@@ -13,6 +13,8 @@ import numpy as np
 from utils.logger import Logger
 from utils import trainer
 
+from utils.extract_wrong_words import evaluate_and_find_errors
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script")
     parser.add_argument('--config', type=str, required=False, help='Path to the config file', default='/lustre/home/mvidas/Diplomski/experiments/default_train.yml')    
@@ -115,10 +117,16 @@ if __name__ == "__main__":
     model_name, model_args, settings_args = extract_args()
     logger = Logger(os.path.join(settings.LOG_PATH, model_name), model_args, settings_args)
     
-    for seed in [42, 198, 6000, 3828, 7382]:
-        set_seed(seed)
-        main(model_name, model_args, settings_args, logger)
+    #for seed in [42, 198, 6000, 3828, 7382]:
+        #set_seed(seed)
+        #main(model_name, model_args, settings_args, logger)
+        
     
-    logger.calculate_mean_stddev()
+    #logger.calculate_mean_stddev()
+    evaluate_and_find_errors(model_name, settings_args, model_args, 'cuda')
+
+    
+
+
     
     
