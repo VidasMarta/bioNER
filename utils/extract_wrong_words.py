@@ -63,17 +63,31 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
             pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
 
             for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, batch_attention_masks)):
-                words = word_embeddings_model.tokenizer.convert_ids_to_tokens(tokens[idx].cpu().numpy())
-                
-                for i, (pred, gold, m) in enumerate(zip(pred_seq, gold_seq, mask_seq.cpu().numpy())):
-                    if m == 0:  # skip padding
+                word_ids = word_embeddings_model.tokenizer.word_ids(batch_index=idx)
+                reconstructed_words = []
+                pred_labels = []
+                gold_labels = []
+
+                prev_word_id = None
+                for i, w_id in enumerate(word_ids):
+                    if w_id is None:
                         continue
-                    pred = int(pred)
+                    if mask_seq[i].item() == 0:  #skip padding
+                        continue
+                    if w_id != prev_word_id:  #first subword
+                        reconstructed_words.append(text_val[idx][w_id])  #get original word from dataset
+                        pred_labels.append(int(pred_seq[i]))
+                        gold_labels.append(int(gold_seq[i]))
+                        prev_word_id = w_id
+                                
+                for w, pred, gold in zip(reconstructed_words, pred_labels, gold_labels):
                     gold = int(gold)
-                    if pred != gold and gold != -1:
-                        print(words[i])
+                    pred = int(pred)
+                    if gold == -1: 
+                        continue
+                    if pred != gold:
                         errors_val.append({
-                            "token": words[i],
+                            "token": w,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold]
                         })
