@@ -123,9 +123,9 @@ if __name__ == "__main__":
         
     
     #logger.calculate_mean_stddev()
-    errors_val , errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    errors_val = evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))# , errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
     print(errors_val)
-    print(errors_test)
+    #print(errors_test)
 
     
 
