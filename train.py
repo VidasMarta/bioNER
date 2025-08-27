@@ -123,7 +123,8 @@ if __name__ == "__main__":
         
     
     #logger.calculate_mean_stddev()
-    evaluate_and_find_errors(model_name, settings_args, model_args, 'cuda')
+    errors_val = evaluate_and_find_errors(model_name, settings_args, model_args, 'cuda')
+    print(errors_val[:10])
 
     
 

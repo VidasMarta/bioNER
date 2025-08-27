@@ -28,7 +28,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
     num_tags = len(tag_to_num)
 
     model_weights = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
-    model = models.ft_bb_BiRNN_CRF(num_tags, model_args, settings_args['char_embedding_dim']) 
+    model = models.ft_bb_BiRNN_CRF(num_tags, model_args, settings_args['cnn_embedding_dim']) 
     model.load_state_dict(model_weights)
     model.eval()
 
