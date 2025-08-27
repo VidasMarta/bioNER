@@ -31,6 +31,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
     model_weights = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
     model = models.ft_bb_BiRNN_CRF(num_tags, model_args, settings_args['cnn_embedding_dim']) 
     #model.load_state_dict(model_weights)
+    model.to(device)
     model.eval()
 
     if settings_args['char_cnn_embedding'] is not None:
