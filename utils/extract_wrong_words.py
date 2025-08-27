@@ -6,6 +6,26 @@ import models
 from preprocessing import CharEmbeddingCNN, Embedding
 import settings
 
+def _reconstruct_word(word_ids, mask_seq, text, idx, pred_seq, gold_seq):
+    reconstructed_words = []
+    pred_labels = []
+    gold_labels = []
+
+    prev_word_id = None
+    for i, w_id in enumerate(word_ids):
+        if w_id is None:
+            continue
+        if mask_seq[i].item() == 0:  #skip padding
+            continue
+        if w_id != prev_word_id:  #first subword
+            reconstructed_words.append(text[idx][w_id])  #get original word from dataset
+            pred_labels.append(int(pred_seq[i]))
+            gold_labels.append(int(gold_seq[i]))
+            prev_word_id = w_id
+
+    return reconstructed_words, pred_labels, gold_labels
+    
+
 
 def evaluate_and_find_errors(model_name, settings_args, model_args, device):
     dataset_loader = DatasetLoader(settings_args['dataset'], settings.DATA_PATH)
@@ -63,22 +83,8 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
             pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
 
             for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, batch_attention_masks)):
-                word_ids = word_embeddings_model.tokenizer.word_ids(batch_index=idx)
-                reconstructed_words = []
-                pred_labels = []
-                gold_labels = []
-
-                prev_word_id = None
-                for i, w_id in enumerate(word_ids):
-                    if w_id is None:
-                        continue
-                    if mask_seq[i].item() == 0:  #skip padding
-                        continue
-                    if w_id != prev_word_id:  #first subword
-                        reconstructed_words.append(text_val[idx][w_id])  #get original word from dataset
-                        pred_labels.append(int(pred_seq[i]))
-                        gold_labels.append(int(gold_seq[i]))
-                        prev_word_id = w_id
+                word_ids = word_embeddings_model.tokenizer.encoding.word_ids(batch_index=idx)
+                reconstructed_words, pred_labels, gold_labels = _reconstruct_word(word_ids, mask_seq, text_val, idx, pred_seq, gold_seq)
                                 
                 for w, pred, gold in zip(reconstructed_words, pred_labels, gold_labels):
                     gold = int(gold)
