@@ -83,7 +83,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
             pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
 
             for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, batch_attention_masks)):
-                word_ids = word_embeddings_model.tokenizer.encoding.word_ids(batch_index=idx)
+                word_ids = batch_tokens.word_ids(batch_index=idx)
                 reconstructed_words, pred_labels, gold_labels = _reconstruct_word(word_ids, mask_seq, text_val, idx, pred_seq, gold_seq)
                                 
                 for w, pred, gold in zip(reconstructed_words, pred_labels, gold_labels):
