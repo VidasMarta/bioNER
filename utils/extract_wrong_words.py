@@ -8,6 +8,7 @@ import settings
 
 
 def evaluate_and_find_errors(model_name, settings_args, model_args, device):
+    print(device)
     dataset_loader = DatasetLoader(settings_args['dataset'], settings.DATA_PATH)
 
     batch_size=model_args['batch_size']
@@ -52,6 +53,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
         for (tokens, tags, emb_att_mask, crf_mask), char_embedding in zip(val_data_loader, val_char_embeddings or itertools.repeat(None)): 
             if char_embedding != None:
                     batch_char_embedding = char_embedding.to(device)
+                    print("prebacih")
             else:
                 batch_char_embedding = None
 
