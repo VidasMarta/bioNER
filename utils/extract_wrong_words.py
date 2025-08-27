@@ -24,6 +24,47 @@ def _reconstruct_word(word_ids, mask_seq, text, idx, pred_seq, gold_seq):
             prev_word_id = w_id
 
     return reconstructed_words, pred_labels, gold_labels
+
+def _get_errors(word_embeddings_model, text, data_loader, char_embeddings, device, model, num_to_tag):
+    errors = []
+    encoding = word_embeddings_model.tokenizer(
+                text,
+                is_split_into_words=True,
+                truncation=True,
+                padding='max_length',
+                max_length=256,
+                return_tensors='pt',
+                return_attention_mask=True,
+            )
+    with torch.no_grad():
+        for (tokens, tags, emb_att_mask, crf_mask), char_embedding in zip(data_loader, char_embeddings or itertools.repeat(None)): 
+            if char_embedding != None:
+                    batch_char_embedding = char_embedding.to(device)
+            else:
+                batch_char_embedding = None
+
+            batch_attention_masks = emb_att_mask.to(device)
+            batch_tags = tags.to(device)
+
+            batch_tokens = tokens.to(device)
+            pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
+
+            for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, batch_attention_masks)):
+                word_ids = encoding.word_ids(batch_index=idx)
+                reconstructed_words, pred_labels, gold_labels = _reconstruct_word(word_ids, mask_seq, text, idx, pred_seq, gold_seq)
+                                
+                for w, pred, gold in zip(reconstructed_words, pred_labels, gold_labels):
+                    gold = int(gold)
+                    pred = int(pred)
+                    if gold == -1: 
+                        continue
+                    if pred != gold:
+                        errors.append({
+                            "token": w,
+                            "predicted": num_to_tag[pred],
+                            "gold": gold #num_to_tag[gold]
+                        })
+    return errors
     
 
 
@@ -66,45 +107,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
         val_char_embeddings = None
         test_char_embeddings = None
 
-    errors_val = []
-    errors_test = []
+    errors_val = _get_errors(word_embeddings_model, text_val, val_data_loader, val_char_embeddings, device, model, num_to_tag)
+    errors_test = _get_errors(word_embeddings_model, text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
 
-    encoding = word_embeddings_model.tokenizer(
-                text_val,
-                is_split_into_words=True,
-                truncation=True,
-                padding='max_length',
-                max_length=256,
-                return_tensors='pt',
-                return_attention_mask=True,
-            )
-    with torch.no_grad():
-        for (tokens, tags, emb_att_mask, crf_mask), char_embedding in zip(val_data_loader, val_char_embeddings or itertools.repeat(None)): 
-            if char_embedding != None:
-                    batch_char_embedding = char_embedding.to(device)
-            else:
-                batch_char_embedding = None
-
-            batch_attention_masks = emb_att_mask.to(device)
-            batch_tags = tags.to(device)
-
-            batch_tokens = tokens.to(device)
-            pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
-
-            for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, batch_attention_masks)):
-                word_ids = encoding.word_ids(batch_index=idx)
-                reconstructed_words, pred_labels, gold_labels = _reconstruct_word(word_ids, mask_seq, text_val, idx, pred_seq, gold_seq)
-                                
-                for w, pred, gold in zip(reconstructed_words, pred_labels, gold_labels):
-                    gold = int(gold)
-                    pred = int(pred)
-                    if gold == -1: 
-                        continue
-                    if pred != gold:
-                        errors_val.append({
-                            "token": w,
-                            "predicted": num_to_tag[pred],
-                            "gold": num_to_tag[gold]
-                        })
-    
-    return errors_val#, errors_test #TODO analogno i za test
+    return errors_val, errors_test 
