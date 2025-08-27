@@ -108,6 +108,6 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
         test_char_embeddings = None
 
     errors_val = _get_errors(word_embeddings_model, text_val, val_data_loader, val_char_embeddings, device, model, num_to_tag)
-    errors_test = _get_errors(word_embeddings_model, text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
+    #errors_test = _get_errors(word_embeddings_model, text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
 
     return errors_val, errors_test 

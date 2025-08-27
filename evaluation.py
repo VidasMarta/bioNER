@@ -96,49 +96,6 @@ class Evaluation:
             loss = final_loss/len(data_loader)    
 
             return loss, f1_score_strict
-        
-    def get_wrong_preds(self, data_loader, model, device, char_embeddings, num_to_tag_dict, ft_bb=False):
-        model = model.to(device)
-        model.eval()
-
-        all_wrong_words = []
-
-        with torch.no_grad():
-            for (tokens, tags, emb_att_mask, crf_mask), char_embedding in zip(data_loader, char_embeddings or itertools.repeat(None)): 
-                if char_embedding != None:
-                        batch_char_embedding = char_embedding.to(device)
-                else:
-                    batch_char_embedding = None
-
-                batch_attention_masks = emb_att_mask.to(device)
-                batch_tags = tags.to(device)
-
-                if ft_bb: #if doing bioBERT finetuning, model takes tokens
-                    batch_tokens = tokens.to(device)
-                    loss = model(batch_tokens, batch_tags, batch_attention_masks, batch_char_embedding)
-                    final_loss += loss.item()
-                    pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
-
-                else: #else, model takes emeddings
-                    batch_embeddings = self.emb_model.get_embedding(tokens, emb_att_mask)
-                    batch_embeddings = batch_embeddings.to(device)
-                    loss = model(batch_embeddings, batch_tags, batch_attention_masks, batch_char_embedding)
-                    final_loss += loss.item()
-                    pred_tags = model.predict(batch_embeddings, batch_attention_masks, batch_char_embedding) 
-
-
-                #remove padding
-                relevant_true_tags = self.emb_model.get_relevant_tags(tags, num_to_tag_dict, crf_mask)
-
-                # Predicted tags already have no padding, so just map them to strings
-                relevant_pred_tags = self.emb_model.get_relevant_tags(pred_tags, num_to_tag_dict, crf_mask) 
-
-                wrong_tags_idxs = [i for i, (a, b) in enumerate(zip(relevant_true_tags, relevant_pred_tags)) if a != b]
-                wrong_tags_words = self.emb_model(tokens, wrong_tags_idxs)
-
-                all_wrong_words.append(wrong_tags_words)
-
-        return all_wrong_words
 
 
 
