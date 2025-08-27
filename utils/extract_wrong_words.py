@@ -70,7 +70,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
                         continue
                     pred = int(pred)
                     gold = int(gold)
-                    if pred != gold:
+                    if pred != gold and gold != -1:
                         print(words[i])
                         errors_val.append({
                             "token": words[i],
