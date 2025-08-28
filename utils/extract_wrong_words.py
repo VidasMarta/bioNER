@@ -6,38 +6,10 @@ import models
 from preprocessing import CharEmbeddingCNN, Embedding
 import settings
 
-def _reconstruct_word(word_ids, mask_seq, text, idx, pred_seq, gold_seq):
-    reconstructed_words = []
-    pred_labels = []
-    gold_labels = []
-
-    prev_word_id = None
-    for i, w_id in enumerate(word_ids):
-        if w_id is None:
-            continue
-        if mask_seq[i].item() == 0:  #skip padding
-            continue
-        if w_id != prev_word_id:  #first subword
-            reconstructed_words.append(text[idx][w_id])  #get original word from dataset
-            pred_labels.append(int(pred_seq[i]))
-            gold_labels.append(int(gold_seq[i]))
-            prev_word_id = w_id
-
-    return reconstructed_words, pred_labels, gold_labels
-
 def _get_errors(word_embeddings_model, text, data_loader, char_embeddings, device, model, num_to_tag):
     errors = []
-    encoding = word_embeddings_model.tokenizer(
-                text,
-                is_split_into_words=True,
-                truncation=True,
-                padding='max_length',
-                max_length=256,
-                return_tensors='pt',
-                return_attention_mask=True,
-            )
     with torch.no_grad():
-        for (tokens, tags, emb_att_mask, crf_mask), char_embedding in zip(data_loader, char_embeddings or itertools.repeat(None)): 
+        for batch_idx, (tokens, tags, emb_att_mask, crf_mask), char_embedding in enumerate(zip(data_loader, char_embeddings or itertools.repeat(None))): 
             if char_embedding != None:
                     batch_char_embedding = char_embedding.to(device)
             else:
@@ -49,21 +21,27 @@ def _get_errors(word_embeddings_model, text, data_loader, char_embeddings, devic
             batch_tokens = tokens.to(device)
             pred_tags = model.predict(batch_tokens, batch_attention_masks, batch_char_embedding) 
 
-            for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, batch_attention_masks)):
-                word_ids = encoding.word_ids(batch_index=idx)
-                reconstructed_words, pred_labels, gold_labels = _reconstruct_word(word_ids, mask_seq, text, idx, pred_seq, gold_seq)
-                                
-                for w, pred, gold in zip(reconstructed_words, pred_labels, gold_labels):
-                    gold = int(gold)
-                    pred = int(pred)
-                    if gold == -1: 
+            for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, crf_mask)):
+                words = text[batch_idx * data_loader.batch_size + idx]  # original words
+                word_ptr = 0
+
+                for i, (pred, gold, m) in enumerate(zip(pred_seq, gold_seq, mask_seq)):
+                    if m == 0:        # # skip padding and subwords
                         continue
+
+                    word = words[word_ptr]
+                    word_ptr += 1
+
+                    pred = pred.item()
+                    gold = gold.item()
+
                     if pred != gold:
                         errors.append({
-                            "token": w,
+                            "token": word,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold]
                         })
+
     return errors
     
 
