@@ -102,7 +102,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
         max_word_len = settings_args['cnn_max_word_len']
         char_emb = CharEmbeddingCNN(vocab, char_emb_size, feature_size, max_word_len)
         val_char_embeddings = char_emb.batch_cnn_embedding_generator(text_val, max_len, batch_size)
-        test_char_embeddings = char_emb.batch_cnn_embedding_generator(text_val, max_len, batch_size)
+        test_char_embeddings = char_emb.batch_cnn_embedding_generator(text_test, max_len, batch_size)
     else:
         val_char_embeddings = None
         test_char_embeddings = None
