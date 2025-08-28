@@ -129,12 +129,12 @@ if __name__ == "__main__":
 
     with open(output_path+'/wrong_val.log',"w") as f:
         for error in errors_val:
-            f.write(error + "\n")
+            f.write(error, "\n")
     
 
     with open(output_path+'/wrong_test.log',"w") as f:
         for error in errors_test:
-            f.write(error + "\n")
+            f.write(error, "\n")
 
     
 
