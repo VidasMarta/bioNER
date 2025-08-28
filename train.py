@@ -115,7 +115,8 @@ def extract_args():
 
 if __name__ == "__main__":
     model_name, model_args, settings_args = extract_args()
-    logger = Logger(os.path.join(settings.LOG_PATH, model_name), model_args, settings_args)
+    output_path = os.path.join(settings.LOG_PATH, model_name)
+    logger = Logger(output_path, model_args, settings_args)
     
     #for seed in [42, 198, 6000, 3828, 7382]:
         #set_seed(seed)
@@ -123,9 +124,17 @@ if __name__ == "__main__":
         
     
     #logger.calculate_mean_stddev()
-    errors_val = evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))# , errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-    print(errors_val)
-    #print(errors_test)
+    errors_val, errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    
+
+    with open(output_path+'/wrong_val.log',"w") as f:
+        for error in errors_val:
+            f.write(error + "\n")
+    
+
+    with open(output_path+'/wrong_test.log',"w") as f:
+        for error in errors_test:
+            f.write(error + "\n")
 
     
 
