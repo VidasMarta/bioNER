@@ -37,6 +37,7 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
 
                     if pred != gold:
                         errors.append({
+                            "idx": batch_idx * data_loader.batch_size + idx, 
                             "token": word,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold]
