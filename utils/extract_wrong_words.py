@@ -6,10 +6,10 @@ import models
 from preprocessing import CharEmbeddingCNN, Embedding
 import settings
 
-def _get_errors(word_embeddings_model, text, data_loader, char_embeddings, device, model, num_to_tag):
+def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
     errors = []
     with torch.no_grad():
-        for batch_idx, (tokens, tags, emb_att_mask, crf_mask), char_embedding in enumerate(zip(data_loader, char_embeddings or itertools.repeat(None))): 
+        for batch_idx, ((tokens, tags, emb_att_mask, crf_mask), char_embedding) in enumerate(zip(data_loader, char_embeddings or itertools.repeat(None))): 
             if char_embedding != None:
                     batch_char_embedding = char_embedding.to(device)
             else:
@@ -26,7 +26,7 @@ def _get_errors(word_embeddings_model, text, data_loader, char_embeddings, devic
                 word_ptr = 0
 
                 for i, (pred, gold, m) in enumerate(zip(pred_seq, gold_seq, mask_seq)):
-                    if m == 0:        # # skip padding and subwords
+                    if m == 0:  # skip padding and subwords
                         continue
 
                     word = words[word_ptr]
@@ -85,7 +85,7 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
         val_char_embeddings = None
         test_char_embeddings = None
 
-    errors_val = _get_errors(word_embeddings_model, text_val, val_data_loader, val_char_embeddings, device, model, num_to_tag)
-    errors_test = _get_errors(word_embeddings_model, text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
+    errors_val = _get_errors(text_val, val_data_loader, val_char_embeddings, device, model, num_to_tag)
+    errors_test = _get_errors(text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
 
     return errors_val, errors_test 
