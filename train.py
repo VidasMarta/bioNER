@@ -149,10 +149,12 @@ if __name__ == "__main__":
     settings_args['train_filename'] = 'generated_sentences_20250902.json'
     model_args['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
 
-    for seed in [42, 198, 6000, 3828, 7382]:
-        set_seed(seed)
-        main(model_name, model_args, settings_args, logger)
+    #for seed in [42, 198, 6000, 3828, 7382]:
+    #    set_seed(seed)
+    #    main(model_name, model_args, settings_args, logger)
     
+    set_seed(42)
+    main(model_name, model_args, settings_args, logger)
     logger.calculate_mean_stddev()
     
 
