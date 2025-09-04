@@ -142,12 +142,12 @@ if __name__ == "__main__":
 
     #---> Train with generated data with 5 different seeds
     model_name, model_args, settings_args = extract_args()
-    settings_args['train_filename'] = 'generated_sentences_20250902.json'
-    model_args['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
-    
     model_name += "_with_genData" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
+
+    settings_args['train_filename'] = 'generated_sentences_20250902.json'
+    model_args['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
 
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
