@@ -142,8 +142,8 @@ if __name__ == "__main__":
 
     #---> Train with generated data with 5 different seeds
     model_name, model_args, settings_args = extract_args()
-    model_name += "_with_genData" #D1_ftB_C_L_5_A_mean_with_genData
-    output_path = os.path.join(settings.LOG_PATH, model_name)
+    new_model_name = model_name + "_with_genData" #D1_ftB_C_L_5_A_mean_with_genData
+    output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger = Logger(output_path, model_args, settings_args)
 
     settings_args['train_filename'] = 'generated_sentences_20250902.json'
@@ -151,10 +151,10 @@ if __name__ == "__main__":
 
     #for seed in [42, 198, 6000, 3828, 7382]:
     #    set_seed(seed)
-    #    main(model_name, model_args, settings_args, logger)
+    #    main(new_model_name, model_args, settings_args, logger)
     
     set_seed(42)
-    main(model_name, model_args, settings_args, logger)
+    main(new_model_name, model_args, settings_args, logger)
     logger.calculate_mean_stddev()
     
 
