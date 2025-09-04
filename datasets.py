@@ -24,7 +24,7 @@ class DatasetLoader:
         else:
             print(f"File {file_path} not found")
 
-    def load_data(self):
+    def load_data(self, train_filename = "train.json" ):
         ''' 
         Load the dataset
         Returns:    
@@ -38,7 +38,7 @@ class DatasetLoader:
         tags_train, tags_val, tags_test = [], [], []
 
         tags_file = os.path.join(self.folder_path, "label.json")        
-        train_file = os.path.join(self.folder_path, "train.json")
+        train_file = os.path.join(self.folder_path, train_filename)
         val_file = os.path.join(self.folder_path, "devel.json")
         test_file = os.path.join(self.folder_path, "test.json")
         

@@ -108,12 +108,16 @@ class Trainer(ABC):
 
 class Finetuning_Trainer(Trainer):
     def __init__(self, model_name, model_args, num_tags, train_data_loader, valid_data_loader, word_embeddings_model, char_emb, text_train, text_val, 
-                 max_len, batch_size, device, num_to_tag, eval, logger):
+                 max_len, batch_size, device, num_to_tag, eval, logger, weights = None):
         super().__init__(model_name, model_args, num_tags, train_data_loader, valid_data_loader, word_embeddings_model, char_emb, text_train, text_val,
                           max_len, batch_size, device, num_to_tag, eval, logger)   
         self.finetuning = True
         self.model = models.ft_bb_BiRNN_CRF(num_tags, model_args, model_args['char_embedding_dim'])
         self.best_model = models.ft_bb_BiRNN_CRF(num_tags, model_args, model_args['char_embedding_dim'])
+
+        if weights != None:
+            self.model.load_state_dict(weights)
+        
 
     def _define_optimizer(self):
         if self.model_args['optimizer'] == 'adam':
@@ -169,13 +173,17 @@ class Finetuning_Trainer(Trainer):
             
 class Normal_Trainer(Trainer):
     def __init__(self, model_name, model_args, num_tags, train_data_loader, valid_data_loader, word_embeddings_model, char_emb, text_train, text_val, 
-                 max_len, batch_size, device, num_to_tag, eval, logger):
+                 max_len, batch_size, device, num_to_tag, eval, logger, weights):
         super().__init__(model_name, model_args, num_tags, train_data_loader, valid_data_loader, word_embeddings_model, char_emb, text_train, text_val,
                           max_len, batch_size, device, num_to_tag, eval, logger)
         
         self.finetuning = False
         self.model = models.BiRNN_CRF(num_tags, model_args, word_embeddings_model.embedding_dim, model_args['char_embedding_dim'])
         self.best_model = models.BiRNN_CRF(num_tags, model_args, word_embeddings_model.embedding_dim, model_args['char_embedding_dim'])
+
+        if weights != None:
+            self.model.load_state_dict(weights)
+
 
     def _define_optimizer(self):
         if self.model_args['optimizer'] == 'adam':
@@ -213,3 +221,4 @@ class Normal_Trainer(Trainer):
             self.optimizer.step()
             final_loss += loss.item()
         return final_loss / len(data_loader)
+    
