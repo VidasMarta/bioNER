@@ -77,24 +77,45 @@ class Dataset_Converter:
 
         return total_tags, (text_train, tags_train, json_train), (text_val, tags_val, json_val), (text_test, tags_test, json_test)
 
+def merge_json_files(file_paths, output_file):
+    merged_data = []
+    for path in file_paths:
+        with open(path, 'r', encoding="utf-8") as file:
+            for line in file:
+                data = json.loads(line.strip())
+                merged_data.append(data)
+    with open(output_file, 'w') as outfile:
+        for item in merged_data:
+            outfile.write(json.dumps(item) + "\n")
+
 # Example usage
 if __name__ == "__main__":
-    dataset = Dataset_Converter("ncbi_kaggle", r"C:\Users\Marta\Desktop\Dipl_code\Diplomski\data")
+    dataset_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated1a_json"
+    file_paths = [dataset_path + "/train.json", dataset_path +"/generated_sentences_20250902.json"]
+
+    output_file = dataset_path + "/train_and_gen.json"
+
+    merge_json_files(file_paths, output_file)
+
+    print(f"Merged data written to '{output_file}'")
+
+
+    """ dataset = Dataset_Converter("ncbi_kaggle", "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/")
     total_tags, (text_train, tags_train, json_train), (text_val, tags_val, json_val), (text_test, tags_test, json_test) = dataset.load_data()
     print(f"Total tags: {total_tags}")
     print(f"Training data: {len(text_train)} sentences")
     print(f"Validation data: {len(text_val)} sentences")
     print(f"Testing data: {len(text_test)} sentences")
 
-    with open(dataset.folder_path + "\\train.json", "w") as f:
+    with open(dataset.folder_path + "/train.json", "w") as f:
         for item in json_train:
             f.write(json.dumps(item) + "\n")
 
-    with open(dataset.folder_path + "\\devel.json", "w") as f:
+    with open(dataset.folder_path + "/devel.json", "w") as f:
         for item in json_val:
             f.write(json.dumps(item) + "\n")
 
-    with open(dataset.folder_path + "\\test.json", "w") as f:    
+    with open(dataset.folder_path + "/test.json", "w") as f:    
         for item in json_test:
-            f.write(json.dumps(item) + "\n")
+            f.write(json.dumps(item) + "\n") """
     

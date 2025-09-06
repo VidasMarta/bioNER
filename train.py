@@ -118,7 +118,6 @@ if __name__ == "__main__":
     #model_name, model_args, settings_args = extract_args()
     #output_path = os.path.join(settings.LOG_PATH, model_name)
     #logger = Logger(output_path, model_args, settings_args)
-    #settings_args['train_filename'] = "train.json"
     #model_args['weights'] = None
     #for seed in [42, 198, 6000, 3828, 7382]:
     #    set_seed(seed)
@@ -146,7 +145,6 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    settings_args['train_filename'] = 'generated_sentences_20250902.json'
     model_args['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
 
     #for seed in [42, 198, 6000, 3828, 7382]:
