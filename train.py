@@ -21,6 +21,8 @@ def parse_args():
     parser.add_argument('--model_name', type=str, required=False, help='Name of the file used for saving model weights', default='bilstm_crf')    
     return parser.parse_args()
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def main(model_name, model_args, settings_args, logger):    
     if torch.cuda.is_available():
@@ -70,9 +72,11 @@ def main(model_name, model_args, settings_args, logger):
 
     if settings_args['bert_finetuning'] and settings_args['word_embedding'] == 'bioBERT':
         model_args['ft_lr'] = settings_args['ft_lr']
-        trainer.Finetuning_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
+        trainer_object = trainer.Finetuning_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
         word_embeddings_model, char_emb, text_train, text_val, max_len, batch_size, 
-        device, num_to_tag, eval, logger).train()
+        device, num_to_tag, eval, logger)
+        print("Number of trainable parameters in a NER model: ", count_parameters(trainer_object.model))    
+        trainer_object.train()
 
         best_model_weights = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
         best_model = models.ft_bb_BiRNN_CRF(num_tags, model_args, model_args['char_embedding_dim']) 
@@ -81,9 +85,11 @@ def main(model_name, model_args, settings_args, logger):
         eval.evaluate(test_data_loader, best_model, device, test_char_embeddings, num_to_tag, logger, True)
 
     else:
-        trainer.Normal_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
+        trainer_object = trainer.Normal_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
         word_embeddings_model, char_emb, text_train, text_val, max_len, batch_size, 
-        device, num_to_tag, eval, logger).train()
+        device, num_to_tag, eval, logger)
+        print("Number of trainable parameters in a NER model: ", count_parameters(trainer_object.model))
+        trainer_object.train()
 
         best_model_weights = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
         best_model = models.BiRNN_CRF(num_tags, model_args, word_embeddings_model.embedding_dim, model_args['char_embedding_dim'])
@@ -139,13 +145,13 @@ if __name__ == "__main__":
     #    for error in errors_test:
     #        f.write(f"{error} \n")
 
-    #---> Train with generated data with 5 different seeds
+    #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
-    new_model_name = model_name # + "_with_genData" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = model_name + "cData" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    model_args['weights'] = None #torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
+    model_args['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
 
     #for seed in [42, 198, 6000, 3828, 7382]:
     #    set_seed(seed)
