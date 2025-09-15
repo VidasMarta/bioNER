@@ -111,16 +111,17 @@ if __name__ == "__main__":
             f.write(json.dumps(item) + "\n") """
     
     #code to merge two train sets
-    """ dataset_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated1a_json"
-    file_paths = [dataset_path + "/train.json", dataset_path +"/generated_sentences_20250902.json"]
+    dataset_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated2a_json"
+    file_paths = [dataset_path + "/train.json", dataset_path +"/generated_sentences_20250912_do_val.json"]
 
     output_file = dataset_path + "/train_and_gen.json"
 
     merge_json_files(file_paths, output_file)
 
-    print(f"Merged data written to '{output_file}'") """
+    print(f"Merged data written to '{output_file}'") 
 
     #code to shuffle merged train set
+    """
     file_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated1a_json/train_and_gen.json"
     with open(file_path, "r") as f:
         data = []
@@ -133,5 +134,5 @@ if __name__ == "__main__":
     shuffled_file_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated1b_json/train_and_gen.json"
     with open(shuffled_file_path, "w") as f:
         for item in data:
-            f.write(json.dumps(item) + "\n")
+            f.write(json.dumps(item) + "\n") """
     
