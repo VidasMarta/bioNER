@@ -27,6 +27,6 @@ settings:
   cnn_max_word_len: 20 #oko 20-30
   cnn_embedding_dim: 256
   feature_size: 128
-  dataset: "generated2b_json" # Options: "bc5cdr_json", "ncbi_disease_json", "generated1_json", "generated1a_json", "generated1b_json"
+  dataset: "generated2_json" # Options: "bc5cdr_json", "ncbi_disease_json", "generated1_json", "generated1a_json", "generated1b_json"
   tagging_scheme : "IOB1" #Other options: IOBES (depends on how the dataset is tagged)
-  train_filename: "train_and_gen.json" #generated_sentences_20250902.json, train_and_gen.json, train.json
+  train_filename: "generated_sentences_20250912_do_val.json" #generated_sentences_20250902.json, train_and_gen.json, train.json
