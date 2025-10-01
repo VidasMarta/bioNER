@@ -12,6 +12,7 @@ from datasets import *
 import numpy as np
 from utils.logger import Logger
 from utils import trainer
+import copy
 
 from utils.extract_wrong_words import evaluate_and_find_errors
 
@@ -147,19 +148,31 @@ if __name__ == "__main__":
 
     #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
-    new_model_name = model_name + "_with_gen2cData" #D1_ftB_C_L_5_A_mean_with_genData
-    output_path = os.path.join(settings.LOG_PATH, new_model_name)
+    output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    model_args['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
+    new_model_name = model_name + "_with_gen2Data_mean" #D1_ftB_C_L_5_A_mean_with_genData
+    output_path = os.path.join(settings.LOG_PATH, new_model_name)
+    logger_2 = Logger(output_path)
 
-    #for seed in [42, 198, 6000, 3828, 7382]:
-    #    set_seed(seed)
-    #    main(new_model_name, model_args, settings_args, logger)
+    for seed in [42, 198, 6000, 3828, 7382]:
+        set_seed(seed)
+        #First train on gen data
+        main(model_name, model_args, settings_args, logger)
+
+        #Then take weights and finetune on NCBI-disease train set
+        model_args_2 = copy.deepcopy(model_args)
+        model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
+        settings_args_2 = copy.deepcopy(settings_args)
+        settings_args_2['dataset'] = 'ncbi_disease_json'
+        settings_args_2['train_filename'] = 'train.json'
+
+        main(new_model_name, model_args_2, settings_args_2, logger_2)
+        
+        
     
-    set_seed(42)
-    main(new_model_name, model_args, settings_args, logger)
     logger.calculate_mean_stddev()
+    logger_2.calculate_mean_stddev()
     
 
 
