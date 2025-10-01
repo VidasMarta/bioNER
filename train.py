@@ -151,7 +151,7 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = model_name + "_with_gen2Data_mean" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = model_name + "Data_mean" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
