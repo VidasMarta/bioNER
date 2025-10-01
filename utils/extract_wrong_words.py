@@ -40,7 +40,8 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
                             "idx": batch_idx * data_loader.batch_size + idx, 
                             "token": word,
                             "predicted": num_to_tag[pred],
-                            "gold": num_to_tag[gold]
+                            "gold": num_to_tag[gold],
+                            "sentence": " ".join(words),
                         })
 
     return errors
