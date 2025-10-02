@@ -5,36 +5,36 @@ from datasets import Dataset, DatasetLoader
 import models
 from preprocessing import CharEmbeddingCNN, Embedding
 import settings
-import numpy as np
 
 def _get_gold_entity(words, gold_seq, word_idx): 
-    """
-        Extract the gold entity span (as a string) for the word at word_idx.
-        Uses integer encoding: B=0, I=1, O=2.
-        Returns None if the word is 'O' or padding.
-    """
+        #Extract the gold entity span (as a string) for the word at word_idx.
+        #Uses integer encoding: B=0, I=1, O=2.
+        #Returns None if the word is 'O' or padding.
     gold_id = int(gold_seq[word_idx])
-    if gold_id == -1:  # ignore subwords/padding
-        return None
-    if gold_id == 2:   # O
+    if gold_id == -1 or gold_id == 2:  # ignore or O
         return None
     
-    start = word_idx
-    while start > 0 and int(gold_seq[start-1]) in (0, 1):
-        start -= 1
-        # stop if we hit an O or padding
-        if int(gold_seq[start]) in (2, -1):
-            start += 1
-            break
+    # if it's a B, start from here
+    if gold_id == 0:
+        start = word_idx
+    else:
+        # it's an I -> walk back until B
+        start = word_idx
+        while start > 0 and int(gold_seq[start]) == 1:
+            if int(gold_seq[start - 1]) == 0:
+                start -= 1
+                break
+            elif int(gold_seq[start - 1]) == 1:
+                start -= 1
+            else:
+                break
     
-    # find end of entity
+    # walk forward through I's
     end = word_idx
-    while end + 1 < len(words) and int(gold_seq[end+1]) == 1:
+    while end + 1 < len(words) and int(gold_seq[end + 1]) == 1:
         end += 1
     
-    entity_tokens = words[start:end+1]
-    return " ".join(entity_tokens)
-
+    return " ".join(words[start:end + 1])
 
 
 def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
@@ -122,3 +122,10 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
     errors_test = _get_errors(text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
 
     return errors_val, errors_test 
+
+
+if __name__ == "__main__": 
+    words = ["APC", "colorectal", "tumor", "sporadic", "colorectal", "carcinogenesis"]
+    gold_seq = [2, 0, 1, 2, 0, 1]   # O B I O B I
+
+    print(_get_gold_entity(words, gold_seq, 5))
