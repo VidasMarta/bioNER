@@ -56,6 +56,12 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
                 words = text[batch_idx * data_loader.batch_size + idx]  # original words
                 word_ptr = 0
 
+                # build a word-level gold label sequence (no -1s, same length as words)
+                gold_word_labels = []
+                for g, m in zip(gold_seq, mask_seq):   
+                    if m.item() == 1:  
+                        gold_word_labels.append(int(g))
+
                 for i, (pred, gold, m) in enumerate(zip(pred_seq, gold_seq, mask_seq)):
                     if m == 0:  # skip padding and subwords
                         continue
@@ -66,13 +72,14 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
                     pred = pred.item()
                     gold = gold.item()
 
+
                     if pred != gold:
                         errors.append({
                             "idx": batch_idx * data_loader.batch_size + idx, 
                             "token": word,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold],
-                            "gold entity": _get_gold_entity(words, gold_seq, word_ptr),
+                            "gold entity": _get_gold_entity(words, gold_word_labels, word_ptr),
                         })
 
     return errors
