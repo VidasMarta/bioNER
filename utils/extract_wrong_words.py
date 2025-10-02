@@ -7,27 +7,41 @@ from preprocessing import CharEmbeddingCNN, Embedding
 import settings
 
 def _get_entity(words, gold_seq, num_to_tag, word_idx):
-    gold_tag = num_to_tag[int(gold_seq[word_idx])]
-    if gold_tag == "O":
+    gold_id = int(gold_seq[word_idx])
+    if gold_id == -1:
+        return words[word_idx]  # treat ignored subwords as single token
+    
+    gold_tag = num_to_tag[gold_id]
+    if gold_tag == "O" or "-" not in gold_tag:
         return words[word_idx]  # no entity
     
     prefix, ent_type = gold_tag.split("-", 1)
     
+    # walk backwards to find the beginning of the entity
     start = word_idx
     while start > 0:
-        prev_tag = num_to_tag[int(gold_seq[start-1])]
+        prev_id = int(gold_seq[start - 1])
+        if prev_id == -1:  # skip ignored subwords
+            start -= 1
+            continue
+        prev_tag = num_to_tag[prev_id]
         if not prev_tag.endswith(ent_type) or prev_tag.startswith("O"):
             break
         start -= 1
     
+    # walk forwards to find the end of the entity
     end = word_idx
     while end + 1 < len(words):
-        next_tag = num_to_tag[int(gold_seq[end+1])]
+        next_id = int(gold_seq[end + 1])
+        if next_id == -1:  # skip ignored subwords
+            end += 1
+            continue
+        next_tag = num_to_tag[next_id]
         if not next_tag.startswith("I-") or not next_tag.endswith(ent_type):
             break
         end += 1
     
-    entity_tokens = words[start:end+1]
+    entity_tokens = words[start:end + 1]
     return " ".join(entity_tokens)
 
 def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
