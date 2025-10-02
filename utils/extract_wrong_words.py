@@ -14,21 +14,16 @@ def _get_gold_entity(words, gold_seq, word_idx):
     if gold_id == -1 or gold_id == 2:  # ignore or O
         return None
     
-    # if it's a B, start from here
-    if gold_id == 0:
+    if gold_id == 0:  # B
         start = word_idx
-    else:
-        # it's an I -> walk back until B
+    else:  # I
         start = word_idx
-        while start > 0 and int(gold_seq[start]) == 1:
-            if int(gold_seq[start - 1]) == 0:
+        while start > 0 and gold_seq[start-1] in (0, 1):
+            if gold_seq[start-1] == 0:  # B
                 start -= 1
                 break
-            elif int(gold_seq[start - 1]) == 1:
-                start -= 1
-            else:
-                break
-    
+            start -= 1
+  
     # walk forward through I's
     end = word_idx
     while end + 1 < len(words) and int(gold_seq[end + 1]) == 1:
@@ -54,32 +49,19 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
 
             for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, crf_mask)):
                 words = text[batch_idx * data_loader.batch_size + idx]  # original words
-                word_ptr = 0
+                # compress to word-level using CRF mask
+                gold_word_labels = [int(g) for g, m in zip(gold_seq, mask_seq) if m.item() == 1]
+                pred_word_labels = [int(p) for p, m in zip(pred_seq, mask_seq) if m.item() == 1]
 
-                # build a word-level gold label sequence (no -1s, same length as words)
-                gold_word_labels = []
-                for g, m in zip(gold_seq, mask_seq):   
-                    if m.item() == 1:  
-                        gold_word_labels.append(int(g))
-
-                for i, (pred, gold, m) in enumerate(zip(pred_seq, gold_seq, mask_seq)):
-                    if m == 0:  # skip padding and subwords
-                        continue
-
-                    word = words[word_ptr]
-                    word_ptr += 1
-
-                    pred = pred.item()
-                    gold = gold.item()
-
-
+                # now iterate word-level directly
+                for word_idx, (word, pred, gold) in enumerate(zip(words, pred_word_labels, gold_word_labels)):
                     if pred != gold:
                         errors.append({
-                            "idx": batch_idx * data_loader.batch_size + idx, 
+                            "idx": batch_idx * data_loader.batch_size + idx,
                             "token": word,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold],
-                            "gold entity": _get_gold_entity(words, gold_word_labels, word_ptr),
+                            "gold entity": _get_gold_entity(words, gold_word_labels, word_idx),
                         })
 
     return errors
