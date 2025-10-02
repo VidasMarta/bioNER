@@ -6,6 +6,30 @@ import models
 from preprocessing import CharEmbeddingCNN, Embedding
 import settings
 
+def _get_entity(words, gold_seq, num_to_tag, word_idx):
+    gold_tag = num_to_tag[int(gold_seq[word_idx])]
+    if gold_tag == "O":
+        return words[word_idx]  # no entity
+    
+    prefix, ent_type = gold_tag.split("-", 1)
+    
+    start = word_idx
+    while start > 0:
+        prev_tag = num_to_tag[int(gold_seq[start-1])]
+        if not prev_tag.endswith(ent_type) or prev_tag.startswith("O"):
+            break
+        start -= 1
+    
+    end = word_idx
+    while end + 1 < len(words):
+        next_tag = num_to_tag[int(gold_seq[end+1])]
+        if not next_tag.startswith("I-") or not next_tag.endswith(ent_type):
+            break
+        end += 1
+    
+    entity_tokens = words[start:end+1]
+    return " ".join(entity_tokens)
+
 def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
     errors = []
     with torch.no_grad():
@@ -41,7 +65,7 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
                             "token": word,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold],
-                            "sentence": " ".join(words),
+                            "gold entity": _get_entity(words, gold_seq, num_to_tag, word_ptr),
                         })
 
     return errors
