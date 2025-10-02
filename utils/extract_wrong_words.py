@@ -79,7 +79,7 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
                             "token": word,
                             "predicted": num_to_tag[pred],
                             "gold": num_to_tag[gold],
-                            "gold entity": _get_entity(words, gold_seq, num_to_tag, word_ptr),
+                            "gold entity": _get_entity(words, gold_seq, num_to_tag, word_ptr-1),
                         })
 
     return errors
