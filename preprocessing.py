@@ -56,7 +56,7 @@ class Embedding(ABC): #For word embeddings
         pass
     
 #bioLinkBERT https://huggingface.co/michiyasunaga/BioLinkBERT-base/tree/main
-class Embedding_bioBERT(Embedding): #bioBERT large https://github.com/dmis-lab/biobert?tab=readme-ov-file
+class Embedding_bioBERT(Embedding): #bioBERT large https://github.com/dmis-lab/biobert?tab=readme-ov-file TODO: change self.embedding dim to 1024
     def __init__(self, embedding_model_name, dataset_name, max_len=256):
         super(Embedding_bioBERT, self).__init__(embedding_model_name, dataset_name, max_len)
         self.max_len = max_len
