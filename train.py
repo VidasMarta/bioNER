@@ -115,14 +115,17 @@ def extract_args():
     args = parse_args()
     model_name = args.model_name
     model_args, settings_args = settings.Settings(args.config)
+    return model_name, model_args, settings_args
+
+def print_args(model_args, settings_args):
     print("Training with the following settings:")
     print("Model Args:", model_args)
     print("Settings Args:", settings_args)
-    return model_name, model_args, settings_args
 
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
     """model_name, model_args, settings_args = extract_args()
+    print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
     model_args['weights'] = None
@@ -148,6 +151,9 @@ if __name__ == "__main__":
 
     #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
+    settings_args['dataset'] = 'generated2_json'
+    settings_args['train_filename'] = 'generated_sentences_20250912_do_val.json'
+    print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
