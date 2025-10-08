@@ -61,8 +61,8 @@ class Embedding_bioBERT(Embedding): #bioBERT large https://huggingface.co/dmis-l
     def __init__(self, embedding_model_name, dataset_name, max_len=256):
         super(Embedding_bioBERT, self).__init__(embedding_model_name, dataset_name, max_len)
         self.max_len = max_len
-        self.embedding_dim = 1024  # Dimensionality of BioBERT embeddings 768, for large 1024
-        bioBERT_setup_path = os.path.join(settings.EMBEDDINGS_PATH, "bioLinkBERTlarge_setup") 
+        self.embedding_dim = 768  # Dimensionality of BioBERT embeddings 768, for large 1024
+        bioBERT_setup_path = os.path.join(settings.EMBEDDINGS_PATH, "bioLinkBERT_setup") 
         self.tokenizer = AutoTokenizer.from_pretrained(bioBERT_setup_path)
         self.bert = AutoModel.from_pretrained(bioBERT_setup_path)
 
