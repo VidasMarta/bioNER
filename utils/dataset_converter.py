@@ -89,6 +89,11 @@ def merge_json_files(file_paths, output_file):
         for item in merged_data:
             outfile.write(json.dumps(item) + "\n")
 
+def save_jsonl(data_split, filename):
+        with open(filename, "w", encoding="utf-8") as f:
+            for entry in data_split:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
 # Example usage
 if __name__ == "__main__":
     """ dataset = Dataset_Converter("ncbi_kaggle", "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/")
@@ -122,7 +127,7 @@ if __name__ == "__main__":
 
     #code to shuffle merged train set
     
-    file_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated2a_json/train_and_gen.json"
+    """file_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated2a_json/train_and_gen.json"
     with open(file_path, "r") as f:
         data = []
         for line in f:
@@ -134,5 +139,37 @@ if __name__ == "__main__":
     shuffled_file_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated2b_json/train_and_gen.json"
     with open(shuffled_file_path, "w") as f:
         for item in data:
-            f.write(json.dumps(item) + "\n") 
+            f.write(json.dumps(item) + "\n")"""
+    
+    #code to split synthetic data into train(70) - val(15) - test(15)
+    output_folder = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/gen2_json/"
+    input_file = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated2_json/generated_sentences_20250912_do_val.json"
+
+    train_ratio, val_ratio, test_ratio = 0.7, 0.15,0.15
+    random_seed = 42
+
+    data = []
+    with open(input_file, "r", encoding="utf-8") as f:
+        data = [json.loads(line.strip()) for line in f]
+
+    print(f"Total samples: {len(data)}")
+
+    random.seed(random_seed)
+    random.shuffle(data)
+
+    n_total = len(data)
+    n_train = int(n_total*train_ratio)
+    n_val = int(n_total*val_ratio)
+    n_test = n_total - n_train - n_val
+
+    train_data = data[:n_train]
+    val_data = data[n_train:n_train + n_val]
+    test_data = data[n_train + n_val:]
+
+    print(f"Train: {len(train_data)}, Val: {len(val_data)}, Test: {len(test_data)}")
+    
+    save_jsonl(train_data, output_folder + "train.json")
+    save_jsonl(val_data, output_folder + "devel.json")
+    save_jsonl(test_data, output_folder + "test.json")
+
     
