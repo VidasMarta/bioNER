@@ -1,0 +1,15 @@
+name: nlp_srl
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - numpy==1.23.5
+      - spacy==3.3.3
+      - thinc==8.0.17
+      - allennlp==2.10.1
+      - allennlp-models==2.10.1
+
+
+#python -m spacy download en_core_web_sm
+#conda env create -f /home/martavidas/Documents/FER/Diplomski/Diplomski/utils/nlp_srl_env.yml
+#conda activate nlp_srl
