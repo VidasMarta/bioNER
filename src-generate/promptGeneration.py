@@ -57,7 +57,8 @@ PROMPT = {
         medical document. Consider the sentence output that comes after sentence: 
         The patient diagnosed with {condition}.        
         Based on your medical expertise. 
-        Your task is to generate next sentence containing following disease: {condition}. \n\n""",
+        Your task is to generate next sentence containing following disease: {condition}. \n\n
+        """,
 
     'genre_syn_generation': """
         A diagnosis is the process of identifying a specific disease or condition 
