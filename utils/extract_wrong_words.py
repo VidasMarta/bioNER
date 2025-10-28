@@ -6,6 +6,32 @@ import models
 from preprocessing import CharEmbeddingCNN, Embedding
 import settings
 
+def _get_gold_entity(words, gold_seq, word_idx): 
+        #Extract the gold entity span (as a string) for the word at word_idx.
+        #Uses integer encoding: B=0, I=1, O=2.
+        #Returns None if the word is 'O' or padding.
+    gold_id = int(gold_seq[word_idx])
+    if gold_id == -1 or gold_id == 2:  # ignore or O
+        return None
+    
+    if gold_id == 0:  # B
+        start = word_idx
+    else:  # I
+        start = word_idx
+        while start > 0 and gold_seq[start-1] in (0, 1):
+            if gold_seq[start-1] == 0:  # B
+                start -= 1
+                break
+            start -= 1
+  
+    # walk forward through I's
+    end = word_idx
+    while end + 1 < len(words) and int(gold_seq[end + 1]) == 1:
+        end += 1
+    
+    return " ".join(words[start:end + 1])
+
+
 def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
     errors = []
     with torch.no_grad():
@@ -23,24 +49,19 @@ def _get_errors(text, data_loader, char_embeddings, device, model, num_to_tag):
 
             for idx, (pred_seq, gold_seq, mask_seq) in enumerate(zip(pred_tags, batch_tags, crf_mask)):
                 words = text[batch_idx * data_loader.batch_size + idx]  # original words
-                word_ptr = 0
+                # compress to word-level using CRF mask
+                gold_word_labels = [int(g) for g, m in zip(gold_seq, mask_seq) if m.item() == 1]
+                pred_word_labels = [int(p) for p, m in zip(pred_seq, mask_seq) if m.item() == 1]
 
-                for i, (pred, gold, m) in enumerate(zip(pred_seq, gold_seq, mask_seq)):
-                    if m == 0:  # skip padding and subwords
-                        continue
-
-                    word = words[word_ptr]
-                    word_ptr += 1
-
-                    pred = pred.item()
-                    gold = gold.item()
-
+                # now iterate word-level directly
+                for word_idx, (word, pred, gold) in enumerate(zip(words, pred_word_labels, gold_word_labels)):
                     if pred != gold:
                         errors.append({
-                            "idx": batch_idx * data_loader.batch_size + idx, 
+                            "idx": batch_idx * data_loader.batch_size + idx,
                             "token": word,
                             "predicted": num_to_tag[pred],
-                            "gold": num_to_tag[gold]
+                            "gold": num_to_tag[gold],
+                            "gold entity": _get_gold_entity(words, gold_word_labels, word_idx),
                         })
 
     return errors
@@ -90,3 +111,10 @@ def evaluate_and_find_errors(model_name, settings_args, model_args, device):
     errors_test = _get_errors(text_test, test_data_loader, test_char_embeddings, device, model, num_to_tag)
 
     return errors_val, errors_test 
+
+
+if __name__ == "__main__": 
+    words = ["APC", "colorectal", "tumor", "sporadic", "colorectal", "carcinogenesis"]
+    gold_seq = [2, 0, 1, 2, 0, 1]   # O B I O B I
+
+    print(_get_gold_entity(words, gold_seq, 5))

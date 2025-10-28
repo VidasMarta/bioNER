@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 
 class Logger:
-    def __init__(self, model_logs_path, model_args, settings_args):
+    def __init__(self, model_logs_path, model_args=None, settings_args=None):
         self.output_path = model_logs_path
         self.init_time = datetime.now()
         if not os.path.exists(self.output_path):

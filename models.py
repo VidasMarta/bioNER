@@ -106,7 +106,7 @@ class ft_bb_BiRNN_CRF(nn.Module):
         self.use_crf = model_args['use_crf']
         self.attention = model_args['attention']
 
-        bioBERT_setup_path = os.path.join(settings.EMBEDDINGS_PATH, "bioBERT_setup") 
+        bioBERT_setup_path = os.path.join(settings.EMBEDDINGS_PATH, "bioLinkBERT_setup") 
         self.tokenizer = AutoTokenizer.from_pretrained(bioBERT_setup_path)
         self.bert = AutoModel.from_pretrained(bioBERT_setup_path)
             

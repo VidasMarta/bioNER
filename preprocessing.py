@@ -55,12 +55,14 @@ class Embedding(ABC): #For word embeddings
     def get_word_on_index(self, tokens, idxs):
         pass
     
-class Embedding_bioBERT(Embedding): 
+#bioLinkBERT https://huggingface.co/michiyasunaga/BioLinkBERT-base/tree/main
+#bioLinkBERTlarge https://huggingface.co/michiyasunaga/BioLinkBERT-large/tree/main TODO: change self.embedding dim to 1024
+class Embedding_bioBERT(Embedding): #bioBERT large https://huggingface.co/dmis-lab/biobert-large-cased-v1.1/tree/main TODO: change self.embedding dim to 1024
     def __init__(self, embedding_model_name, dataset_name, max_len=256):
         super(Embedding_bioBERT, self).__init__(embedding_model_name, dataset_name, max_len)
         self.max_len = max_len
-        self.embedding_dim = 768  # Dimensionality of BioBERT embeddings
-        bioBERT_setup_path = os.path.join(settings.EMBEDDINGS_PATH, "bioBERT_setup") 
+        self.embedding_dim = 768  # Dimensionality of BioBERT embeddings 768, for large 1024
+        bioBERT_setup_path = os.path.join(settings.EMBEDDINGS_PATH, "bioLinkBERT_setup") 
         self.tokenizer = AutoTokenizer.from_pretrained(bioBERT_setup_path)
         self.bert = AutoModel.from_pretrained(bioBERT_setup_path)
 
