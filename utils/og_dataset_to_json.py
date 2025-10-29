@@ -1,11 +1,14 @@
 import argparse
 import json
 import re
+import statistics
+import string
+import numpy as np
 import spacy
 from tqdm import tqdm
 import random
+import os
 
-# Load spaCy English model
 def parse_text_file(input_file):
     abstracts = {}
     annotations = {}
@@ -123,12 +126,58 @@ def filter_by_abstract_ids(input_file, output_file, sample_ratio):
     print(f"Saved {len(filtered_data)} sentences to {output_file}")
 
 
+def compute_stats(input_file, output_file):
+    # Load data
+    with open(input_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    stats_data = []
+
+    # Define punctuation characters to count
+    punct_chars = set(string.punctuation)
+
+    for item in data:
+        tokens = item["tokens"]
+        entities = item.get("entities", [])
+        
+        # Basic metrics
+        sentence_length = len(tokens)
+        num_entities = len(entities)
+        num_punct = sum(1 for tok in tokens if any(ch in punct_chars for ch in tok))
+        
+        # Compute entity lengths (in tokens)
+        entity_lengths = []
+        for ent in entities:
+            ent_tokens = [t for t in tokens if t in ent.split()]  # approximate matching
+            if ent_tokens:
+                entity_lengths.append(len(ent_tokens))
+        
+        avg_entity_length = np.mean(entity_lengths) if entity_lengths else 0
+
+        # Add metrics to each record
+        item.update({
+            "sentence_length": sentence_length,
+            "num_entities": num_entities,
+            "avg_entity_length": round(float(avg_entity_length), 2),
+            "num_punctuations": num_punct
+        })
+        stats_data.append(item)
+
+    # Save enriched dataset
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(stats_data, f, ensure_ascii=False, indent=2)
+
+    print(f"Saved statistics-enriched data to {output_file}")
+
+    return stats_data
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
     parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH NCBI train json is saved', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/NCBItrainset_corpus.txt")
     parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_train.json")
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/")
+    parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_sentence_stats.json")
     parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')    
     return parser.parse_args()
@@ -140,13 +189,42 @@ def extract_args():
     model = args.model
     filtered_parsed_mesh_file = args.filtered_parsed_mesh_file
     pct = args.pct
-    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct
+    stats_file = args.stats_file
+    for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file]:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file
 
 
 if __name__ == "__main__":
-    input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct = extract_args()
+    input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file= extract_args()
 
     abstracts, annotations = parse_text_file(input_file)
     create_and_save_json(abstracts, annotations, parsed_mesh_file, model)
     filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)
+    stats_data = compute_stats(parsed_mesh_file, stats_file)
+
+    # --- Aggregate statistics ---
+    def describe(values):
+        return {
+            "mean": round(statistics.mean(values), 2),
+            "min": min(values),
+            "max": max(values),
+            "stdev": round(statistics.stdev(values), 2) if len(values) > 1 else 0
+        }
+
+    sentence_lengths = [x["sentence_length"] for x in stats_data]
+    entity_counts = [x["num_entities"] for x in stats_data]
+    punct_counts = [x["num_punctuations"] for x in stats_data]
+    avg_ent_lens = [x["avg_entity_length"] for x in stats_data]
+
+    global_stats = {
+        "sentence_length": describe(sentence_lengths),
+        "num_entities": describe(entity_counts),
+        "avg_entity_length": describe(avg_ent_lens),
+        "num_punctuations": describe(punct_counts)
+    }
+
+    print("\nDataset Summary Statistics:")
+    for k, v in global_stats.items():
+        print(f"{k}: {v}")
 
