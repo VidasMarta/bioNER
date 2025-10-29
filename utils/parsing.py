@@ -7,6 +7,7 @@ from nltk.tokenize.treebank import TreebankWordDetokenizer
 from typing import List, Dict, Tuple
 import subprocess
 import sys
+import os
 
 def extract_entities(entry):
     tokens = entry["tokens"]
@@ -43,10 +44,8 @@ def load_json_corpus(path, corpus_name):
     triple = []
     detok = TreebankWordDetokenizer()
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            if not line.strip():
-                continue
-            entry = json.loads(line.strip())
+        json_data = json.load(f)
+        for entry in json_data:
             text = detok.detokenize(entry["tokens"])
             entity = extract_entities(entry)
             triple.append((text, entity, corpus_name))
@@ -182,13 +181,19 @@ def parse_args():
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf') #trf    
     return parser.parse_args()
 """
-python3 test.py --ncbi_train_path bioNER/data/ncbi/ncbi/train.json \
+python3 bioNER/utils/parsing.py --ncbi_train_path bioNER/data/ncbi/trf/ncbi_ner_train.json \
     --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
-    --output_path_features bioNER/data/ncbi/syntax_features/syntax_features_sent_tree_head.json \
-    --output_path_embeddings bioNER/data/ncbi/syntax_features/morpho_syntax_features.json \
-    --output_path_dict bioNER/data/ncbi/syntax_features/dict.json \
+    --output_path_features bioNER/data/ncbi/trf/syntax_features/syntax_features_sent_tree_head.json \
+    --output_path_embeddings bioNER/data/ncbi/trf/syntax_features/morpho_syntax_features.json \
+    --output_path_dict bioNER/data/ncbi/trf/syntax_features/dict.json \
     --model en_core_web_trf
-    
+
+python3 bioNER/utils/parsing.py --ncbi_train_path bioNER/data/ncbi/lg/ncbi_ner_train.json \
+    --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
+    --output_path_features bioNER/data/ncbi/lg/syntax_features/syntax_features_sent_tree_head.json \
+    --output_path_embeddings bioNER/data/ncbi/lg/syntax_features/morpho_syntax_features.json \
+    --output_path_dict bioNER/data/ncbi/lg/syntax_features/dict.json \
+    --model en_core_web_lg
 """
     
     
@@ -204,7 +209,14 @@ def extract_args():
 
 if __name__ == "__main__":
     model, ncbi_path, gen_path, output_path_feat, output_path_emb, output_path_dict = extract_args()
-    subprocess.run([sys.executable, "-m", "spacy", "download", model])
+    try:
+        spacy.load(model)
+    except OSError:
+        subprocess.run([sys.executable, "-m", "spacy", "download", model])
+        import spacy
+        
+    for path in [output_path_feat, output_path_emb, output_path_dict]:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
     NCBI_train = Path(ncbi_path)
     generated_train = Path(gen_path)
 

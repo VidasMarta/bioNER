@@ -9,6 +9,8 @@ from tqdm import tqdm
 import random
 import os
 import matplotlib.pyplot as plt
+import subprocess
+import sys
 
 def parse_text_file(input_file):
     abstracts = {}
@@ -188,14 +190,25 @@ def plot_histogram(values, title, xlabel, filename, output_dir):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
-    parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH NCBI train json is saved', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/NCBItrainset_corpus.txt")
-    parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_train.json")
-    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/")
-    parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_sentence_stats.json")
-    parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/plots/")
+    parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH NCBI train json is saved', default="bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt")
+    parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/ncbi_ner_train.json")
+    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/")
+    parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/ncbi_ner_sentence_stats.json")
+    parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/plots/")
     parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
-    parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')    
+    parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf')    
     return parser.parse_args()
+
+"""
+python3 bioNER/utils/og_dataset_to_json.py \
+    --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
+    --parsed_mesh_file bioNER/data/ncbi/lg/ncbi_ner_train.json \
+    --filtered_parsed_mesh_file bioNER/data/ncbi/lg/ \
+    --stats_file bioNER/data/ncbi/lg/ncbi_ner_sentence_stats.json \
+    --histograms bioNER/data/ncbi/lg/plots/ \
+    --pct 0.10 \
+    --model en_core_web_lg
+"""
 
 def extract_args():
     args = parse_args()
@@ -213,10 +226,10 @@ def extract_args():
 
 if __name__ == "__main__":
     input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms= extract_args()
-
-    ''''abstracts, annotations = parse_text_file(input_file)
+    subprocess.run([sys.executable, "-m", "spacy", "download", model])
+    abstracts, annotations = parse_text_file(input_file)
     create_and_save_json(abstracts, annotations, parsed_mesh_file, model)
-    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)'''
+    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)
     stats_data = compute_stats(parsed_mesh_file, stats_file)
 
     # --- Aggregate statistics ---
