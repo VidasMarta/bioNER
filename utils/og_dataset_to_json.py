@@ -125,7 +125,7 @@ def filter_by_abstract_ids(input_file, output_file, sample_ratio):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Training script")
+    parser = argparse.ArgumentParser(description="Parsing")
     parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH NCBI train json is saved', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/NCBItrainset_corpus.txt")
     parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_train.json")
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/")
