@@ -8,6 +8,7 @@ import spacy
 from tqdm import tqdm
 import random
 import os
+import matplotlib.pyplot as plt
 
 def parse_text_file(input_file):
     abstracts = {}
@@ -171,6 +172,19 @@ def compute_stats(input_file, output_file):
 
     return stats_data
 
+def plot_histogram(values, title, xlabel, filename, output_dir):
+    plt.figure(figsize=(8, 5))
+    plt.hist(values, bins="fd", edgecolor="black", alpha=0.7)
+    plt.title(title, fontsize=14)
+    plt.xlabel(xlabel, fontsize=12)
+    plt.ylabel("Frequency", fontsize=12)
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
+    save_path = os.path.join(output_dir, filename)
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+    print(f"Saved histogram: {save_path}")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
@@ -178,6 +192,7 @@ def parse_args():
     parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_train.json")
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/")
     parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/ncbi_ner_sentence_stats.json")
+    parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/plots/")
     parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')    
     return parser.parse_args()
@@ -190,17 +205,18 @@ def extract_args():
     filtered_parsed_mesh_file = args.filtered_parsed_mesh_file
     pct = args.pct
     stats_file = args.stats_file
-    for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file]:
+    histograms = args.histograms
+    for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file, args.histograms]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file
+    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms
 
 
 if __name__ == "__main__":
-    input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file= extract_args()
+    input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms= extract_args()
 
-    abstracts, annotations = parse_text_file(input_file)
+    ''''abstracts, annotations = parse_text_file(input_file)
     create_and_save_json(abstracts, annotations, parsed_mesh_file, model)
-    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)
+    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)'''
     stats_data = compute_stats(parsed_mesh_file, stats_file)
 
     # --- Aggregate statistics ---
@@ -227,4 +243,11 @@ if __name__ == "__main__":
     print("\nDataset Summary Statistics:")
     for k, v in global_stats.items():
         print(f"{k}: {v}")
+
+    plot_histogram(sentence_lengths, "Sentence Length Distribution", "Number of Tokens", "hist_sentence_length.png", histograms)
+    plot_histogram(entity_counts, "Number of Entities per Sentence", "Number of Entities", "hist_num_entities.png", histograms)
+    plot_histogram(avg_ent_lens, "Average Entity Length per Sentence", "Entity Length (tokens)", "hist_avg_entity_length.png", histograms)
+    plot_histogram(punct_counts, "Punctuation Count per Sentence", "Number of Punctuations", "hist_num_punctuations.png", histograms)
+
+    print(f"\nAll histograms saved in folder: {histograms}")
 
