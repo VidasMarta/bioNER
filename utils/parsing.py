@@ -5,7 +5,8 @@ import numpy as np
 from pathlib import Path
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 from typing import List, Dict, Tuple
-
+import subprocess
+import sys
 
 def extract_entities(entry):
     tokens = entry["tokens"]
@@ -173,14 +174,24 @@ def embedd_morpho_syntax(fname, output_path_emb, output_path_dict):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script")
-    parser.add_argument('--ncbi_train_path', type=str, required=False, help='Path to where NCBI train json is saved', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/ncbi_disease_json/train.json")
-    parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="/home/martavidas/Documents/FER/Diplomski/Diplomski/data/gen2_json/train.json")
-    parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="/home/martavidas/Documents/FER/Diplomski/paper/clusterTextSemantic/syntax_features_sent_tree_head.json")
-    parser.add_argument('--output_path_embeddings', type=str, required=False, help='Path where to save output embeddings', default="/home/martavidas/Documents/FER/Diplomski/paper/clusterTextSemantic/morpho_syntax_features.json")
-    parser.add_argument('--output_path_dict', type=str, required=False, help='Path where to save output dict', default="/home/martavidas/Documents/FER/Diplomski/paper/clusterTextSemantic/dict.json")
-    parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm') #trf    
+    parser.add_argument('--ncbi_train_path', type=str, required=False, help='Path to where NCBI train json is saved', default="bioNER/data/ncbi/ncbi/train.json")
+    parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="bioNER/data/ncbi/gen2_json/train.json")
+    parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="bioNER/data/ncbi/syntax_features/syntax_features_sent_tree_head.json")
+    parser.add_argument('--output_path_embeddings', type=str, required=False, help='Path where to save output embeddings', default="bioNER/data/ncbi/syntax_features/morpho_syntax_features.json")
+    parser.add_argument('--output_path_dict', type=str, required=False, help='Path where to save output dict', default="bioNER/data/ncbi/syntax_features/dict.json")
+    parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf') #trf    
     return parser.parse_args()
-
+"""
+python3 test.py --ncbi_train_path bioNER/data/ncbi/ncbi/train.json \
+    --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
+    --output_path_features bioNER/data/ncbi/syntax_features/syntax_features_sent_tree_head.json \
+    --output_path_embeddings bioNER/data/ncbi/syntax_features/morpho_syntax_features.json \
+    --output_path_dict bioNER/data/ncbi/syntax_features/dict.json \
+    --model en_core_web_trf
+    
+"""
+    
+    
 def extract_args():
     args = parse_args()
     model = args.model
@@ -193,6 +204,7 @@ def extract_args():
 
 if __name__ == "__main__":
     model, ncbi_path, gen_path, output_path_feat, output_path_emb, output_path_dict = extract_args()
+    subprocess.run([sys.executable, "-m", "spacy", "download", model])
     NCBI_train = Path(ncbi_path)
     generated_train = Path(gen_path)
 
