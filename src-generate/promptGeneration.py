@@ -6,32 +6,38 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 #TODO: clean up old prompts
-SYSTEM_PROMPTS = {'basic':"""
-                  You are a carefull medical expert in writing you consider background knowledge 
-                  and medical experties when dealing with tasks you solve. You think about
-                  the task and how to output and produce real example of text simple sentence without decoration. 
-                    """,
-            'role':"""
-                You are a carefull {role} in writing you consider background knowledge 
-                and medical experties when dealing with tasks you solve. You think about
-                the task and how to output and produce real example of text simple sentence without decoration. 
-                """,
-            'annotation':"""You are a carefull medical expert in finding
-                medical entities in text. You take context in to account when 
-                searching for entities and output the desired structure a 
-                list [<entity_text>, <entity_text>, ...]. 
-                <entity_text> part of the sentence is the exact copy from the given sentence to analyse. If you find <entity_text> span that has a word 
-                between the main entity point you transcribe the <entity_text> as read in sentence you are analysing. 
-                You make shure you annotate only the correct entites. You need to carefully consider the entity order in sentence.
-                Annotation guidelines:
-                    1. Annotate terms individually: Example: “Huntington’s disease (HD)” → the annotations “Huntington’s disease” and “HD” should be separate. Example: In the phrase “tense and worried”, since each word is a symptom on its own, annotate “tense” separately and “worried” separately.
-                    2. When annotating, if the text contains: "the patient feels pain in the fingers last ..." do not annotate it is not a disease or diagnosis.
-                        "Cystic fibrosis is a disease that ..." annotate as ["cystic fibrosis",] Modified entities and terms are annotated and transcribed exactly as they appear in the text; their form is not changed or reduced to the infinitive.
-                    3. Do not annotate general terms such as “disease”, “syndrome”, “deficit”, “complications”, “tumor”,
-                    unless they are part of a specific phrase ("breast cancer", "brain tumor", "metastatic breast cancer").
-                    4. Do not annotate biological processes such as “carcinogenesis” or “tumorigenesis”.
-                    5. Do not annotate organisms such as “human”, “bacterial”, unless in context they directly refer to a disease (“Epstein-Barr virus”).
-                    """}
+SYSTEM_PROMPTS = {
+    'basic':"""
+        You are a carefull medical expert in writing you consider background knowledge 
+        and medical experties when dealing with tasks you solve. You think about
+        the task and how to output and produce real example of text simple sentence without decoration. 
+        """,
+    'role':"""
+        You are a carefull {role} in writing you consider background knowledge 
+        and medical experties when dealing with tasks you solve. You think about
+        the task and how to output and produce real example of text simple sentence without decoration. 
+        """,
+    'annotation':"""You are a carefull medical expert in finding
+        medical entities in text. You take context in to account when 
+        searching for entities and output the desired structure a 
+        list [<entity_text>, <entity_text>, ...]. 
+        <entity_text> part of the sentence is the exact copy from the given sentence to analyse. If you find <entity_text> span that has a word 
+        between the main entity point you transcribe the <entity_text> as read in sentence you are analysing. 
+        You make shure you annotate only the correct entites. You need to carefully consider the entity order in sentence.
+        Annotation guidelines:
+            1. Annotate terms individually: Example: “Huntington’s disease (HD)” → the annotations “Huntington’s disease” and “HD” should be separate. Example: In the phrase “tense and worried”, since each word is a symptom on its own, annotate “tense” separately and “worried” separately.
+            2. When annotating, if the text contains: "the patient feels pain in the fingers last ..." do not annotate it is not a disease or diagnosis.
+                "Cystic fibrosis is a disease that ..." annotate as ["cystic fibrosis",] Modified entities and terms are annotated and transcribed exactly as they appear in the text; their form is not changed or reduced to the infinitive.
+            3. Do not annotate general terms such as “disease”, “syndrome”, “deficit”, “complications”, “tumor”,
+            unless they are part of a specific phrase ("breast cancer", "brain tumor", "metastatic breast cancer").
+            4. Do not annotate biological processes such as “carcinogenesis” or “tumorigenesis”.
+            5. Do not annotate organisms such as “human”, “bacterial”, unless in context they directly refer to a disease (“Epstein-Barr virus”).
+            """,
+    'annotation_reduced': """
+        You are a careful medical expert identifying biomedical entities in text.
+        You consider context carefully and output a list of entities in the exact order and wording as they appear:
+        Format: [<entity_text>, <entity_text>, ...].
+        Annotate only valid, contextually correct entities."""}
 # tool calling llama.cpp
 PROMPT = {
     'syn_generation': """
@@ -46,7 +52,6 @@ PROMPT = {
         Structural or Functional Impairment, Pathological Process, Not Immediate Injury, 
         Infectious Diseases, Non-Infectious Diseases, Hereditary (Genetic) Diseases, 
         Autoimmune Diseases, Degenerative Diseases.
-
         For given <disease> think about context in what kind of sentence could it occure
         your task is to generate just one a sentence containing the given <disease>, 
         you don't decorate or generate anything else. 
@@ -57,8 +62,7 @@ PROMPT = {
         medical document. Consider the sentence output that comes after sentence: 
         The patient diagnosed with {condition}.        
         Based on your medical expertise. 
-        Your task is to generate next sentence containing following disease: {condition}. \n\n
-        """,
+        Your task is to generate next sentence containing following disease: {condition}. \n\n""",
 
     'genre_syn_generation': """
         A diagnosis is the process of identifying a specific disease or condition 
@@ -72,7 +76,6 @@ PROMPT = {
         Structural or Functional Impairment, Pathological Process, Not Immediate Injury, 
         Infectious Diseases, Non-Infectious Diseases, Hereditary (Genetic) Diseases, 
         Autoimmune Diseases, Degenerative Diseases.
-
         For given <disease or diagnosis> think about context in what kind of sentence could it occure
         your task is to generate just one a sentence containing the given {condition}, 
         you don't decorate or generate anything else. 
@@ -86,27 +89,62 @@ PROMPT = {
         # We want to check if there are additional diagnoses in produced sentence 
         # ('this is the part where there could be noise)
         # json output
+        
+    'kshot_genre_generation': """
+        Generate one simple sentence that naturally includes the disease or diagnosis {condition}, as it would appear in a {genre}.
+        Requirements:
+        Use {condition} exactly as written within the sentence.
+        Keep the sentence factual, and contextually realistic for clinical or biomedical text.
+        Output only the sentence — no explanations or extra text.
+        Examples:
+        {text}
+        """,
+        
+    'two_sent_kshot_genre_syn_gen': """Generate {number_of_sentences} sentences that naturally includes the disease or diagnosis {condition}, as it would appear in a {genre}.
+        Requirements:
+        This is important, use {condition} exactly as written within one of the sentences.
+        Keep the sentences factual, and contextually realistic for clinical or biomedical text.
+        Output only the sentences — no explanations or extra text.
+        Examples:
+        {text}
+        """,
+        
     'disease_annotation': """Find and extract diagnoses and diseases from the text and. 
-            Your output should be a list of entities that is machine-readable using eval(): 
-            [<entity_text>, <entity_text>, ...]. 
-            Think about context of the text. As a medical expert, you know that patient symptoms, 
-            expert-defined signs, diagnostic and medical tests, and treatments are NOT diagnoses or diseases. 
-            You search for diagnoses and disease: 
-            A diagnosis is the process of identifying a specific disease or condition 
-            that is dependent of patient's signs, symptoms, and medical history. 
-            A disease is a specific illness or disorder that affects the body. A disease is a harmful deviation from the normal 
-            structural or functional state of an organism, associated with specific signs and symptoms and 
-            distinct from physical injury. It can be caused by various factors, including pathogens, 
-            genetic or autoimmune dysfunction, or environmental influences.
-            Diseases are generally characterized by a pathological process and a specific set of symptoms, diseases can be 
-            grouped in Abnormal Condition, Structural or Functional Impairment, Pathological Process, Not Immediate Injury, 
-            Infectious Diseases, Non-Infectious Diseases, Hereditary (Genetic) Diseases, Autoimmune Diseases, Degenerative Diseases.
-            Extract only diagnoses and dieases string sturctured [<entity_text>, <entity_text>, ...]
-            if you don't find any entites output an empty list, i.e. []. Some form of {condition} is in the sentence.
-            Diseases or diagnoses [<entity_text>,<entity_text>,...] must be the exact copy of spans from the sentence: 
-            {text} \n\n          
+        Your output should be a list of entities that is machine-readable using eval(): 
+        [<entity_text>, <entity_text>, ...]. 
+        Think about context of the text. As a medical expert, you know that patient symptoms, 
+        expert-defined signs, diagnostic and medical tests, and treatments are NOT diagnoses or diseases. 
+        You search for diagnoses and disease: 
+        A diagnosis is the process of identifying a specific disease or condition 
+        that is dependent of patient's signs, symptoms, and medical history. 
+        A disease is a specific illness or disorder that affects the body. A disease is a harmful deviation from the normal 
+        structural or functional state of an organism, associated with specific signs and symptoms and 
+        distinct from physical injury. It can be caused by various factors, including pathogens, 
+        genetic or autoimmune dysfunction, or environmental influences.
+        Diseases are generally characterized by a pathological process and a specific set of symptoms, diseases can be 
+        grouped in Abnormal Condition, Structural or Functional Impairment, Pathological Process, Not Immediate Injury, 
+        Infectious Diseases, Non-Infectious Diseases, Hereditary (Genetic) Diseases, Autoimmune Diseases, Degenerative Diseases.
+        Extract only diagnoses and dieases string sturctured [<entity_text>, <entity_text>, ...]
+        if you don't find any entites output an empty list, i.e. []. Some form of {condition} is in the sentence.
+        Diseases or diagnoses [<entity_text>,<entity_text>,...] must be the exact copy of spans from the sentence: 
+        {text} \n\n          
          """,
-}
+         
+    'disease_annotation_reduced': """Find and extract diagnoses and diseases mentioned in the following text.
+        Output a Python-evaluable list of entity strings:
+        Format: [<entity_text>, <entity_text>, ...].
+        Guidelines:
+        Annotate only diagnoses and diseases — not symptoms, signs, tests, or treatments.
+        A diagnosis identifies a specific disease or condition based on medical evaluation.
+        A disease is a harmful deviation from normal function, caused by factors such as pathogens, genetics, or environment.
+        Exclude general or vague terms (“disease”, “syndrome”, “tumor”) unless they are part of a specific phrase (e.g., “breast cancer”).
+        Do not annotate biological processes (“carcinogenesis”) or organisms (“bacterial”) unless they directly refer to a disease (e.g., “Epstein-Barr virus”).
+        Use exact spans from the sentence, preserving their form and order.
+        If no valid entities are found, output an empty list: [].
+        Context: The sentence may mention a form of {condition}.
+        Text to annotate:
+        {text}"""
+        }
 
 class Role(Enum):
     NURSE = "nurse"
@@ -114,15 +152,30 @@ class Role(Enum):
     MEDICAL_RESEARCHER = "medical researcher"
     PHYSICIAN = "physician"
     CLINICIAN = "clinician"
+    MD = "medical doctor"
+    SPECIALIST = "medical specialist"
+    GENERAL_PRACTITIONER = "general practitioner"
+    HEALTHCARE_PROFESSIONAL = "healthcare professional"
+    MEDICAL_EXPERT = "medical expert"
+    MD_SHORT = "MD"
 
 
 class Genre(Enum):
     ABSTRACT = "medical paper abstract"
-    ANAMNESIS = "anamnesis from one MD to another MD"
+    ANAMNESIS_MD = "anamnesis from one MD to another MD"
+    ANAMNESIS_PT = "anamnesis from MD to patient"
+    LETTER = "medical letter"
     RESEARCH = "research paper"
     CASESTUDY = "patient case-study"
+    NOTE = "medical note"
+    REPORT = "medical report"
+    SUMMARY = "medical summary"
+    DISCHARGE = "discharge summary"
+    PRESCRIPTION = "medical prescription"
+    GUIDELINE = "medical guideline"
+    REVIEW = "medical review article"
     
-
+    
 @dataclass
 class PromptTemplate:
     """Template for system prompts with randomizable elements"""
@@ -156,6 +209,9 @@ class PromptBuilder:
             'initial_prompt': PROMPT['syn_generation'],
             'genre_prompt': PROMPT['genre_syn_generation'],
             'disease_annotation': PROMPT['disease_annotation'],
+            'disease_annotation_reduced': PROMPT['disease_annotation_reduced'],
+            'kshot_genre_generation':PROMPT['kshot_genre_generation']
+            
         }
         
         self.randomization_options = {
@@ -247,7 +303,8 @@ def format_chat(messages: List[Dict[str, Any]]) -> str:
 def message_request(args: argparse.Namespace, chunk: str,
                    prompt_builder: PromptBuilder = PromptBuilder(), 
                    system_template: str = 'initial_prompt',
-                   user_template: str = 'initial_prompt', text: Optional[str] = None) -> requests.Response:
+                   user_template: str = 'initial_prompt', 
+                   text: Optional[str] = None) -> requests.Response:
     """
     Improved message request function using PromptBuilder
     Args:
@@ -321,7 +378,12 @@ if __name__ == "__main__":
         user_template='initial_prompt',
         condition=condition
     )
-    
+    condition = "diabetes mellitus type 2"
+    messages = builder.build_messages(
+        system_template='role_prompt',
+        user_template='kshot_genre_generation',
+        condition=condition,
+    )
     print("Complete message structure:")
     for msg in messages:
         print(f"{msg['role'].upper()}:")

@@ -285,7 +285,7 @@ def parse_args():
     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/plots/")
     parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')  
-    parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="data/gen2_json/train.json")
+    parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="data/ncbi/gen2_json/train.json")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
     return parser.parse_args()
 
@@ -297,9 +297,9 @@ python3 bioNER/utils/parsing_v2.py \
     --stats_file bioNER/data/ncbi/lg/ncbi_ner_sentence_stats.json \
     --histograms bioNER/data/ncbi/lg/plots/ \
     --pct 0.10 \
-    --model en_core_web_lg
+    --model en_core_web_lg \
     --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
-    --output_path_features bioNER/data/ncbi/lg/syntax_features/syntax_features_sent_tree_head.json \
+    --output_path_features bioNER/data/ncbi/lg/syntax_features/syntax_features_sent_tree_head.json
     
 python3 bioNER/utils/parsing_v2.py \
     --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
@@ -308,9 +308,9 @@ python3 bioNER/utils/parsing_v2.py \
     --stats_file bioNER/data/ncbi/trf/ncbi_ner_sentence_stats.json \
     --histograms bioNER/data/ncbi/trf/plots/ \
     --pct 0.10 \
-    --model en_core_web_trf
+    --model en_core_web_trf \
     --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
-    --output_path_features bioNER/data/ncbi/trf/syntax_features/syntax_features_sent_tree_head.json \
+    --output_path_features bioNER/data/ncbi/trf/syntax_features/syntax_features_sent_tree_head.json
 """
 
 def extract_args():
@@ -331,7 +331,6 @@ def extract_args():
 
 if __name__ == "__main__":
     input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms, gen_train_path, output_path_features = extract_args()
-    
     try:
         spacy.load(model)
     except OSError:
@@ -365,7 +364,6 @@ if __name__ == "__main__":
     plot_histogram(punct_counts, "Punctuation Count per Sentence", "Number of Punctuations", "hist_num_punctuations.png", histograms)
 
     print(f"\nAll histograms saved in folder: {histograms}")
-
 
     quadruple = load_corpuses(parsed_mesh_file, gen_train_path)
     ids, sentences, entities, corpus_labels = zip(*quadruple)

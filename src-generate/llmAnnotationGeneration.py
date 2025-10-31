@@ -52,14 +52,26 @@ def argparse_args():
     parser.add_argument('--test', action='store_true', 
                         help="""If set, recalculate the generation for allready existing 
                         sentences using terms.""")
+    parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
+                        help='spaCy model to use for tokenization (default: en_core_web_sm).')
+    parser.add_argument('--training_examples_file', type=str, default='', 
+                        help='Path to the file containing training examples for few-shot prompting.')
+    parser.add_argument('--kshot_path', type=str, default='', 
+                        help='Path to the file containing training examples for few-shot prompting.')
+    parser.add_argument('--kshot_size', type=int, default=0, 
+                        help='Number of examples to use for each prompt.')
+    parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
+                        help='spaCy model to use for tokenization (default: en_core_web_sm).')
+
     return parser.parse_args()
 
 SPACY_NLP = None
 
-def spacy_load_model():
+def spacy_load_model(model_name: str):
+
     global SPACY_NLP
     if SPACY_NLP is None:
-        SPACY_NLP = spacy.load("en_core_web_sm")
+        SPACY_NLP = spacy.load(model_name)
         return SPACY_NLP
     return SPACY_NLP   
 
@@ -144,7 +156,7 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     return [sent.text for sent in doc.sents if sent.text.strip()]
 
 def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> List[dict]:
-    nlp = spacy_load_model()
+    nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     tags, tokens = create_rule_json(doc, nlp, term)
     terms = [term[0].lower()]
@@ -152,12 +164,13 @@ def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> L
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
         terms_llm = check_additional_disease_tags(args, tokens, term[0].lower())
-
+        # TODO provjeriti da nema više sitih entiteta a nema ih u tekstu
         for term_llm in terms_llm:
             if term_llm[0].lower() != term[0].lower():
                 terms.append(term_llm[0].lower())
                 term_ids.append('NaN')
                 args.logger.info(f'Additional disease term found in generated text: {term_llm} for original term {term}.')
+                args.logger.info(f'Generated sentence: {text}')
                 tags_llm, tokens_llm = create_rule_json(doc, nlp, term_llm)
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE
@@ -170,6 +183,7 @@ def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> L
 
     if 0 not in tags:
         args.logger.info(f'Term not found in generated text: {term}.')
+        args.logger.info(f'Generated sentence: {text}')
         use_llm_annotation = True
         terms_llm = check_additional_disease_tags(args, tokens, term[0].lower())
         if len(terms_llm) > 1:
@@ -190,19 +204,20 @@ def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> L
         elif len(terms_llm) == 1 and terms_llm[0][0].lower() != term[0].lower():
             tags, tokens = create_rule_json(doc, nlp, terms_llm[0])       
         
-            
+        # TODO add the non entity sentence   
         json_data = {"tags": tags, "tokens": tokens, "term": [term[0] for term in terms_llm], "term_id": [term[1] for term in terms_llm]}
         if 0 not in tags:
             args.logger.info(f'No disease term found in generated text even after LLM check: {terms_llm}.')
+            args.logger.info(f'Generated sentence: {text}')
             return {}
     if len(tags) != len(tokens):
         print('JSON creation error.')
         print(text)
         args.logger.info(f'Term JSON creation error wrong lengths of sequences: {term}.')
-        return {}
+        args.logger.info(f'Generated sentence: {text}')
         
-    #TODO check every sentence for additional disease mentions
-    
+        return {}
+            
     if args.verbose:
         print('+'*80)
         print(f'For text: {text} in create json function:')
@@ -229,23 +244,35 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
     except Exception as e:
         return [(term, 'NaN')]
 
-def generate_sentence_samples(args: argparse.Namespace, term_list: List[str], method='a'):
+def generate_sentence_samples(args: argparse.Namespace, term_list: List[str], method: str='a',
+                              system_template: str='role_prompt', 
+                              user_template: str='genre_prompt'):
+    """
+    Generate sentences for a given list of terms. And for a given samples if args.kshot_path is provided.
+    Each generated sentence is saved as a JSON object in the specified output directory.
+    """
+
     date_today = datetime.today().strftime("%Y%m%d")
+    if args.kshot_path: #TODO implement k-shot generation
+        df = utils.load_training_samples(args.kshot_path)
+        shots = utils.make_kshot(df, args.kshot_size)
+        user_template = 'kshot_genre_generation'
+        
     for i, term in enumerate(tqdm.tqdm(term_list)):
-        # try:
-        # args.logger.info(
         with open(os.path.join(args.output_directory, 
                 'generated_sentences_' + date_today + '.txt'), method) as file:
+            shot_id = 
             response = promptGeneration.message_request(args, 
                                                         term[0], 
-                                                        system_template='role_prompt',
-                                                        user_template='genre_prompt')
+                                                        system_template=system_template,
+                                                        user_template=user_template,
+                                                        text=shot)
             text = response.json()['content'].strip()
             text = utils.clean_text(text)
             text = utils.remove_code_fences(text)
             sentences = check_generated_size(args, text)
             for text in sentences:
-                print(term)
+                # print(term)
                 text_json = create_json(args, text, term)
                 # check_additional_disease_tags(args, text_json)
                 # Firstly for this json check for other disease mentions
@@ -289,23 +316,30 @@ def generate_term_list(args: argparse.Namespace):
 
             if tokens:  # flush last
                 entities.append({"idx": idx, "entity": " ".join(tokens)})
+        term_list = [(term['entity'],'NaN') for term in entities]
 
-    elif args.input_file_type.lower() == 'list':
+    elif args.input_file.endswith('.txt'):
         with open(args.input_file, "r") as f:
             ents = f.readlines()
             ents = [str(ent).strip() for ent in ents]
         for ent in ents:
             entities.append({"idx": 0, "entity": ent})
+        term_list = [(term['entity'],'NaN') for term in entities]
+        
+    elif args.input_file.endswith('.csv'):
+        df = pd.read_csv(args.input_file)
+        term_list = [(str(row.iloc[0]).strip(), str(row.iloc[1]).strip()) for _, row in df.iterrows()]
+        
+    term_list = list(set(term_list))    
     
-    return entities   
+    return term_list   
     
     
 def main(args: argparse.Namespace):
     os.makedirs(args.output_directory, exist_ok=True)
     # open json file where each line is one dict
     term_list = generate_term_list(args)
-    term_list = [(term['entity'],'NaN') for term in term_list]
-    term_list = list(set(term_list))
+    
     if args.obo_file_path:
         disease_terms = utils.get_diseases(args)
         term_list += disease_terms
@@ -335,9 +369,16 @@ def setup_logger(args):
 """ python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
     --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/val_wrong_ent.txt \
     --temperature 0 --max_tokens 500 --input_file_type list\
-    --server_url http://172.17.0.1:8484 \
+    --server_url http://0.0.0.0:8484 \
     --obo_file_path /home/mkeber/syn-bioner/HumanDiseaseOntology/src/ontology/HumanDO.obo \
     --output_directory /home/mkeber/syn-bioner/data/synthetic3 \
+    --test --num_sentences 3
+
+python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
+    --input_file /home/mkeber/syn-bioner/data/SNOMEDCT/concepts_filtered.csv \
+    --temperature 0 --max_tokens 500 --input_file_type list\
+    --server_url http://0.0.0.0:8484 \
+    --output_directory /home/mkeber/syn-bioner/data/synthetic-snomed \
     --test --num_sentences 3
     
 python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
@@ -345,12 +386,12 @@ python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
     --temperature 0 --max_tokens 500 --input_file_type list\
     --server_url http://172.17.0.1:8484 \
     --output_directory /home/mkeber/syn-bioner/data/synthetic2 \
-    --num_sentences 3 \
+    --num_sentences 3 --spacy_model en_core_web_lg \
     --test
 """
 if __name__ == "__main__":
     args = argparse_args()
-    SPACY_NLP = spacy.load("en_core_web_sm")
+    SPACY_NLP = spacy.load(args.spacy_model)
     args.logger = setup_logger(args)
     args.logger.info(f"Output directory: {args.output_directory}")
     main(args)
