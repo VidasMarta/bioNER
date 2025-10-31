@@ -13,7 +13,7 @@
 # Paths to your images
 SERVER_IMAGE=/home/mkeber/sif-files/llama.cpp_server-cuda.sif
 CLIENT_IMAGE=/home/mkeber/sif-files/synbioner_generate.sif
-WORKDIR=/home/mkeber/bioner-lm/models/quantized
+WORKDIR=/home/mkeber/models/quantized
 WAIT=60
 # Optional binding
 BIND_PATHS_SERVER="${WORKDIR}:/models"
