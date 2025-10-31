@@ -1,5 +1,7 @@
 import re
 import string
+
+import numpy as np
 import obonet
 from typing import List, Dict, Any, Optional
 import argparse
@@ -42,41 +44,44 @@ def create_concept_txt_file(file_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/C
             f.write(f"{concept}\n")
 
 
-#TODO: LOAD JSON AND CSV TRAINING SAMPLES      
+#TODO: LOAD JSON TRAINING SAMPLES      
 # /home/mkeber/syn-bioner/data/NCBI-Disease/5_selected_ncbi_sentences.csv
 # /home/mkeber/syn-bioner/data/NCBI-Disease/merged_features_3.json
 # RETURN FOR EACH CLUSTER KEY IN DICTIONARY A LIST OF TUPLES (SENTENCE, DISEASES), i.e. (STR, LIST-OF-STRINGS)
 def load_training_samples(
-    file_path: str = '/home/mkeber/syn-bioner/data/NCBI-Disease/5_selected_ncbi_sentences.csv'
+    file_path: str
     ) -> List[Dict[str, Any]]:
-    samples = []
-    df = pd.read_csv(file_path)
+    df = pd.read_json(file_path)
     print(f"Loaded {len(df)} samples from {file_path}")
-    df['entities'] = df['entities'].apply(lambda x: eval(x) if len(eval(x)) > 0 else None)
 
-    # for _, row in df.iterrows():
-    #     sentence = row['sentence']
-    #     diseases = row['entities']
-    #     cluster = row['cluster']
-        # samples.append({'sentence': sentence, 'entities': diseases, 'cluster':cluster})
-        # print(f"Sample {cluster} with {len(diseases)} diseases")
-        # print(f'Diseases: {diseases} for sentence \n {sentence}')
     return df
 
-def make_kshot(df: pd.DataFrame, k: int) -> List[Tuple[str, List[str]]]:
-    """
-    k-shot generation
-    """
-    k_shots = []
-    u_clusters = df.cluster.unique()
-    for i in u_clusters:
-        if len(df[df.cluster == i]) > k:
-            df_cluster = df[df.cluster == i].sample(k)
-        else:
-            df_cluster = df[df.cluster == i]
+def format_kshot_block(examples: List[Dict[str, Any]], args: argparse.Namespace) -> str:
+    formatted = []
+    for ex in examples:
+        ex_text = ex.get("sentence", "").strip()
+        entities = ", ".join(ex.get("entities", []))
+        block = f"Sentence: {ex_text}\nEntities: [{entities}]"
 
-    
-    return k_shots
+        # Conditionally add linguistic features
+        if getattr(args, "include_pos", True):
+            pos_tags = " ".join(ex.get("pos", []))
+            block += f"\nPOS: {pos_tags}"
+        if getattr(args, "include_dep", True):
+            deps = " ".join(ex.get("dep", []))
+            block += f"\nDEP: {deps}"
+
+        formatted.append(block + "\n")
+    return "\n".join(formatted)
+
+def sample_k_examples(args: argparse.Namespace, kshot_pool):
+    k = min(args.kshot_size, len(kshot_pool))
+    sampled = np.random.choice(kshot_pool, size=k, replace=False)
+    kshot_text_block = format_kshot_block(sampled, args)
+    used_ids = [ex.get("id", f"ex_{idx}") for idx, ex in enumerate(sampled)]
+
+    return kshot_text_block, used_ids
+
 
 
 """python3 utils.py"""

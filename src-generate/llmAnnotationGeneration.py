@@ -62,6 +62,15 @@ def argparse_args():
                         help='Number of examples to use for each prompt.')
     parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
                         help='spaCy model to use for tokenization (default: en_core_web_sm).')
+    parser.add_argument('--random_seed', type=int, default=42, 
+                        help='Random seed for reproducibility.')
+    parser.add_argument('--include_pos', action='store_true', 
+                        help='Include POS tags in k-shot examples.')
+    parser.add_argument('--include_dep', action='store_true', 
+                        help='Include dependency tags in k-shot examples.')
+    parser.add_argument('--no_entity_ratio', type=float, default=0.25,
+                        help='Ratio of sentences without entities.')
+
 
     return parser.parse_args()
 
@@ -80,46 +89,6 @@ def spacy_preprocess(text: str):
     doc = nlp(text)
     return doc, nlp
 
-# def format_chat(messages: List[Dict[str, Any]]) -> str:
-#     """Format messages using the template compatible with llama.cpp server."""
-#     formatted = ""
-#     for i, msg in enumerate(messages):
-#         content = f"<|start_header_id|>{msg['role']}<|end_header_id|>\n\n{msg['content'].strip()}<|eot_id|>"
-#         if i == 0:
-#             content = "<|begin_of_text|>" + content
-#         formatted += content
-#     # Add generation prompt for assistant
-#     formatted += "<|start_header_id|>assistant<|end_header_id|>\n\n"
-#     return formatted
-
-# def message_request(args: argparse.Namespace, chunk: str, 
-#                     i: int, prompt_key: str) -> requests.Response:
-#     messages = [ {"role": "system", "content": SYSTEM_PROMPTS[args.system_prompt_key]},
-#                     {"role": "user", "content": PROMPT[prompt_key] +  f"""
-#                      Consider the sentence output that comes after sentence: 
-     
-#         The patient diagnosed with {chunk}. 
-#         Based on your medical expertise. Your task is to generate next sentence containing following disease: """ +  chunk + '\n\n'}, ]
-    
-#     prompt = format_chat(messages)
-#     # Send to llama.cpp HTTP server
-#     response = requests.post(
-#         f"{args.server_url}/completion",
-#         json={
-#             "prompt": prompt,
-#             "max_tokens": args.max_tokens,
-#             "temperature": args.temperature,
-#             "stop": ["<|eot_id|>"]
-#         })
-#     if args.verbose:
-#         args.logger.info('Translation response:')
-#         args.logger.info(f'For column and row {i}, response status code: {response.status_code}')
-#         # Output response
-#         args.logger.info(response.json()['content'])
-#     if response.status_code != 200:
-#         args.logger.info(f"Error: {response.status_code} - {response.text}")
-#         raise Exception(f"Request failed with status code {response.status_code}")
-#     return response
 
 def create_rule_json(doc, nlp, term)-> Tuple[list,list]:         
     tokens = [token.text for token in doc]
@@ -164,7 +133,7 @@ def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> L
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
         terms_llm = check_additional_disease_tags(args, tokens, term[0].lower())
-        # TODO provjeriti da nema više sitih entiteta a nema ih u tekstu
+        # TODO provjeriti da nema više istih entiteta a nema ih u tekstu
         for term_llm in terms_llm:
             if term_llm[0].lower() != term[0].lower():
                 terms.append(term_llm[0].lower())
@@ -204,12 +173,12 @@ def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> L
         elif len(terms_llm) == 1 and terms_llm[0][0].lower() != term[0].lower():
             tags, tokens = create_rule_json(doc, nlp, terms_llm[0])       
         
-        # TODO add the non entity sentence   
+        # TODO add the non entity sentence ---> removed return {} 
         json_data = {"tags": tags, "tokens": tokens, "term": [term[0] for term in terms_llm], "term_id": [term[1] for term in terms_llm]}
         if 0 not in tags:
             args.logger.info(f'No disease term found in generated text even after LLM check: {terms_llm}.')
             args.logger.info(f'Generated sentence: {text}')
-            return {}
+            # return {}
     if len(tags) != len(tokens):
         print('JSON creation error.')
         print(text)
@@ -243,45 +212,111 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
         return [(term, 'NaN') for term in term_llm]
     except Exception as e:
         return [(term, 'NaN')]
-
-def generate_sentence_samples(args: argparse.Namespace, term_list: List[str], method: str='a',
-                              system_template: str='role_prompt', 
-                              user_template: str='genre_prompt'):
+    
+def generate_sentence_samples(
+    args: argparse.Namespace,
+    term_list: List[str],
+    method: str = 'a',
+    system_template: str = 'role_prompt',
+    user_template: str = 'genre_prompt'
+):
     """
-    Generate sentences for a given list of terms. And for a given samples if args.kshot_path is provided.
-    Each generated sentence is saved as a JSON object in the specified output directory.
+    Generate sentences for a list of disease terms using optional k-shot examples.
+    - Randomly samples k-shot examples (from given NCBI subset) per term with fixed seed for reproducibility.
+    - Allows toggling inclusion of POS/DEP features in few-shot examples.
+    - Stores which k-shot example IDs were used in each generated JSON output.
     """
 
+    # -------------------------------------------------------------------------
+    # Setup
+    # -------------------------------------------------------------------------
     date_today = datetime.today().strftime("%Y%m%d")
-    if args.kshot_path: #TODO implement k-shot generation
+    np.random.seed(getattr(args, "random_seed", 42))  # Fixed seed for reproducibility
+
+    output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.txt')
+
+    # -------------------------------------------------------------------------
+    # Load k-shot examples
+    # -------------------------------------------------------------------------
+    kshot_examples = []
+    if args.kshot_path and os.path.exists(args.kshot_path):
         df = utils.load_training_samples(args.kshot_path)
-        shots = utils.make_kshot(df, args.kshot_size)
+        kshot_examples = df.to_dict(orient='records')
         user_template = 'kshot_genre_generation'
-        
+        if args.verbose:
+            print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {args.kshot_path}")
+
+    # Filter by havig entity or not in a kshot_examples pool
+    entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
+    no_entity_examples = [ex for ex in kshot_examples if not ex.get("entities")]
+
+    # -------------------------------------------------------------------------
+    # Generation loop
+    # -------------------------------------------------------------------------
     for i, term in enumerate(tqdm.tqdm(term_list)):
-        with open(os.path.join(args.output_directory, 
-                'generated_sentences_' + date_today + '.txt'), method) as file:
-            shot_id = 
-            response = promptGeneration.message_request(args, 
-                                                        term[0], 
-                                                        system_template=system_template,
-                                                        user_template=user_template,
-                                                        text=shot)
-            text = response.json()['content'].strip()
-            text = utils.clean_text(text)
-            text = utils.remove_code_fences(text)
-            sentences = check_generated_size(args, text)
-            for text in sentences:
-                # print(term)
-                text_json = create_json(args, text, term)
-                # check_additional_disease_tags(args, text_json)
-                # Firstly for this json check for other disease mentions
-                
-                if text_json:
-                    file.write(json.dumps(text_json))  
-                    file.write('\n')   
-        # except Exception as e:
-        #     args.logger.info(f"Failed to parse response for sentence {i}: \n Exception: {e}")
+        with open(output_path, method, encoding='utf-8') as file:
+            try:
+                # -----------------------------------------------------------------
+                # Sample k examples randomly for this term
+                # -----------------------------------------------------------------
+                if kshot_examples:
+                    if np.random.rand() < args.no_entity_ratio:
+                        # generate sentence with no entity
+                        kshot_text_block, used_ids = utils.sample_k_examples(args, no_entity_examples)
+                        shot_text = promptGeneration.PROMPT['kshot_genre_generation_no_entity'].format(
+                            text=kshot_text_block
+                        )
+                    else:
+                        # generate sentence with an entity
+                        kshot_text_block, used_ids = utils.sample_k_examples(args, entity_examples)
+                        shot_text = promptGeneration.PROMPT['kshot_genre_generation_with_entity'].format(
+                            condition=term[0],
+                            genre=promptGeneration.Genre.ABSTRACT.value,
+                            text=kshot_text_block
+                        )
+
+                    args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
+                else:
+                    # Fallback single-shot mode
+                    shot_text = promptGeneration.PROMPT['syn_generation'].format(condition=term[0])
+                    used_ids = []
+
+                # -----------------------------------------------------------------
+                # Send request to LLM
+                # -----------------------------------------------------------------
+                response = promptGeneration.message_request(
+                    args,
+                    term[0],
+                    system_template=system_template,
+                    user_template=user_template,
+                    text=shot_text
+                )
+
+                text = response.json().get('content', '').strip()
+                text = utils.clean_text(text)
+                text = utils.remove_code_fences(text)
+                sentences = check_generated_size(args, text)
+
+                # -----------------------------------------------------------------
+                # Write generated sentences as JSON
+                # -----------------------------------------------------------------
+                for sent in sentences:
+                    text_json = create_json(args, sent, term)
+                    if text_json:
+                        # Store metadata about k-shot context
+                        text_json["kshot_example_ids"] = used_ids
+                        text_json["include_pos"] = getattr(args, "include_pos", True)
+                        text_json["include_dep"] = getattr(args, "include_dep", True)
+                        text_json["random_seed"] = getattr(args, "random_seed", 42)
+
+                        file.write(json.dumps(text_json))
+                        file.write("\n")
+
+            except Exception as e:
+                args.logger.info(f"Failed to generate or parse sentence for term {term}: {e}")
+                if args.verbose:
+                    print(f"[ERROR] Term {term}: {e}")
+
     
 
 def generate_term_list(args: argparse.Namespace):
@@ -365,6 +400,32 @@ def setup_logger(args):
         logger.addHandler(fh)
     logger.propagate = False
     return logger
+
+"""
+With included pos and dep
+python3 llmAnnotationGeneration.py \
+  --input_file data/NCBI-Disease/test.txt \
+  --input_file_type list \
+  --output_directory data/synthetic_aug \
+  --server_url http://0.0.0.0:8484 \
+  --kshot_path data/ncbi_train_10pct.json \
+  --kshot_size 5 \
+  --num_sentences 2 \
+  --include_pos \
+  --include_dep \
+  --random_seed 42 \
+  --verbose
+
+  Excluded pos and dep
+  python3 llmAnnotationGeneration.py \
+  --input_file data/NCBI-Disease/test.txt \
+  --output_directory data/synthetic_no_tags \
+  --kshot_path data/ncbi_train_10pct.json \
+  --kshot_size 5 \
+  --num_sentences 2 \
+  --random_seed 42
+
+"""
 
 """ python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
     --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/val_wrong_ent.txt \

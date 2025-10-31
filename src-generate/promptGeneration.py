@@ -90,7 +90,7 @@ PROMPT = {
         # ('this is the part where there could be noise)
         # json output
         
-    'kshot_genre_generation': """
+    'kshot_genre_generation_with_entity': """
         Generate one simple sentence that naturally includes the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
         Use {condition} exactly as written within the sentence.
@@ -99,8 +99,16 @@ PROMPT = {
         Examples:
         {text}
         """,
+    'kshot_genre_generation_no_entity': """
+        Generate one simple sentence that does NOT contain the disease or diagnosis, but resembles the syntax and tone of the examples.
+        Requirements:
+        Keep the sentence factual, and contextually realistic for clinical or biomedical text.
+        Output only the sentence — no explanations or extra text.
+        Examples:
+        {text}
+        """,
         
-    'two_sent_kshot_genre_syn_gen': """Generate {number_of_sentences} sentences that naturally includes the disease or diagnosis {condition}, as it would appear in a {genre}.
+    'two_sent_kshot_genre_syn_gen': """Generate {number_of_sentences} sentences that {entity} the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
         This is important, use {condition} exactly as written within one of the sentences.
         Keep the sentences factual, and contextually realistic for clinical or biomedical text.
@@ -162,17 +170,17 @@ class Role(Enum):
 
 class Genre(Enum):
     ABSTRACT = "medical paper abstract"
-    ANAMNESIS_MD = "anamnesis from one MD to another MD"
-    ANAMNESIS_PT = "anamnesis from MD to patient"
-    LETTER = "medical letter"
+    #ANAMNESIS_MD = "anamnesis from one MD to another MD"
+    #ANAMNESIS_PT = "anamnesis from MD to patient"
+    #LETTER = "medical letter"
     RESEARCH = "research paper"
-    CASESTUDY = "patient case-study"
-    NOTE = "medical note"
+    #CASESTUDY = "patient case-study"
+    #NOTE = "medical note"
     REPORT = "medical report"
     SUMMARY = "medical summary"
-    DISCHARGE = "discharge summary"
-    PRESCRIPTION = "medical prescription"
-    GUIDELINE = "medical guideline"
+    #DISCHARGE = "discharge summary"
+    #PRESCRIPTION = "medical prescription"
+    #GUIDELINE = "medical guideline"
     REVIEW = "medical review article"
     
     
