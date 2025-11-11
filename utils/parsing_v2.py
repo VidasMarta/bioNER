@@ -253,9 +253,8 @@ def load_corpuses(ncbi_path, gen_path):
     return quadruple
 
 
-def extract_syntax_features(model, ids, sentences, entities, corpus_labels, output_path):
+def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, output_path):
     features = []
-    nlp = spacy.load(model)
     for (id, sent, entity, corpus_name) in zip(ids, sentences, entities, corpus_labels):
         doc = nlp(sent)
         pos_tags = [token.pos_ for token in doc]
@@ -273,7 +272,8 @@ def extract_syntax_features(model, ids, sentences, entities, corpus_labels, outp
         })
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(features, f, indent=2)
+        for feat in features:
+            f.write(json.dumps(feat) + "\n")
 
 
 def parse_args():
@@ -371,8 +371,9 @@ if __name__ == "__main__":
         f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
         f"{corpus_labels.count('generated_train')} from Generated.")
     
+    nlp = spacy.load(model)
     extract_syntax_features(
-        model,
+        nlp,
         ids, 
         sentences,
         entities,
