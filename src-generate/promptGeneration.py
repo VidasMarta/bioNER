@@ -98,25 +98,31 @@ PROMPT = {
         Output only the sentence — no explanations or extra text.
         Examples:
         {text}
+        Your task is to produce the Sentence: and after that the Entities: [] part.
+        Sentence:
         """,
     'kshot_genre_no_entity': """
         Generate one simple sentence that does NOT contain the disease or diagnosis, but resembles the syntax and tone of the examples.
         Requirements:
         Keep the sentence factual, and contextually realistic for clinical or biomedical text.
-        Output only the sentence — no explanations or extra text.
+        Output only the sentence — no explanations or extra text. 
         Examples:
         {text}
+        Your task is to produce the Sentence: and after that the Entities: [] part.
+        Sentence:
         """,
         
     'kshot_num_sent_genre_entity': """Generate {number_of_sentences} sentences that contain the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
         This is important, the output for "Entities: [{condition}]", you use <{condition}> exactly as written within one of the sentences.
         Keep the sentences factual, and contextually realistic for clinical or biomedical text.
-        Output only the sentences — no explanations or extra text.
+        Output only sentences — no explanations or extra text or decorations. 
         Examples:
         {text}
-        Sentence:
+        Your task is to produce just the sentences and the Entities: [] part, given the upper requirements.
+        Sentences:
         """,
+        
         
     'disease_annotation': """Find and extract diagnoses and diseases from the text and. 
         Your output should be a list of entities that is machine-readable using eval(): 
@@ -221,6 +227,7 @@ class PromptBuilder:
             'disease_annotation_reduced': PROMPT['disease_annotation_reduced'],
             'kshot_num_sent_genre_entity':PROMPT['kshot_num_sent_genre_entity'],
             'kshot_genre_no_entity':PROMPT['kshot_genre_no_entity'],
+            'kshot_genre_generation_with_entity':PROMPT['kshot_genre_generation_with_entity'],
             
             
         }

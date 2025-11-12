@@ -129,7 +129,10 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
             doc = nlp(str(doc))
     return [sent.text for sent in doc.sents if sent.text.strip()]
 
-def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> List[dict]:
+def create_json(args: argparse.Namespace, text: str, 
+                term: Tuple[str, str], 
+                entities: Optional[List[str]] = None) -> List[dict]:
+    # TODO: add proposed entities from parsing step Where and why?
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     tags, tokens = create_rule_json(doc, nlp, term)
@@ -300,12 +303,19 @@ def generate_sentence_samples(
                 text = response.json()['content'].strip()
                 text = utils.clean_text(text)
                 text = utils.remove_code_fences(text)
+                # TODO: parsing Sentence: ... Entities: [...] format
+                text, entities = utils.parse_text_entities_format(args, text)
+                if args.verbose:
+                    args.logger.info(f"Generated text is: {text}")
+                    args.logger.info(
+                        f"Extracted entities proposed by LLM: {entities}\n Term is: {term[0]}")
                 sentences = check_generated_size(args, text)
                 # -----------------------------------------------------------------
                 # Write generated sentences as JSON
                 # -----------------------------------------------------------------
                 for sent in sentences:
-                    text_json = create_json(args, sent, term)
+                    # TODO: add proposed entities from parsing step
+                    text_json = create_json(args, sent, term, entities=entities)
                     if text_json:
                         # Store metadata about k-shot context
                         text_json["kshot_example_ids"] = used_ids

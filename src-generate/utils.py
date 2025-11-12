@@ -3,7 +3,7 @@ import string
 
 import numpy as np
 import obonet
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import argparse
 import pandas as pd
 def remove_code_fences(text: str) -> str:
@@ -82,11 +82,21 @@ def sample_k_examples(args: argparse.Namespace, kshot_pool):
     # TODO: provide unique/correct ids all ids are 0,1,2,3,...
     used_ids = [ex.get("abstract_id", f"ex_{idx}") for idx, ex in enumerate(sampled)] #this doesn't work and provide unique ids
     print(f"Sampled k-shot example IDs: {used_ids}")
-    print(sampled)
-    exit()
     return kshot_text_block, used_ids
 
-
+# TODO: parsing Sentence: ... Entities: [...] format
+def parse_text_entities_format(args: argparse.Namespace, text: str) -> Tuple[str, List[str]]:
+    pattern = r'Sentence:\s*(.*?)\s*Entities:\s*\[(.*?)\]'
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        sentence = match.group(1).strip()
+        entities_str = match.group(2).strip()
+        entities = [ent.strip() for ent in entities_str.split(',')] if entities_str else []
+        return sentence, entities
+    else:
+        print("[WARNING] Could not parse the generated text for sentence and entities.")
+        return text, []
+    
 
 """python3 utils.py"""
 
