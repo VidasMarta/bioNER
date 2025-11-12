@@ -45,7 +45,7 @@ def argparse_args():
                         sentences using terms.""")
     parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
                         help='spaCy model to use for tokenization (default: en_core_web_sm).')
-    parser.add_argument('--kshot_size', type=int, default=0, 
+    parser.add_argument('--kshot_size', type=int, default=3, 
                         help='Number of examples to use for each prompt.')
     parser.add_argument('--random_seed', type=int, default=42, 
                         help='Random seed for reproducibility.')
@@ -53,7 +53,7 @@ def argparse_args():
                         help='Include POS tags in k-shot examples.')
     parser.add_argument('--include_dep', action='store_true', 
                         help='Include dependency tags in k-shot examples.')
-    parser.add_argument('--no_entity_ratio', type=float, default=0.25,
+    parser.add_argument('--no_entity_ratio', type=float, default=0.25, #TODO ovo izračunati iz NCBI traina
                         help='Ratio of sentences without entities.')
     parser.add_argument('--n_clusters', type=int, default=5,
                         help='Number of clusters for KMeans clustering of syntax embeddings.')
@@ -198,8 +198,9 @@ def adaptive_syntax_generation(
     print("[INFO] Building real NCBI dependency graphs...")
     real_graphs = pe.build_dependency_graphs(real_data)
     real_emb = pe.get_graph_embedding(real_graphs)
+
     print(f"[INFO] Clustering real embeddings into {args.n_clusters} syntax clusters...")
-    kmeans = KMeans(n_clusters=args.n_clusters, random_state=42)
+    kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
     real_labels = kmeans.fit_predict(real_emb)
     centroids_real = kmeans.cluster_centers_
 
@@ -358,6 +359,25 @@ def main(args: argparse.Namespace):
         for entry in final_data:
             f.write(json.dumps(entry) + "\n")
 
+
+'''
+python3 /home/mkeber/syn-bioner/generation_pipeline.py \
+    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/ncbi_train.json \
+    --Generated_train /home/mkeber/syn-bioner/data/synthetic2/generated_train.json \
+    --output_directory /home/mkeber/syn-bioner/data/synthetic2 \
+    --server_url http://172.17.0.1:8484 \
+    --num_sentences 3
+    --system_prompt_key generation \
+    --temperature 0 \
+    --max_tokens 500 \
+    --input_file_type list\
+    --spacy_model en_core_web_lg \
+    --kshot_size 3 \
+    --n_clusters 5 \
+    --min_samples_per_cluster 10 \
+    --weighted_threshold 0.75 \ 
+    --test
+'''
 
 if __name__ == "__main__":
     args = argparse_args()
