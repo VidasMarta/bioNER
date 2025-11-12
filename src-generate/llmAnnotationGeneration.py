@@ -52,10 +52,6 @@ def argparse_args():
     parser.add_argument('--test', action='store_true', 
                         help="""If set, recalculate the generation for allready existing 
                         sentences using terms.""")
-    parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
-                        help='spaCy model to use for tokenization (default: en_core_web_sm).')
-    parser.add_argument('--training_examples_file', type=str, default='', 
-                        help='Path to the file containing training examples for few-shot prompting.')
     parser.add_argument('--kshot_path', type=str, default='', 
                         help='Path to the file containing training examples for few-shot prompting.')
     parser.add_argument('--kshot_size', type=int, default=0, 
@@ -80,10 +76,19 @@ def spacy_load_model(model_name: str):
 
     global SPACY_NLP
     if SPACY_NLP is None:
-        SPACY_NLP = spacy.load(model_name)
+        SPACY_NLP = get_spacy(model_name)
         return SPACY_NLP
     return SPACY_NLP   
 
+def get_spacy(model_name: str):
+    try: return spacy.load(model_name)
+    except Exception as e:
+        print(f"Error loading spaCy model: {e}")
+        os.system(f"python3 -m spacy download {model_name}")
+        print(f"Downloading {model_name} model")
+        import spacy
+        return spacy.load(model_name)
+    
 def spacy_preprocess(text: str):
     nlp = spacy_load_model()
     doc = nlp(text)
@@ -109,7 +114,7 @@ def create_rule_json(doc, nlp, term)-> Tuple[list,list]:
     return tags, tokens
 
 def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
-    nlp = spacy_load_model()
+    nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     # if LLM generated more than one sentence return empty dict
     if len(list(doc.sents)) > args.num_sentences: 
@@ -173,7 +178,6 @@ def create_json(args: argparse.Namespace, text: str, term: Tuple[str, str]) -> L
         elif len(terms_llm) == 1 and terms_llm[0][0].lower() != term[0].lower():
             tags, tokens = create_rule_json(doc, nlp, terms_llm[0])       
         
-        # TODO add the non entity sentence ---> removed return {} 
         json_data = {"tags": tags, "tokens": tokens, "term": [term[0] for term in terms_llm], "term_id": [term[1] for term in terms_llm]}
         if 0 not in tags:
             args.logger.info(f'No disease term found in generated text even after LLM check: {terms_llm}.')
@@ -219,12 +223,14 @@ def generate_sentence_samples(
     method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
-):
+)-> str:
     """
     Generate sentences for a list of disease terms using optional k-shot examples.
     - Randomly samples k-shot examples (from given NCBI subset) per term with fixed seed for reproducibility.
     - Allows toggling inclusion of POS/DEP features in few-shot examples.
     - Stores which k-shot example IDs were used in each generated JSON output.
+
+    returns path to the output JSON file.
     """
 
     # -------------------------------------------------------------------------
@@ -233,7 +239,7 @@ def generate_sentence_samples(
     date_today = datetime.today().strftime("%Y%m%d")
     np.random.seed(getattr(args, "random_seed", 42))  # Fixed seed for reproducibility
 
-    output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.txt')
+    output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.json')
 
     # -------------------------------------------------------------------------
     # Load k-shot examples
@@ -242,10 +248,9 @@ def generate_sentence_samples(
     if args.kshot_path and os.path.exists(args.kshot_path):
         df = utils.load_training_samples(args.kshot_path)
         kshot_examples = df.to_dict(orient='records')
-        user_template = 'kshot_genre_generation'
         if args.verbose:
             print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {args.kshot_path}")
-
+    # TODO: sampling logic for k-shot examples
     # Filter by havig entity or not in a kshot_examples pool
     entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
     no_entity_examples = [ex for ex in kshot_examples if not ex.get("entities")]
@@ -263,40 +268,39 @@ def generate_sentence_samples(
                     if np.random.rand() < args.no_entity_ratio:
                         # generate sentence with no entity
                         kshot_text_block, used_ids = utils.sample_k_examples(args, no_entity_examples)
-                        shot_text = promptGeneration.PROMPT['kshot_genre_generation_no_entity'].format(
-                            text=kshot_text_block
-                        )
+                        user_template = 'kshot_genre_no_entity'
                     else:
                         # generate sentence with an entity
                         kshot_text_block, used_ids = utils.sample_k_examples(args, entity_examples)
-                        shot_text = promptGeneration.PROMPT['kshot_genre_generation_with_entity'].format(
-                            condition=term[0],
-                            genre=promptGeneration.Genre.ABSTRACT.value,
-                            text=kshot_text_block
-                        )
+                        user_template = 'kshot_num_sent_genre_entity'
+                        # shot_text = promptGeneration.PROMPT[user_template].format(
+                        #     number_of_sentences=args.num_sentences,
+                        #     condition=term[0],
+                        #     genre=promptGeneration.Genre.ABSTRACT.value,
+                        #     text=kshot_text_block
+                        # )
 
                     args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
                 else:
                     # Fallback single-shot mode
-                    shot_text = promptGeneration.PROMPT['syn_generation'].format(condition=term[0])
+                    user_template = 'syn_generation'
                     used_ids = []
 
                 # -----------------------------------------------------------------
                 # Send request to LLM
                 # -----------------------------------------------------------------
                 response = promptGeneration.message_request(
-                    args,
-                    term[0],
-                    system_template=system_template,
-                    user_template=user_template,
-                    text=shot_text
-                )
-
-                text = response.json().get('content', '').strip()
+                        args,
+                        term[0],
+                        system_template=system_template,
+                        user_template=user_template,
+                        text=kshot_text_block
+                    )
+                # print(response.json())
+                text = response.json()['content'].strip()
                 text = utils.clean_text(text)
                 text = utils.remove_code_fences(text)
                 sentences = check_generated_size(args, text)
-
                 # -----------------------------------------------------------------
                 # Write generated sentences as JSON
                 # -----------------------------------------------------------------
@@ -314,8 +318,10 @@ def generate_sentence_samples(
 
             except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for term {term}: {e}")
+                args.logger.info(f"Response content: {response.json().get('content', '')}")
                 if args.verbose:
                     print(f"[ERROR] Term {term}: {e}")
+    return output_path
 
     
 
@@ -416,6 +422,22 @@ python3 llmAnnotationGeneration.py \
   --random_seed 42 \
   --verbose
 
+
+python3 bioNER/src-generate/llmAnnotationGeneration.py \
+  --input_file data/SNOMEDCT/concepts_filtered.csv \
+  --input_file_type list \
+  --output_directory  data/synthetic-snomed-kshot \
+  --server_url http://med-llm-webapp-backend-1:8080  \
+  --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
+  --kshot_size 5 \
+  --num_sentences 2 \
+  --include_pos \
+  --include_dep \
+  --random_seed 42 \
+  --verbose \
+  --test --temperature 0 --max_tokens 500 --verbose
+  
+  
   Excluded pos and dep
   python3 llmAnnotationGeneration.py \
   --input_file data/NCBI-Disease/test.txt \
@@ -452,7 +474,7 @@ python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
 """
 if __name__ == "__main__":
     args = argparse_args()
-    SPACY_NLP = spacy.load(args.spacy_model)
+    SPACY_NLP = spacy_load_model(args.spacy_model)
     args.logger = setup_logger(args)
     args.logger.info(f"Output directory: {args.output_directory}")
     main(args)

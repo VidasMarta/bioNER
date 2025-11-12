@@ -99,7 +99,7 @@ PROMPT = {
         Examples:
         {text}
         """,
-    'kshot_genre_generation_no_entity': """
+    'kshot_genre_no_entity': """
         Generate one simple sentence that does NOT contain the disease or diagnosis, but resembles the syntax and tone of the examples.
         Requirements:
         Keep the sentence factual, and contextually realistic for clinical or biomedical text.
@@ -108,13 +108,14 @@ PROMPT = {
         {text}
         """,
         
-    'two_sent_kshot_genre_syn_gen': """Generate {number_of_sentences} sentences that {entity} the disease or diagnosis {condition}, as it would appear in a {genre}.
+    'kshot_num_sent_genre_entity': """Generate {number_of_sentences} sentences that contain the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
-        This is important, use {condition} exactly as written within one of the sentences.
+        This is important, the output for "Entities: [{condition}]", you use <{condition}> exactly as written within one of the sentences.
         Keep the sentences factual, and contextually realistic for clinical or biomedical text.
         Output only the sentences — no explanations or extra text.
         Examples:
         {text}
+        Sentence:
         """,
         
     'disease_annotation': """Find and extract diagnoses and diseases from the text and. 
@@ -218,7 +219,9 @@ class PromptBuilder:
             'genre_prompt': PROMPT['genre_syn_generation'],
             'disease_annotation': PROMPT['disease_annotation'],
             'disease_annotation_reduced': PROMPT['disease_annotation_reduced'],
-            'kshot_genre_generation':PROMPT['kshot_genre_generation']
+            'kshot_num_sent_genre_entity':PROMPT['kshot_num_sent_genre_entity'],
+            'kshot_genre_no_entity':PROMPT['kshot_genre_no_entity'],
+            
             
         }
         
@@ -252,7 +255,9 @@ class PromptBuilder:
             role = role or (template.role_variations[0] if template.role_variations else "medical professional")
         return template.format(role=role, **kwargs)
     
-    def get_user_prompt(self, template_key: str, condition: str, text: Optional[str] = None, randomize: bool = True, **kwargs) -> str:
+    def get_user_prompt(self, template_key: str, condition: str, 
+                        text: Optional[str] = None, randomize: bool = True, 
+                        number_of_sentences: int = 1, **kwargs) -> str:
         """Generate user prompt with optional randomization"""
         if template_key not in self.user_templates:
             raise ValueError(f"Template '{template_key}' not found. Available: {list(self.user_templates.keys())}")
@@ -264,11 +269,16 @@ class PromptBuilder:
             if 'genre' in template and 'genre' not in kwargs:
                 kwargs['genre'] = random.choice(self.randomization_options['genre'])
 
-        return template.format(condition=condition, text=text, **kwargs)
+        return template.format(condition=condition, text=text, number_of_sentences=number_of_sentences, **kwargs)
 
-    def build_messages(self, system_template: str, user_template: str, condition: str, text: Optional[str] = None,
+    def build_messages(self, system_template: str, 
+                       user_template: str, 
+                       condition: str, 
+                       text: Optional[str] = None,
                       system_randomize: bool = True, user_randomize: bool = True,
-                      system_kwargs: Dict = None, user_kwargs: Dict = None) -> List[Dict[str, Any]]:
+                      system_kwargs: Dict = None, user_kwargs: Dict = None,
+                      number_of_sentences: int = 1,
+                      ) -> List[Dict[str, Any]]:
         """Build complete message array for API request"""
         system_kwargs = system_kwargs or {}
         user_kwargs = user_kwargs or {}
@@ -277,7 +287,8 @@ class PromptBuilder:
             system_template, randomize=system_randomize, **system_kwargs
         )
         user_content = self.get_user_prompt(
-            user_template, condition, text=text, randomize=user_randomize, **user_kwargs
+            user_template, condition, text=text, randomize=user_randomize, 
+            number_of_sentences=number_of_sentences, **user_kwargs
         )
         
         return [
@@ -308,7 +319,8 @@ def format_chat(messages: List[Dict[str, Any]]) -> str:
     return formatted
 
 
-def message_request(args: argparse.Namespace, chunk: str,
+def message_request(args: argparse.Namespace, 
+                    condition: str,
                    prompt_builder: PromptBuilder = PromptBuilder(), 
                    system_template: str = 'initial_prompt',
                    user_template: str = 'initial_prompt', 
@@ -317,8 +329,7 @@ def message_request(args: argparse.Namespace, chunk: str,
     Improved message request function using PromptBuilder
     Args:
         args (argparse.Namespace): Command line arguments
-        chunk (str): The condition or term to include in the prompt
-        i (int): Index for logging purposes
+        condition (str): The condition or term to include in the prompt
         prompt_builder (PromptBuilder): Instance of PromptBuilder to generate prompts
         system_template (str): Key for the system prompt template initial_prompt or role_prompt
         user_template (str): Key for the user prompt template initial_prompt or genre_prompt
@@ -327,9 +338,11 @@ def message_request(args: argparse.Namespace, chunk: str,
     messages = prompt_builder.build_messages(
         system_template=system_template,
         user_template=user_template,
-        condition=chunk,
+        condition=condition,
         system_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         text=text,
+        user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
+        number_of_sentences=getattr(args, 'num_sentences', 1), 
     )
     args.logger.info(f'Generated system prompt: {messages[0]["content"]}')
     args.logger.info(f'Generated user prompt: {messages[1]["content"]}')
@@ -347,7 +360,7 @@ def message_request(args: argparse.Namespace, chunk: str,
     
     if args.verbose:
         args.logger.info('Translation response:')
-        args.logger.info(f'For column and row {i}, response status code: {response.status_code}')
+        args.logger.info(f'Response status code: {response.status_code}')
         args.logger.info(f'System prompt used: {messages[0]["content"][:100]}...')
         args.logger.info(response.json()['content'])
     

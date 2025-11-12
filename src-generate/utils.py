@@ -64,10 +64,11 @@ def format_kshot_block(examples: List[Dict[str, Any]], args: argparse.Namespace)
         block = f"Sentence: {ex_text}\nEntities: [{entities}]"
 
         # Conditionally add linguistic features
-        if getattr(args, "include_pos", True):
+        # TODO: POS and DEP they are not in the current data structure
+        if args.include_pos:
             pos_tags = " ".join(ex.get("pos", []))
             block += f"\nPOS: {pos_tags}"
-        if getattr(args, "include_dep", True):
+        if args.include_dep:
             deps = " ".join(ex.get("dep", []))
             block += f"\nDEP: {deps}"
 
@@ -78,8 +79,11 @@ def sample_k_examples(args: argparse.Namespace, kshot_pool):
     k = min(args.kshot_size, len(kshot_pool))
     sampled = np.random.choice(kshot_pool, size=k, replace=False)
     kshot_text_block = format_kshot_block(sampled, args)
-    used_ids = [ex.get("id", f"ex_{idx}") for idx, ex in enumerate(sampled)]
-
+    # TODO: provide unique/correct ids all ids are 0,1,2,3,...
+    used_ids = [ex.get("abstract_id", f"ex_{idx}") for idx, ex in enumerate(sampled)] #this doesn't work and provide unique ids
+    print(f"Sampled k-shot example IDs: {used_ids}")
+    print(sampled)
+    exit()
     return kshot_text_block, used_ids
 
 
