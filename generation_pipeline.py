@@ -61,6 +61,8 @@ def argparse_args():
                         help='Minimum number of synthetic samples required per cluster to consider it covered.')
     parser.add_argument('--weighted_threshold', type=float, default=0.75,
                         help='Weighted coverage threshold to stop iterations.')
+    parser.add_argument('--max_iterations', type=int, default=5,
+                        help='Maximum number of iterations for adaptive generation.')
 
 
     return parser.parse_args()
@@ -75,12 +77,13 @@ def compute_cluster_coverage(
 ):
     """
     Compute per-cluster cosine overlap and weighted global coverage.
-
-    Returns:
-        cluster_overlaps (List[float])
-        uncovered_clusters (List[int])
-        weighted_coverage (float)
-        cluster_sizes (List[int])
+    Args:
+        real_emb (np.ndarray): NCBI syntax embeddings.
+        synth_emb (np.ndarray): Generated syntax embeddings.
+        real_labels (np.ndarray): Cluster labels for NCBI embeddings.
+        centroids_real (np.ndarray): Centroids of NCBI clusters.
+        overlap_threshold (float): Minimum cosine similarity to consider cluster covered.
+        min_samples_per_cluster (int): Minimum number of synthetic samples per cluster.
     """
     n_clusters = len(np.unique(real_labels))
     # Assign synthetic embeddings to nearest real cluster center
@@ -94,22 +97,23 @@ def compute_cluster_coverage(
     synth_counts = []
 
     for i in range(n_clusters):
-        real_cluster_emb = real_emb[real_labels == i]
-        synth_cluster_emb = synth_emb[synth_labels == i]
+        real_cluster_emb = real_emb[real_labels == i] #take all embeddings from real data that belong to cluster i
+        synth_cluster_emb = synth_emb[synth_labels == i] #take all embeddings from synthetic data that belong to cluster i
 
         cluster_sizes.append(len(real_cluster_emb))
         synth_counts.append(len(synth_cluster_emb))
 
-        if len(synth_cluster_emb) == 0:
-            cluster_overlaps.append(0.0)
+        if len(synth_cluster_emb) == 0: #no synthetic samples in this cluster
+            cluster_overlaps.append(0.0) 
             uncovered_clusters.append(i)
             continue
-
+        
+        #compute how similar the average syntactic embedding of generated sentences is to the real NCBI sentences within that cluster
         overlap_i = cosine_similarity(
-            real_cluster_emb.mean(axis=0, keepdims=True),
+            real_cluster_emb.mean(axis=0, keepdims=True), #compute average embedding for real and synthetic cluster (centroids)
             synth_cluster_emb.mean(axis=0, keepdims=True),
         )[0, 0]
-        cluster_overlaps.append(overlap_i)
+        cluster_overlaps.append(overlap_i) #add 
 
         if overlap_i < overlap_threshold or len(synth_cluster_emb) < min_samples_per_cluster:
             uncovered_clusters.append(i)
@@ -199,7 +203,8 @@ def adaptive_syntax_generation(
     real_graphs = pe.build_dependency_graphs(real_data)
     real_emb = pe.get_graph_embedding(real_graphs)
 
-    print(f"[INFO] Clustering real embeddings into {args.n_clusters} syntax clusters...")
+    print(f"[INFO] Clustering real embeddings into {args.n_clusters} syntax clusters...") 
+    #TODO zasebno napraviti optimizaciju za kmeans (n_clusters koliko staviti) ili treba neka druga metoda za clustering??
     kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
     real_labels = kmeans.fit_predict(real_emb)
     centroids_real = kmeans.cluster_centers_
@@ -215,7 +220,7 @@ def adaptive_syntax_generation(
     while  iteration <= max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         synth_graphs = pe.build_dependency_graphs(synth_data)
-        synth_emb = pe.get_graph_embedding(synth_graphs)
+        synth_emb = pe.get_graph_embedding(synth_graphs) #TODO ovdje podesiti parametre za gl2vec model
 
         (
             cluster_overlaps,
@@ -249,7 +254,7 @@ def adaptive_syntax_generation(
         uncovered_mask = [synth_labels[i] in uncovered_clusters for i in range(len(synth_labels))]
         bad_indices = np.where(uncovered_mask)[0]
         num_regen = max(1, int(regenerate_ratio * len(bad_indices)))
-        regen_indices = np.random.choice(bad_indices, num_regen, replace=False)
+        regen_indices = np.random.choice(bad_indices, num_regen, replace=False) #TODO ovo promijeniti, možda uzeti sve ili neki weighted odabir koliko primjera iz pojedinog klastera
         bad_terms = [synth_data[i].get("term") for i in regen_indices if "term" in synth_data[i]]
 
         print(f"[INFO] Regenerating {len(bad_terms)} low-similarity samples...")
@@ -299,7 +304,7 @@ def adaptive_syntax_generation(
         with open(os.path.join(args.output_directory, f"syntax_features_iter_{iteration}.json"), "r") as f:
             newly_parsed_sentences = json.load(f)
 
-        synth_data.extend(newly_parsed_sentences)
+        synth_data.extend(newly_parsed_sentences) #TODO možda izbaciti ove "loše" primjere iz synth_data prije dodavanja novih
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
 
         iteration += 1
@@ -375,7 +380,8 @@ python3 /home/mkeber/syn-bioner/generation_pipeline.py \
     --kshot_size 3 \
     --n_clusters 5 \
     --min_samples_per_cluster 10 \
-    --weighted_threshold 0.75 \ 
+    --weighted_threshold 0.75 \
+    --max_iterations 5 \
     --test
 '''
 
