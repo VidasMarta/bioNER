@@ -4,7 +4,7 @@ import re
 import statistics
 import string
 import numpy as np
-import spacy
+import spacy 
 from tqdm import tqdm
 import random
 import os
@@ -18,7 +18,7 @@ from typing import List, Dict, Tuple
 
 def parse_text_file(input_file):
     abstracts = {}
-    annotations = {}
+    annotations = {} 
 
     # Step 1: Parse the text file
     with open(input_file, "r", encoding="utf-8") as f:
@@ -112,11 +112,12 @@ def create_and_save_json(abstracts, annotations, output_file, model):
 
     print(f"Saved {len(json_data)} sentence objects to {output_file}")
 
-def filter_by_abstract_ids(input_file, output_file, sample_ratio):
+def filter_by_abstract_ids(input_file, output_file, sample_ratio, pct_train):
     # Load the full dataset
     with open(input_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
+    data = [item for item in data if item["corpus"] == 'NCBI_train']
     # Collect unique abstract IDs
     abstract_ids = sorted({item["abstract_id"] for item in data})
     print(f"Total abstracts: {len(abstract_ids)}")
@@ -124,16 +125,19 @@ def filter_by_abstract_ids(input_file, output_file, sample_ratio):
     # Randomly sample args.pct of abstract IDs
     sample_size = max(1, int(len(abstract_ids) * sample_ratio))
     sampled_ids = set(random.sample(abstract_ids, sample_size))
-    print(f"Selected {len(sampled_ids)} abstracts for the 10% sample.")
+    print(f"Selected {len(sampled_ids)} abstracts for the {pct_train}% sample.")
 
     # Filter all sentences that belong to sampled abstracts
     filtered_data = [item for item in data if item["abstract_id"] in sampled_ids]
 
     # Save to new JSON file
-    with open(output_file + f"ncbi_ner_train_{sample_ratio*100:.0f}pct.json", "w", encoding="utf-8") as f:
+    filtered_abstracts = output_file + f"ncbi_ner_train_{pct_train*100:.0f}pct.json"
+    with open(filtered_abstracts, "w", encoding="utf-8") as f:
         json.dump(filtered_data, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved {len(filtered_data)} sentences to {output_file}")
+    print(f"Saved {len(filtered_data)} sentences to {filtered_abstracts}")
+
+    return filtered_abstracts
 
 
 def compute_stats(input_file, output_file):
@@ -280,106 +284,87 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
     parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH NCBI train json is saved', default="data/MeSH_NCBI/NCBItrainset_corpus.txt")
     parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/ncbi_ner_train.json")
-    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
+    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
     parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/ncbi_ner_sentence_stats.json")
     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/plots/")
-    parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
+    parser.add_argument('--pcts', type=List[float], required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)', default=0.10)  
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')  
     parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="data/ncbi/gen2_json/train.json")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
     return parser.parse_args()
 
-"""
-python3 bioNER/utils/parsing_v2.py \
-    --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
-    --parsed_mesh_file bioNER/data/ncbi/lg/ncbi_ner_train.json \
-    --filtered_parsed_mesh_file bioNER/data/ncbi/lg/ \
-    --stats_file bioNER/data/ncbi/lg/ncbi_ner_sentence_stats.json \
-    --histograms bioNER/data/ncbi/lg/plots/ \
-    --pct 0.10 \
-    --model en_core_web_lg \
-    --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
-    --output_path_features bioNER/data/ncbi/lg/syntax_features/syntax_features_sent_tree_head.json
-    
-python3 bioNER/utils/parsing_v2.py \
-    --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
-    --parsed_mesh_file bioNER/data/ncbi/trf/ncbi_ner_train.json \
-    --filtered_parsed_mesh_file bioNER/data/ncbi/lg/ \
-    --stats_file bioNER/data/ncbi/trf/ncbi_ner_sentence_stats.json \
-    --histograms bioNER/data/ncbi/trf/plots/ \
-    --pct 0.10 \
-    --model en_core_web_trf \
-    --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
-    --output_path_features bioNER/data/ncbi/trf/syntax_features/syntax_features_sent_tree_head.json
-"""
-
-def extract_args():
+if __name__ == "__main__":
     args = parse_args()
-    input_file = args.input_file
-    parsed_mesh_file = args.parsed_mesh_file
-    model = args.model
-    filtered_parsed_mesh_file = args.filtered_parsed_mesh_file
-    pct = args.pct
-    stats_file = args.stats_file
-    histograms = args.histograms
-    gen_train_path = args.gen_train_path
-    output_path_features = args.output_path_features
     for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file, args.histograms, args.output_path_features]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms, gen_train_path, output_path_features
-
-
-if __name__ == "__main__":
-    input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms, gen_train_path, output_path_features = extract_args()
     try:
-        spacy.load(model)
+        spacy.load(args.model)
     except OSError:
-        subprocess.run([sys.executable, "-m", "spacy", "download", model])
+        subprocess.run([sys.executable, "-m", "spacy", "download", args.model])
         import spacy
 
-    abstracts, annotations = parse_text_file(input_file)
-    create_and_save_json(abstracts, annotations, parsed_mesh_file, model)
-    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)
-    stats_data = compute_stats(parsed_mesh_file, stats_file)
+    # PARSE, SAVE AND CREATE STATS OF MESH NCBI 
+    # abstracts, annotations = parse_text_file(args.input_file)
+    # create_and_save_json(abstracts, annotations, args.parsed_mesh_file, args.model)
+    # stats_data = compute_stats(args.parsed_mesh_file, args.stats_file)
+    # sentence_lengths = [x["sentence_length"] for x in stats_data]
+    # entity_counts = [x["num_entities"] for x in stats_data]
+    # punct_counts = [x["num_punctuations"] for x in stats_data]
+    # avg_ent_lens = [x["avg_entity_length"] for x in stats_data]
+    # global_stats = {
+    #     "sentence_length": describe(sentence_lengths),
+    #     "num_entities": describe(entity_counts),
+    #     "avg_entity_length": describe(avg_ent_lens),
+    #     "num_punctuations": describe(punct_counts)
+    # }
+    # print("\nDataset Summary Statistics:")
+    # for k, v in global_stats.items():
+    #     print(f"{k}: {v}")
+    # plot_histogram(sentence_lengths, "Sentence Length Distribution", "Number of Tokens", "hist_sentence_length.png", args.histograms)
+    # plot_histogram(entity_counts, "Number of Entities per Sentence", "Number of Entities", "hist_num_entities.png", args.histograms)
+    # plot_histogram(avg_ent_lens, "Average Entity Length per Sentence", "Entity Length (tokens)", "hist_avg_entity_length.png", args.histograms)
+    # plot_histogram(punct_counts, "Punctuation Count per Sentence", "Number of Punctuations", "hist_num_punctuations.png", args.histograms)
+    # print(f"\nAll histograms saved in folder: {args.histograms}")
 
-    sentence_lengths = [x["sentence_length"] for x in stats_data]
-    entity_counts = [x["num_entities"] for x in stats_data]
-    punct_counts = [x["num_punctuations"] for x in stats_data]
-    avg_ent_lens = [x["avg_entity_length"] for x in stats_data]
 
-    global_stats = {
-        "sentence_length": describe(sentence_lengths),
-        "num_entities": describe(entity_counts),
-        "avg_entity_length": describe(avg_ent_lens),
-        "num_punctuations": describe(punct_counts)
-    }
-
-    print("\nDataset Summary Statistics:")
-    for k, v in global_stats.items():
-        print(f"{k}: {v}")
-
-    plot_histogram(sentence_lengths, "Sentence Length Distribution", "Number of Tokens", "hist_sentence_length.png", histograms)
-    plot_histogram(entity_counts, "Number of Entities per Sentence", "Number of Entities", "hist_num_entities.png", histograms)
-    plot_histogram(avg_ent_lens, "Average Entity Length per Sentence", "Entity Length (tokens)", "hist_avg_entity_length.png", histograms)
-    plot_histogram(punct_counts, "Punctuation Count per Sentence", "Number of Punctuations", "hist_num_punctuations.png", histograms)
-
-    print(f"\nAll histograms saved in folder: {histograms}")
-
-    quadruple = load_corpuses(parsed_mesh_file, gen_train_path)
+    # EXTRACT SYNATX FEATURES FOR BOTH DATASETS
+    quadruple = load_corpuses(args.parsed_mesh_file, args.gen_train_path)
     ids, sentences, entities, corpus_labels = zip(*quadruple)
     print(f"Loaded {len(sentences)} sentences: "
         f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
         f"{corpus_labels.count('generated_train')} from Generated.")
     
-    nlp = spacy.load(model)
+    nlp = spacy.load(args.model)
     extract_syntax_features(
         nlp,
         ids, 
         sentences,
         entities,
         corpus_labels,
-        output_path_features
+        args.output_path_features
     )
 
+    # EXTRACT % ABSTRACTS 
+    subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
+    available_abstracts = args.parsed_mesh_file
+    previous_pct = 1
+    for pct in subset_pcts:
+        samples_pct /= previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
+        filtered_abstracts = filter_by_abstract_ids(available_abstracts, args.filtered_parsed_mesh_file, samples_pct, pct)
+        available_abstracts = filtered_abstracts
+        previous_pct = pct
 
 
+
+"""    
+python3 bioNER/utils/parsing_v2.py \
+    --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
+    --parsed_mesh_file bioNER/data/ncbi/trf/ncbi_ner_train.json \
+    --filtered_parsed_mesh_file bioNER/data/ncbi/lg/ \
+    --stats_file bioNER/data/ncbi/trf/ncbi_ner_sentence_stats.json \
+    --histograms bioNER/data/ncbi/trf/plots/ \
+    --pct [0.50, 0.20, 0.10] \
+    --model en_core_web_trf \
+    --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
+    --output_path_features bioNER/data/ncbi/trf/syntax_features_sent_tree_head.json
+"""
