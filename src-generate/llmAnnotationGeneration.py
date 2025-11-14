@@ -9,7 +9,6 @@ import collections
 import os
 import re
 import numpy as np
-import spacy
 import logging
 from datetime import datetime
 from collections import defaultdict
@@ -81,6 +80,7 @@ def spacy_load_model(model_name: str):
     return SPACY_NLP   
 
 def get_spacy(model_name: str):
+    import spacy
     try: return spacy.load(model_name)
     except Exception as e:
         print(f"Error loading spaCy model: {e}")
@@ -249,8 +249,7 @@ def generate_sentence_samples(
     # -------------------------------------------------------------------------
     kshot_examples = []
     if args.kshot_path and os.path.exists(args.kshot_path):
-        df = utils.load_training_samples(args.kshot_path)
-        kshot_examples = df.to_dict(orient='records')
+        kshot_examples = utils.load_training_samples(args.kshot_path)
         if args.verbose:
             print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {args.kshot_path}")
     # TODO: sampling logic for k-shot examples

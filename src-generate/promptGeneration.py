@@ -114,12 +114,11 @@ PROMPT = {
         
     'kshot_num_sent_genre_entity': """Generate {number_of_sentences} sentences that contain the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
-        This is important, the output for "Entities: [{condition}]", you use <{condition}> exactly as written within one of the sentences.
         Keep the sentences factual, and contextually realistic for clinical or biomedical text.
         Output only sentences — no explanations or extra text or decorations. 
         Examples:
         {text}
-        Your task is to produce just the sentences and the Entities: [] part, given the upper requirements.
+        Your task is to produce just the sentences, given the upper requirements.
         Sentences:
         """,
         

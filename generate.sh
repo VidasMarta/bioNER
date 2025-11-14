@@ -29,7 +29,7 @@ singularity exec --nv --pwd /app --no-home \
 echo "Waiting for llama.cpp server to load model wait time is $WAIT ..."
 sleep $WAIT
 echo " "
-echo "STARTING translation:"
+echo "STARTING generation:"
 echo "Bigger models will need even more waiting time currently $WAIT seconds"
 
 # singularity exec --nv --cleanenv $CLIENT_IMAGE python3 src/translateClinicalNotes.py --csv data/agbonnet/agbonet.csv\
@@ -37,16 +37,17 @@ echo "Bigger models will need even more waiting time currently $WAIT seconds"
 #         --server_url http://0.0.0.0:8484 --column_to_translate full_note\
 #             --output_dir data/agbonnet
 
-singularity exec --nv --cleanenv $CLIENT_IMAGE python3 llmAnnotationGeneration.py \
-  --input_file data/NCBI-Disease/test.txt \
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 src-generate/llmAnnotationGeneration.py \
+  --input_file data/SNOMEDCT/concepts_filtered.csv \
   --input_file_type list \
   --output_directory data/synthetic_aug \
   --server_url http://0.0.0.0:8484 \
   --kshot_path data/ncbi/trf/ncbi_train_10pct.json \
+  --obo_file_path /home/mkeber/syn-bioner/HumanDiseaseOntology/src/ontology/HumanDO.obo \
   --kshot_size 5 \
   --num_sentences 2 \
   --include_pos \
   --include_dep \
   --random_seed 42 \
-  --verbose --test
+  --verbose --test --spacy_model en_core_web_trf
 echo "Current time: $(date +"%H:%M:%S")"

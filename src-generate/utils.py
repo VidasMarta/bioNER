@@ -1,6 +1,7 @@
 import re
 import string
-
+import json
+import os
 import numpy as np
 import obonet
 from typing import List, Dict, Any, Optional, Tuple
@@ -48,13 +49,15 @@ def create_concept_txt_file(file_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/C
 # /home/mkeber/syn-bioner/data/NCBI-Disease/5_selected_ncbi_sentences.csv
 # /home/mkeber/syn-bioner/data/NCBI-Disease/merged_features_3.json
 # RETURN FOR EACH CLUSTER KEY IN DICTIONARY A LIST OF TUPLES (SENTENCE, DISEASES), i.e. (STR, LIST-OF-STRINGS)
+
 def load_training_samples(
     file_path: str
     ) -> List[Dict[str, Any]]:
-    df = pd.read_json(file_path)
-    print(f"Loaded {len(df)} samples from {file_path}")
-
-    return df
+    data = []
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            data.append(json.loads(line))
+    return data
 
 def format_kshot_block(examples: List[Dict[str, Any]], args: argparse.Namespace) -> str:
     formatted = []
@@ -80,7 +83,7 @@ def sample_k_examples(args: argparse.Namespace, kshot_pool):
     sampled = np.random.choice(kshot_pool, size=k, replace=False)
     kshot_text_block = format_kshot_block(sampled, args)
     # TODO: provide unique/correct ids all ids are 0,1,2,3,...
-    used_ids = [ex.get("abstract_id", f"ex_{idx}") for idx, ex in enumerate(sampled)] #this doesn't work and provide unique ids
+    used_ids = [ex.get("id", f"ex_{idx}") for idx, ex in enumerate(sampled)] #this doesn't work and provide unique ids
     print(f"Sampled k-shot example IDs: {used_ids}")
     return kshot_text_block, used_ids
 
@@ -103,5 +106,3 @@ def parse_text_entities_format(args: argparse.Namespace, text: str) -> Tuple[str
 
 if __name__ == "__main__":
     df = load_training_samples()
-    print(df.entities.notna())
-    print(df.entities)
