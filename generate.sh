@@ -32,9 +32,21 @@ echo " "
 echo "STARTING translation:"
 echo "Bigger models will need even more waiting time currently $WAIT seconds"
 
-singularity exec --nv --cleanenv $CLIENT_IMAGE python3 src/translateClinicalNotes.py --csv data/agbonnet/agbonet.csv\
-    --system_template translation --temperature 0 --max_tokens 5000\
-        --server_url http://0.0.0.0:8484 --column_to_translate full_note\
-            --output_dir data/agbonnet
+# singularity exec --nv --cleanenv $CLIENT_IMAGE python3 src/translateClinicalNotes.py --csv data/agbonnet/agbonet.csv\
+#     --system_template translation --temperature 0 --max_tokens 5000\
+#         --server_url http://0.0.0.0:8484 --column_to_translate full_note\
+#             --output_dir data/agbonnet
 
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 llmAnnotationGeneration.py \
+  --input_file data/NCBI-Disease/test.txt \
+  --input_file_type list \
+  --output_directory data/synthetic_aug \
+  --server_url http://0.0.0.0:8484 \
+  --kshot_path data/ncbi/trf/ncbi_train_10pct.json \
+  --kshot_size 5 \
+  --num_sentences 2 \
+  --include_pos \
+  --include_dep \
+  --random_seed 42 \
+  --verbose --test
 echo "Current time: $(date +"%H:%M:%S")"

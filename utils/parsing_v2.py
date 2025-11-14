@@ -115,7 +115,7 @@ def create_and_save_json(abstracts, annotations, output_file, model):
 def filter_by_abstract_ids(input_file, output_file, sample_ratio, pct_train):
     # Load the full dataset
     with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        data = [json.loads(line) for line in f]
 
     data = [item for item in data if item["corpus"] == 'NCBI_train']
     # Collect unique abstract IDs
@@ -125,7 +125,7 @@ def filter_by_abstract_ids(input_file, output_file, sample_ratio, pct_train):
     # Randomly sample args.pct of abstract IDs
     sample_size = max(1, int(len(abstract_ids) * sample_ratio))
     sampled_ids = set(random.sample(abstract_ids, sample_size))
-    print(f"Selected {len(sampled_ids)} abstracts for the {pct_train}% sample.")
+    print(f"Selected {len(sampled_ids)} abstracts for the {pct_train*100}% sample.")
 
     # Filter all sentences that belong to sampled abstracts
     filtered_data = [item for item in data if item["abstract_id"] in sampled_ids]
@@ -133,12 +133,12 @@ def filter_by_abstract_ids(input_file, output_file, sample_ratio, pct_train):
     # Save to new JSON file
     filtered_abstracts = output_file + f"ncbi_ner_train_{pct_train*100:.0f}pct.json"
     with open(filtered_abstracts, "w", encoding="utf-8") as f:
-        json.dump(filtered_data, f, ensure_ascii=False, indent=2)
+        for item in filtered_data:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
     print(f"Saved {len(filtered_data)} sentences to {filtered_abstracts}")
 
     return filtered_abstracts
-
 
 def compute_stats(input_file, output_file):
     # Load data
@@ -237,13 +237,13 @@ def extract_entities(entry):
     return entities
 
 def load_corpuses(ncbi_path, gen_path):
-    quadruple = []
+    corpus_list = []
     id = 0
     with open(ncbi_path, "r", encoding="utf-8") as f:
         json_data = json.load(f)
         for entry in json_data:
             id += 1
-            quadruple.append((id, entry["sentence"], entry["entities"], "NCBI_train"))
+            corpus_list.append((id, entry["sentence"], entry["entities"], "NCBI_train", entry["abstract_id"]))
     
     detok = TreebankWordDetokenizer()
     with open(gen_path, "r", encoding="utf-8") as f:
@@ -252,27 +252,32 @@ def load_corpuses(ncbi_path, gen_path):
             sentence = detok.detokenize(entry["tokens"])
             entities = extract_entities(entry)
             id += 1
-            quadruple.append((id, sentence, entities, "generated_train"))
+            corpus_list.append((id, sentence, entities, "generated_train", None))
     
-    return quadruple
+    return corpus_list
 
 
-def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, output_path):
+def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, abstract_ids,
+                            output_path, rewrite):
     features = []
-    for (id, sent, entity, corpus_name) in zip(ids, sentences, entities, corpus_labels):
+    if os.path.exists(output_path) and not rewrite:
+        return 
+    for (id, sent, entity, corpus_name, abstract_id) in zip(ids, sentences, entities, corpus_labels, abstract_ids):
         doc = nlp(sent)
         pos_tags = [token.pos_ for token in doc]
         dep_rels = [token.dep_ for token in doc]
         parents = [token.head.i for token in doc] #index of parent token
 
         features.append({
+            "abstract_id": abstract_id,
             "id": id,
             "sentence": doc.text,
             "entities": entity,
             "corpus": corpus_name,
             "pos": pos_tags,
             "dep": dep_rels,
-            "parents": parents
+            "parents": parents,
+            
         })
 
     with open(output_path, "w", encoding="utf-8") as f:
@@ -287,10 +292,11 @@ def parse_args():
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
     parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/ncbi_ner_sentence_stats.json")
     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/plots/")
-    parser.add_argument('--pcts', type=List[float], required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)', default=0.10)  
+    parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)', default=0.10)  
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')  
     parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="data/ncbi/gen2_json/train.json")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
+    parser.add_argument('--rewrite', action='store_true', help='Whether to rewrite existing features file')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -328,8 +334,8 @@ if __name__ == "__main__":
 
 
     # EXTRACT SYNATX FEATURES FOR BOTH DATASETS
-    quadruple = load_corpuses(args.parsed_mesh_file, args.gen_train_path)
-    ids, sentences, entities, corpus_labels = zip(*quadruple)
+    corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path)
+    ids, sentences, entities, corpus_labels, abstract_id = zip(*corpus_list)
     print(f"Loaded {len(sentences)} sentences: "
         f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
         f"{corpus_labels.count('generated_train')} from Generated.")
@@ -341,15 +347,18 @@ if __name__ == "__main__":
         sentences,
         entities,
         corpus_labels,
-        args.output_path_features
+        abstract_id,
+        args.output_path_features,
+        args.rewrite
     )
 
     # EXTRACT % ABSTRACTS 
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
-    available_abstracts = args.parsed_mesh_file
+    available_abstracts = args.output_path_features
     previous_pct = 1
+
     for pct in subset_pcts:
-        samples_pct /= previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
+        samples_pct = pct / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
         filtered_abstracts = filter_by_abstract_ids(available_abstracts, args.filtered_parsed_mesh_file, samples_pct, pct)
         available_abstracts = filtered_abstracts
         previous_pct = pct
@@ -358,13 +367,13 @@ if __name__ == "__main__":
 
 """    
 python3 bioNER/utils/parsing_v2.py \
-    --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
-    --parsed_mesh_file bioNER/data/ncbi/trf/ncbi_ner_train.json \
-    --filtered_parsed_mesh_file bioNER/data/ncbi/lg/ \
-    --stats_file bioNER/data/ncbi/trf/ncbi_ner_sentence_stats.json \
-    --histograms bioNER/data/ncbi/trf/plots/ \
-    --pct [0.50, 0.20, 0.10] \
+    --input_file data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
+    --parsed_mesh_file data/ncbi/trf/ncbi_ner_train.json \
+    --filtered_parsed_mesh_file data/ncbi/trf/ \
+    --stats_file data/ncbi/trf/ncbi_ner_sentence_stats.json \
+    --histograms data/ncbi/trf/plots/ \
+    --pct 0.50 0.20 0.10 \
     --model en_core_web_trf \
-    --gen_train_path bioNER/data/ncbi/gen2_json/train.json \
-    --output_path_features bioNER/data/ncbi/trf/syntax_features_sent_tree_head.json
+    --gen_train_path data/ncbi/gen2_json/train.json \
+    --output_path_features data/ncbi/trf/syntax_features_sent_tree_head.json
 """

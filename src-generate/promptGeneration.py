@@ -98,7 +98,7 @@ PROMPT = {
         Output only the sentence — no explanations or extra text.
         Examples:
         {text}
-        Your task is to produce the Sentence: and after that the Entities: [] part.
+        Your task is to produce just the sentence.
         Sentence:
         """,
     'kshot_genre_no_entity': """
@@ -108,7 +108,7 @@ PROMPT = {
         Output only the sentence — no explanations or extra text. 
         Examples:
         {text}
-        Your task is to produce the Sentence: and after that the Entities: [] part.
+        Your task is to produce just the sentence.
         Sentence:
         """,
         
