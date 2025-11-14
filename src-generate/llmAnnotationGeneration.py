@@ -426,7 +426,7 @@ python3 llmAnnotationGeneration.py \
   --input_file_type list \
   --output_directory data/synthetic_aug \
   --server_url http://0.0.0.0:8484 \
-  --kshot_path data/ncbi_train_10pct.json \
+  --kshot_path data/ncbi_ner_train_10pct.json \
   --kshot_size 5 \
   --num_sentences 2 \
   --include_pos \
@@ -454,35 +454,11 @@ python3 bioNER/src-generate/llmAnnotationGeneration.py \
   python3 llmAnnotationGeneration.py \
   --input_file data/NCBI-Disease/test.txt \
   --output_directory data/synthetic_no_tags \
-  --kshot_path data/ncbi_train_10pct.json \
+  --kshot_path data/ncbi_ner_train_10pct.json \
   --kshot_size 5 \
   --num_sentences 2 \
   --random_seed 42
 
-"""
-
-""" python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
-    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/val_wrong_ent.txt \
-    --temperature 0 --max_tokens 500 --input_file_type list\
-    --server_url http://0.0.0.0:8484 \
-    --obo_file_path /home/mkeber/syn-bioner/HumanDiseaseOntology/src/ontology/HumanDO.obo \
-    --output_directory /home/mkeber/syn-bioner/data/synthetic3 \
-    --test --num_sentences 3
-
-python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
-    --input_file /home/mkeber/syn-bioner/data/SNOMEDCT/concepts_filtered.csv \
-    --temperature 0 --max_tokens 500 --input_file_type list\
-    --server_url http://0.0.0.0:8484 \
-    --output_directory /home/mkeber/syn-bioner/data/synthetic-snomed \
-    --test --num_sentences 3
-    
-python3 /home/mkeber/syn-bioner/src/llmAnnotationGeneration.py \
-    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/val_wrong_ent.txt \
-    --temperature 0 --max_tokens 500 --input_file_type list\
-    --server_url http://172.17.0.1:8484 \
-    --output_directory /home/mkeber/syn-bioner/data/synthetic2 \
-    --num_sentences 3 --spacy_model en_core_web_lg \
-    --test
 """
 if __name__ == "__main__":
     args = argparse_args()

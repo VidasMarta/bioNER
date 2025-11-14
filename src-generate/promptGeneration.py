@@ -96,6 +96,7 @@ PROMPT = {
         Use {condition} exactly as written within the sentence.
         Keep the sentence factual, and contextually realistic for clinical or biomedical text.
         Output only the sentence — no explanations or extra text.
+        Use the following examples as inspiration for style and structure from provided part of speech tags and dependency parsing tags.
         Examples:
         {text}
         Your task is to produce just the sentence.
@@ -106,6 +107,7 @@ PROMPT = {
         Requirements:
         Keep the sentence factual, and contextually realistic for clinical or biomedical text.
         Output only the sentence — no explanations or extra text. 
+        Use the following examples as inspiration for style and structure from provided part of speech tags and dependency parsing tags.
         Examples:
         {text}
         Your task is to produce just the sentence.
@@ -116,6 +118,7 @@ PROMPT = {
         Requirements:
         Keep the sentences factual, and contextually realistic for clinical or biomedical text.
         Output only sentences — no explanations or extra text or decorations. 
+        Use the following examples as inspiration for style and structure from provided part of speech tags and dependency parsing tags.
         Examples:
         {text}
         Your task is to produce just the sentences, given the upper requirements.
