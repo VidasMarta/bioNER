@@ -214,8 +214,9 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
     # print('+'*80)
     # print(text)
     # pprint.pprint(eval(response.json()['content']))
+    cleaned_content = utils.remove_code_fences(response.json()['content'])    
     try:
-        term_llm = eval(response.json()['content'])
+        term_llm = eval(cleaned_content)
         return [(term, 'NaN') for term in term_llm]
     except Exception as e:
         return [(term, 'NaN')]

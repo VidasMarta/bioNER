@@ -44,12 +44,6 @@ def create_concept_txt_file(file_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/C
         for concept in concepts:
             f.write(f"{concept}\n")
 
-
-#TODO: LOAD JSON TRAINING SAMPLES      
-# /home/mkeber/syn-bioner/data/NCBI-Disease/5_selected_ncbi_sentences.csv
-# /home/mkeber/syn-bioner/data/NCBI-Disease/merged_features_3.json
-# RETURN FOR EACH CLUSTER KEY IN DICTIONARY A LIST OF TUPLES (SENTENCE, DISEASES), i.e. (STR, LIST-OF-STRINGS)
-
 def load_training_samples(
     file_path: str
     ) -> List[Dict[str, Any]]:
@@ -65,9 +59,6 @@ def format_kshot_block(examples: List[Dict[str, Any]], args: argparse.Namespace)
         ex_text = ex.get("sentence", "").strip()
         entities = ", ".join(ex.get("entities", []))
         block = f"Sentence: {ex_text}\nEntities: [{entities}]"
-
-        # Conditionally add linguistic features
-        # TODO: POS and DEP they are not in the current data structure
         if args.include_pos:
             pos_tags = " ".join(ex.get("pos", []))
             block += f"\nPOS: {pos_tags}"
@@ -82,8 +73,7 @@ def sample_k_examples(args: argparse.Namespace, kshot_pool):
     k = min(args.kshot_size, len(kshot_pool))
     sampled = np.random.choice(kshot_pool, size=k, replace=False)
     kshot_text_block = format_kshot_block(sampled, args)
-    # TODO: provide unique/correct ids all ids are 0,1,2,3,...
-    used_ids = [ex.get("id", f"ex_{idx}") for idx, ex in enumerate(sampled)] #this doesn't work and provide unique ids
+    used_ids = [ex.get("id", f"ex_{idx}") for idx, ex in enumerate(sampled)]
     print(f"Sampled k-shot example IDs: {used_ids}")
     return kshot_text_block, used_ids
 
