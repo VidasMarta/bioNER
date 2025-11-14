@@ -252,6 +252,9 @@ def generate_sentence_samples(
         kshot_examples = utils.load_training_samples(args.kshot_path)
         if args.verbose:
             print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {args.kshot_path}")
+    else:
+        print(f"[INFO] No k-shot examples loaded. BUG! Check path: {args.kshot_path}")
+        print(f"{os.path.exists(args.kshot_path)} {os.getcwd()}")
     # TODO: sampling logic for k-shot examples
     # Filter by havig entity or not in a kshot_examples pool
     entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
