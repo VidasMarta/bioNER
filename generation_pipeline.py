@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import utils.parsing_embedding as pe
 import utils.parsing_v2 as parser
+import utils.kmeans_params as kmeans_params
 import umap
 import spacy
 import matplotlib.pyplot as plt
@@ -63,6 +64,8 @@ def argparse_args():
                         help='Weighted coverage threshold to stop iterations.')
     parser.add_argument('--max_iterations', type=int, default=5,
                         help='Maximum number of iterations for adaptive generation.')
+    parser.add_argument('--cluster_dir', type=str, default='',
+                        help='Directory containing precomputed cluster centroids and labels.')
 
 
     return parser.parse_args()
@@ -204,10 +207,25 @@ def adaptive_syntax_generation(
     real_emb = pe.get_graph_embedding(real_graphs)
 
     print(f"[INFO] Clustering real embeddings into {args.n_clusters} syntax clusters...") 
-    #TODO zasebno napraviti optimizaciju za kmeans (n_clusters koliko staviti) ili treba neka druga metoda za clustering??
-    kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
-    real_labels = kmeans.fit_predict(real_emb)
-    centroids_real = kmeans.cluster_centers_
+    cluster_dir = args.cluster_dir
+    if not os.path.exists(cluster_dir):
+        args.parsed_features = os.path.join(output_dir, "syntax_features.jsonl")
+        args.output_dir = os.path.join(output_dir, "kmeans_clusters")   
+        args.k_min = 2
+        args.k_max = 10
+        kmeans_params.main(args)  # Call the kmeans_params script to compute clusters
+
+    real_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
+    centroids_real = np.load(os.path.join(cluster_dir, "cluster_centroids.npy"))
+
+    with open(os.path.join(cluster_dir, "cluster_config.json")) as f:
+        config = json.load(f)
+    args.n_clusters = config["best_k"]
+
+
+    # kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
+    # real_labels = kmeans.fit_predict(real_emb)
+    # centroids_real = kmeans.cluster_centers_
 
     # Save NCBI examples with cluster labels for later k-shot selection
     ncbi_clustered_path = os.path.join(output_dir, "ncbi_clustered.jsonl")
@@ -382,7 +400,8 @@ python3 /home/mkeber/syn-bioner/generation_pipeline.py \
     --min_samples_per_cluster 10 \
     --weighted_threshold 0.75 \
     --max_iterations 5 \
-    --test
+    --test \
+    --cluster_dir /home/mkeber/syn-bioner/data/synthetic2/kmeans_clusters
 '''
 
 if __name__ == "__main__":
