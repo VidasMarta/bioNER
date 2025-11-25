@@ -220,7 +220,7 @@ def adaptive_syntax_generation(
 
     with open(os.path.join(cluster_dir, "cluster_config.json")) as f:
         config = json.load(f)
-    args.n_clusters = config["best_k"]
+    # args.n_clusters = config["best_k"]
 
 
     # kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
