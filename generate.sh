@@ -37,6 +37,7 @@ echo "Bigger models will need even more waiting time currently $WAIT seconds"
 #         --server_url http://0.0.0.0:8484 --column_to_translate full_note\
 #             --output_dir data/agbonnet
 
+<<<<<<< HEAD
 singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
   --disease_file data/SNOMEDCT/concepts_filtered.csv \
   --disease_file_type list \
@@ -51,3 +52,4 @@ singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.ll
   --random_seed 42 \
   --generate_k 40000 --temperature 0 --max_tokens 400 --verbose
   echo "Current time: $(date +"%H:%M:%S")"
+=======
