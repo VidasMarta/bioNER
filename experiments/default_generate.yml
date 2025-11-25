@@ -1,0 +1,32 @@
+embedding_hiperparameters:
+  GL2Vec:
+    wl_iterations: 1
+    dimensions: 32
+    workers: 24
+    learning_rate: 0.05
+    min_count: 2
+    epochs: 20
+
+  kmeans:
+    k: 5
+    cluster_dir:
+    k_min:
+    k_max:
+
+server:
+  server_url: http://0.0.0.0:8484
+  temperature: 0
+  max_tokens: 500
+
+generate:
+  kshot_size: 3
+  input_file_type: "list"
+  min_samples_per_cluster: 10
+  weighted_threshold: 1.5
+  max_iterations: 5
+  overlap_threshold: 1.5
+  regenerate_ratio: 0.3
+  system_prompt_key: "generation"
+
+
+
