@@ -3,8 +3,8 @@ import json
 import os
 from typing import Any, Dict, List
 from sklearn.cluster import KMeans
-from src_generate.llmAnnotationGeneration import main as generate_sentence_samples
-from src_generate.llmAnnotationGeneration import setup_logger
+from src_generate.llmAnnotationGenerationLatest import main as generate_sentence_samples
+from src_generate.llmAnnotationGenerationLatest import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import utils.parsing_embedding as pe
@@ -384,11 +384,11 @@ def main(args: argparse.Namespace):
 
 
 '''
-python3 /home/mkeber/syn-bioner/generation_pipeline.py \
-    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/ncbi_train.json \
-    --Generated_train /home/mkeber/syn-bioner/data/synthetic2/generated_train.json \
-    --output_directory /home/mkeber/syn-bioner/data/synthetic2 \
-    --server_url http://172.17.0.1:8484 \
+python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
+    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
+    --Generated_train /home/mkeber/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
+    --output_directory /home/mkeber/syn-bioner/data/generation-pipeline \
+    --server_url http://0.0.0.0:8484 \
     --num_sentences 3
     --system_prompt_key generation \
     --temperature 0 \
@@ -401,7 +401,10 @@ python3 /home/mkeber/syn-bioner/generation_pipeline.py \
     --weighted_threshold 0.75 \
     --max_iterations 5 \
     --test \
-    --cluster_dir /home/mkeber/syn-bioner/data/synthetic2/kmeans_clusters
+    --cluster_dir /home/mkeber/syn-bioner/data/generation-pipeline/kmeans_clusters
+    
+    
+    --server_url http://172.17.0.1:8484 \
 '''
 
 if __name__ == "__main__":
