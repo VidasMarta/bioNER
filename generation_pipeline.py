@@ -18,6 +18,8 @@ def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
     parser.add_argument('--NCBI_train', type=str, default='',
                         help='Path to the NCBI_train.')
+    parser.add_argument('--NCBI_kshot', type=str, default='',
+                        help='Path to the NCBI subset (10, 20 or 50 pct) to use as k-shot pool.')
     parser.add_argument('--Generated_train', type=str, default='', #TODO: možda cijeli generated, ne samo train
                         help='Path to the Generated_train.')
     parser.add_argument('--output_directory', type=str, required=True, 
@@ -190,6 +192,7 @@ def visualize_embeddings_clusterwise(
 def adaptive_syntax_generation(
     args,
     real_data: List[Dict[str, Any]],
+    kshot_data: List[Dict[str, Any]],
     initial_synth_data: List[Dict[str, Any]],
 ):
     """
@@ -217,8 +220,8 @@ def adaptive_syntax_generation(
     real_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(cluster_dir, "cluster_centroids.npy"))
 
-    with open(os.path.join(cluster_dir, "cluster_config.json")) as f:
-        config = json.load(f)
+    # with open(os.path.join(cluster_dir, "cluster_config.json")) as f:
+    #    config = json.load(f)
     # args.n_clusters = config["best_k"]
 
 
@@ -227,9 +230,13 @@ def adaptive_syntax_generation(
     # centroids_real = kmeans.cluster_centers_
 
     # Save NCBI examples with cluster labels for later k-shot selection
-    ncbi_clustered_path = os.path.join(output_dir, "ncbi_clustered.jsonl")
-    with open(ncbi_clustered_path, "w") as f:
-        for sample, label in zip(real_data, real_labels):
+    ncbi_clustered_path = os.path.join(output_dir, "kshot_ncbi_clustered.jsonl")
+    kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
+    kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
+    similarities = cosine_similarity(kshot_emb, centroids_real)
+    kshot_labels = np.argmax(similarities, axis=1)
+    with open(args.NCBI_kshot, "w") as f:
+        for sample, label in zip(kshot_data, kshot_labels):
             sample["cluster_id"] = int(label)
             f.write(json.dumps(sample) + "\n")
     print(f"[INFO] Saved NCBI examples with cluster IDs → {ncbi_clustered_path}")
@@ -285,7 +292,7 @@ def adaptive_syntax_generation(
 
         # Select cluster-specific k-shot examples pool
         kshot_examples = get_cluster_specific_kshot(
-            os.path.join(output_dir, "ncbi_clustered.jsonl"),
+            os.path.join(output_dir, "kshot_ncbi_clustered.jsonl"),
             uncovered_clusters,
             kshot_size=args.kshot_size
         )
@@ -301,7 +308,7 @@ def adaptive_syntax_generation(
         # Call generation function for k-shot generation
         iter_output = args.output_directory + f"/iteration_{iteration}"
         os.makedirs(iter_output, exist_ok=True)
-        new_path = generate_sentence_samples(args, bad_terms, method="a")
+        new_path = generate_sentence_samples(args, bad_terms, kshot_file, method="a")
 
         if os.path.exists(new_path):
             with open(new_path, "r") as f:
@@ -372,9 +379,13 @@ def main(args: argparse.Namespace):
     ncbi_data = [entry for entry in all_data if entry.get("corpus") == "NCBI_train"]
     synth_data = [entry for entry in all_data if entry.get("corpus") == "generated_train"]
 
+    with open(args.NCBI_kshot, ) as f:
+        kshot_data = [json.loads(line) for line in f]
+
     final_data, final_overlap = adaptive_syntax_generation(
         args,
         real_data=ncbi_data,
+        kshot_data = kshot_data,
         initial_synth_data=synth_data
     )
 
@@ -387,7 +398,8 @@ def main(args: argparse.Namespace):
 
 '''
 python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
-    --NCBI_train /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
+    --NCBI_train /home/mkeber/syn-bioner/data/NCBI-Disease/ \
+    --NCBI_kshot /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
     --Generated_train /home/mkeber/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
     --output_directory /home/mkeber/syn-bioner/data/generation_pipeline \
     --server_url http://0.0.0.0:8484 \
