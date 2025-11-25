@@ -224,6 +224,7 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
 def generate_sentence_samples(
     args: argparse.Namespace,
     term_list: List[str],
+    kshot_path: str, 
     method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
@@ -249,13 +250,13 @@ def generate_sentence_samples(
     # Load k-shot examples
     # -------------------------------------------------------------------------
     kshot_examples = []
-    if args.kshot_path and os.path.exists(args.kshot_path):
-        kshot_examples = utils.load_training_samples(args.kshot_path)
+    if kshot_path and os.path.exists(kshot_path):
+        kshot_examples = utils.load_training_samples(kshot_path)
         if args.verbose:
-            print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {args.kshot_path}")
+            print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {kshot_path}")
     else:
-        print(f"[INFO] No k-shot examples loaded. BUG! Check path: {args.kshot_path}")
-        print(f"{os.path.exists(args.kshot_path)} {os.getcwd()}")
+        print(f"[INFO] No k-shot examples loaded. BUG! Check path: {kshot_path}")
+        print(f"{os.path.exists(kshot_path)} {os.getcwd()}")
     # TODO: sampling logic for k-shot examples
     # Filter by havig entity or not in a kshot_examples pool
     entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
@@ -402,7 +403,7 @@ def main(args: argparse.Namespace):
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
 
-    generate_sentence_samples(args, term_list)
+    generate_sentence_samples(args, args.kshot_path, term_list)
     
 def setup_logger(args):
     log_dir = args.output_directory
