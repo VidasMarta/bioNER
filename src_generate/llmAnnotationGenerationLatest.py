@@ -223,8 +223,8 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
     
 def generate_sentence_samples(
     args: argparse.Namespace,
-    term_list: List[str],
-    kshot_path: str, 
+    kshot_path: str,
+    term_list: List[str], 
     method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'

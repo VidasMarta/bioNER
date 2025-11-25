@@ -69,7 +69,6 @@ def argparse_args():
     parser.add_argument('--cluster_dir', type=str, default='',
                         help='Directory containing precomputed cluster centroids and labels.')
     parser.add_argument('--overlap_threshold', type=float, default=0.75, help='Wanted cluster overlap treshold per cluster.')
-    parser.add_argument('--regenerate_ratio', type=float, default=0.2, help="Ratio for regeneration of uncovered clusters.")
 
 
     return parser.parse_args()
@@ -80,6 +79,8 @@ def compute_cluster_coverage(
     real_labels: np.ndarray,
     centroids_real: np.ndarray,
     overlap_threshold: float,
+    iter: int,
+    output_dir: str,
     min_samples_per_cluster: int = 10,
 ):
     """
@@ -103,6 +104,8 @@ def compute_cluster_coverage(
     cluster_sizes = []
     synth_counts = []
 
+    log = {"per_cluster": []}
+
     for i in range(n_clusters):
         real_cluster_emb = real_emb[real_labels == i] #take all embeddings from real data that belong to cluster i
         synth_cluster_emb = synth_emb[synth_labels == i] #take all embeddings from synthetic data that belong to cluster i
@@ -110,24 +113,43 @@ def compute_cluster_coverage(
         cluster_sizes.append(len(real_cluster_emb))
         synth_counts.append(len(synth_cluster_emb))
 
+        overlap_i = 0.0
         if len(synth_cluster_emb) == 0: #no synthetic samples in this cluster
             cluster_overlaps.append(0.0) 
             uncovered_clusters.append(i)
             continue
         
         #compute how similar the average syntactic embedding of generated sentences is to the real NCBI sentences within that cluster
-        overlap_i = cosine_similarity(
-            real_cluster_emb.mean(axis=0, keepdims=True), #compute average embedding for real and synthetic cluster (centroids)
-            synth_cluster_emb.mean(axis=0, keepdims=True),
-        )[0, 0]
-        cluster_overlaps.append(overlap_i) #add 
+        else:
+            overlap_i = cosine_similarity(
+                real_cluster_emb.mean(axis=0, keepdims=True), #compute average embedding for real and synthetic cluster (centroids)
+                synth_cluster_emb.mean(axis=0, keepdims=True),
+            )[0, 0]
+            cluster_overlaps.append(overlap_i) #add 
 
-        if overlap_i < overlap_threshold or len(synth_cluster_emb) < min_samples_per_cluster:
-            uncovered_clusters.append(i)
+            if overlap_i < overlap_threshold or len(synth_cluster_emb) < min_samples_per_cluster:
+                uncovered_clusters.append(i)
+
+        log["per_cluster"].append({
+            "cluster_id": i,
+            "cluster_centroid_overlap": float(overlap_i),  
+            "real_cluster_size": int(cluster_sizes[-1]),
+            "synth_cluster_size": int(synth_counts[-1]),
+            "is_uncovered": i in uncovered_clusters
+        })
 
     # Weighted average (by cluster size)
     cluster_sizes = np.array(cluster_sizes)
     weighted_coverage = np.sum(cluster_sizes * np.array(cluster_overlaps)) / np.sum(cluster_sizes)
+    
+    log["iteration_summary"] = {
+        "iteration": iter,
+        "uncovered_clusters": uncovered_clusters,
+        "weighted_coverage": weighted_coverage
+    }
+    logger_file = os.path.join(output_dir, "logger.jsonl")
+    with open(logger_file, "w") as f:
+        f.write(json.dump(log) + "\n")
 
     return cluster_overlaps, uncovered_clusters, weighted_coverage, cluster_sizes, synth_labels
 
@@ -235,7 +257,7 @@ def adaptive_syntax_generation(
     kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
     similarities = cosine_similarity(kshot_emb, centroids_real)
     kshot_labels = np.argmax(similarities, axis=1)
-    with open(args.NCBI_kshot, "w") as f:
+    with open(ncbi_clustered_path, "w") as f:
         for sample, label in zip(kshot_data, kshot_labels):
             sample["cluster_id"] = int(label)
             f.write(json.dumps(sample) + "\n")
@@ -243,7 +265,6 @@ def adaptive_syntax_generation(
 
     if args.test:
         args.max_iterations = 3
-        args.regenerate_ratio = 0.1
 
     while  iteration <= args.max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
@@ -262,7 +283,9 @@ def adaptive_syntax_generation(
             real_labels,
             centroids_real,
             args.overlap_threshold,
-            args.min_samples_per_cluster,
+            iteration,
+            output_dir,
+            args.min_samples_per_cluster
         )
 
         print(f"[INFO] Per-cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
@@ -277,38 +300,52 @@ def adaptive_syntax_generation(
             )
             break
 
+        # Adaptive regeneration: guided by uncovered clusters
+        regen_terms = []
 
-        # Regenerate from uncovered clusters
-        uncovered_mask = [synth_labels[i] in uncovered_clusters for i in range(len(synth_labels))]
-        bad_indices = np.where(uncovered_mask)[0]
-        if args.test:
-            num_regen = min(3, int(args.regenerate_ratio * len(bad_indices)))
-        else:
-            num_regen = max(1, int(args.regenerate_ratio * len(bad_indices)))
-        regen_indices = np.random.choice(bad_indices, num_regen, replace=False) #TODO ovo promijeniti, možda uzeti sve ili neki weighted odabir koliko primjera iz pojedinog klastera
-        bad_terms = [synth_data[i].get("term") for i in regen_indices if "term" in synth_data[i]]
+        for cluster_id in uncovered_clusters:
+            # Determine regeneration strength (0–1): the lower the overlap, the higher the regen weight
+            regen_weight = 1.0 - cluster_overlaps[cluster_id]
 
-        print(f"[INFO] Regenerating {len(bad_terms)} low-similarity samples...")
+            # Determine how many new samples to generate for this cluster
+            # TODO jel nam ovo ok?
+            # You can tune scaling constant (args.min_samples_per_cluster acts as base target)
+            num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
 
-        # Select cluster-specific k-shot examples pool
+            # Collect synthetic terms already assigned to this cluster
+            cluster_mask = synth_labels == cluster_id
+            indices_in_cluster = [i for i in range(len(synth_data)) if cluster_mask[i] and "term" in synth_data[i]] 
+            cluster_terms = [synth_data[i].get("term") for i in indices_in_cluster]
+
+            # If not enough terms in this cluster, sample some from the global synthetic pool as backup
+            if len(cluster_terms) < num_new:
+                extra_terms = [synth_data[i].get("term") for i in np.random.choice(range(len(synth_data)), num_new - len(cluster_terms), replace=False) 
+                               if "term" in synth_data[i]]
+                cluster_terms.extend(extra_terms)
+
+            # Randomly pick terms for this cluster’s regeneration quota
+            selected_terms = np.random.choice(cluster_terms, size=num_new, replace=False)
+            regen_terms.extend(selected_terms)
+
+        print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
+
+        # Select cluster-specific k-shot examples for uncovered clusters
         kshot_examples = get_cluster_specific_kshot(
             os.path.join(output_dir, "kshot_ncbi_clustered.jsonl"),
             uncovered_clusters,
             kshot_size=args.kshot_size
         )
 
-        # Save them temporarily for LLM prompt conditioning
+        # Save temporarily for prompt conditioning
         kshot_file = os.path.join(output_dir, f"kshot_iter_{iteration}.jsonl")
         with open(kshot_file, "w") as f:
             for ex in kshot_examples:
                 f.write(json.dumps(ex) + "\n")
 
-        args.kshot_path = kshot_file
-
-        # Call generation function for k-shot generation
-        iter_output = args.output_directory + f"/iteration_{iteration}"
+        # Generate new samples from uncovered clusters using LLM
+        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}")
         os.makedirs(iter_output, exist_ok=True)
-        new_path = generate_sentence_samples(args, bad_terms, kshot_file, method="a")
+        new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
 
         if os.path.exists(new_path):
             with open(new_path, "r") as f:
@@ -334,7 +371,15 @@ def adaptive_syntax_generation(
         with open(os.path.join(iter_output, f"syntax_features_iter_{iteration}.json"), "r") as f:
             newly_parsed_sentences = json.load(f)
 
-        synth_data.extend(newly_parsed_sentences) #TODO možda izbaciti ove "loše" primjere iz synth_data prije dodavanja novih
+        terms_to_replace = set(regen_terms)
+        indices_to_replace = [i for i, entry in enumerate(synth_data) if entry.get("term") in terms_to_replace]
+
+        # Remove in reverse order to preserve indexing
+        for idx in sorted(indices_to_replace, reverse=True):
+            del synth_data[idx]
+
+        # Add new regenerated ones
+        synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
 
         iteration += 1
@@ -401,7 +446,7 @@ python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
     --NCBI_train /home/mkeber/syn-bioner/data/NCBI-Disease/ \
     --NCBI_kshot /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
     --Generated_train /home/mkeber/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
-    --output_directory /home/mkeber/syn-bioner/data/generation_pipeline \
+    --output_directory /home/mkeber/syn-bioner/data/generation_pipeline/ \
     --server_url http://0.0.0.0:8484 \
     --num_sentences 3
     --system_prompt_key generation \
@@ -417,7 +462,6 @@ python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
     --test \
     --cluster_dir /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters
     --overlap_threshold 0.75
-    --regenerate_ratio 0.3
     
     --server_url http://172.17.0.1:8484 \
 '''
