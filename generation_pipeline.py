@@ -203,8 +203,8 @@ def adaptive_syntax_generation(
 
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
-    real_graphs = pe.build_dependency_graphs(real_data)
-    real_emb = pe.get_graph_embedding(real_graphs)
+    real_graphs, _ = pe.build_dependency_graphs(real_data)
+    real_emb, model = pe.get_graph_embedding(real_graphs) #TODO ovdje podesiti parametre za gl2vec model
 
     print(f"[INFO] Clustering real embeddings into {args.n_clusters} syntax clusters...") 
     cluster_dir = args.cluster_dir
@@ -237,8 +237,8 @@ def adaptive_syntax_generation(
 
     while  iteration <= max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
-        synth_graphs = pe.build_dependency_graphs(synth_data)
-        synth_emb = pe.get_graph_embedding(synth_graphs) #TODO ovdje podesiti parametre za gl2vec model
+        synth_graphs, _ = pe.build_dependency_graphs(synth_data)
+        synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
 
         (
             cluster_overlaps,
@@ -385,7 +385,7 @@ def main(args: argparse.Namespace):
 
 '''
 python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
-    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
+    --NCBI_train /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
     --Generated_train /home/mkeber/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
     --output_directory /home/mkeber/syn-bioner/data/generation-pipeline \
     --server_url http://0.0.0.0:8484 \
@@ -396,7 +396,7 @@ python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
     --input_file_type list\
     --spacy_model en_core_web_lg \
     --kshot_size 3 \
-    --n_clusters 5 \
+    --embedding_hiperparameters  \
     --min_samples_per_cluster 10 \
     --weighted_threshold 0.75 \
     --max_iterations 5 \
