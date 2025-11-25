@@ -61,11 +61,13 @@ def argparse_args():
     parser.add_argument('--min_samples_per_cluster', type=int, default=10,
                         help='Minimum number of synthetic samples required per cluster to consider it covered.')
     parser.add_argument('--weighted_threshold', type=float, default=0.75,
-                        help='Weighted coverage threshold to stop iterations.')
+                        help='Weighted coverage threshold to stop iterations (global overlap).')
     parser.add_argument('--max_iterations', type=int, default=5,
                         help='Maximum number of iterations for adaptive generation.')
     parser.add_argument('--cluster_dir', type=str, default='',
                         help='Directory containing precomputed cluster centroids and labels.')
+    parser.add_argument('--overlap_threshold', type=float, default=0.75, help='Wanted cluster overlap treshold per cluster.')
+    parser.add_argument('--regenerate_ratio', type=float, default=0.2, help="Ratio for regeneration of uncovered clusters.")
 
 
     return parser.parse_args()
@@ -189,9 +191,6 @@ def adaptive_syntax_generation(
     args,
     real_data: List[Dict[str, Any]],
     initial_synth_data: List[Dict[str, Any]],
-    overlap_threshold: float = 0.75,
-    max_iterations: int = 5,
-    regenerate_ratio: float = 0.3,
 ):
     """
     Iteratively generate synthetic sentences until GL2Vec embedding overlap
@@ -235,7 +234,11 @@ def adaptive_syntax_generation(
             f.write(json.dumps(sample) + "\n")
     print(f"[INFO] Saved NCBI examples with cluster IDs → {ncbi_clustered_path}")
 
-    while  iteration <= max_iterations:
+    if args.test:
+        args.max_iterations = 3
+        args.regenerate_ratio = 0.1
+
+    while  iteration <= args.max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         synth_graphs = pe.build_dependency_graphs(synth_data)
         synth_emb = pe.get_graph_embedding(synth_graphs) #TODO ovdje podesiti parametre za gl2vec model
@@ -251,7 +254,7 @@ def adaptive_syntax_generation(
             synth_emb,
             real_labels,
             centroids_real,
-            overlap_threshold,
+            args.overlap_threshold,
             args.min_samples_per_cluster,
         )
 
@@ -271,7 +274,10 @@ def adaptive_syntax_generation(
         # Regenerate from uncovered clusters
         uncovered_mask = [synth_labels[i] in uncovered_clusters for i in range(len(synth_labels))]
         bad_indices = np.where(uncovered_mask)[0]
-        num_regen = max(1, int(regenerate_ratio * len(bad_indices)))
+        if args.test:
+            num_regen = min(3, int(args.regenerate_ratio * len(bad_indices)))
+        else:
+            num_regen = max(1, int(args.regenerate_ratio * len(bad_indices)))
         regen_indices = np.random.choice(bad_indices, num_regen, replace=False) #TODO ovo promijeniti, možda uzeti sve ili neki weighted odabir koliko primjera iz pojedinog klastera
         bad_terms = [synth_data[i].get("term") for i in regen_indices if "term" in synth_data[i]]
 
@@ -295,7 +301,6 @@ def adaptive_syntax_generation(
         # Call generation function for k-shot generation
         iter_output = args.output_directory + f"/iteration_{iteration}"
         os.makedirs(iter_output, exist_ok=True)
-        args.output_directory = iter_output
         new_path = generate_sentence_samples(args, bad_terms, method="a")
 
         if os.path.exists(new_path):
@@ -316,10 +321,10 @@ def adaptive_syntax_generation(
             new_texts,
             new_entities,
             new_labels,
-            os.path.join(args.output_directory, f"syntax_features_iter_{iteration}.json")
+            os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
         )
 
-        with open(os.path.join(args.output_directory, f"syntax_features_iter_{iteration}.json"), "r") as f:
+        with open(os.path.join(iter_output, f"syntax_features_iter_{iteration}.json"), "r") as f:
             newly_parsed_sentences = json.load(f)
 
         synth_data.extend(newly_parsed_sentences) #TODO možda izbaciti ove "loše" primjere iz synth_data prije dodavanja novih
@@ -370,10 +375,7 @@ def main(args: argparse.Namespace):
     final_data, final_overlap = adaptive_syntax_generation(
         args,
         real_data=ncbi_data,
-        initial_synth_data=synth_data,
-        overlap_threshold=0.75,
-        max_iterations=5,
-        regenerate_ratio=0.3,
+        initial_synth_data=synth_data
     )
 
     print(f"[RESULT] Final syntax overlap: {final_overlap:.3f}")
@@ -385,9 +387,9 @@ def main(args: argparse.Namespace):
 
 '''
 python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
-    --input_file /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
+    --NCBI_train /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
     --Generated_train /home/mkeber/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
-    --output_directory /home/mkeber/syn-bioner/data/generation-pipeline \
+    --output_directory /home/mkeber/syn-bioner/data/generation_pipeline \
     --server_url http://0.0.0.0:8484 \
     --num_sentences 3
     --system_prompt_key generation \
@@ -401,8 +403,9 @@ python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
     --weighted_threshold 0.75 \
     --max_iterations 5 \
     --test \
-    --cluster_dir /home/mkeber/syn-bioner/data/generation-pipeline/kmeans_clusters
-    
+    --cluster_dir /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters
+    --overlap_threshold 0.75
+    --regenerate_ratio 0.3
     
     --server_url http://172.17.0.1:8484 \
 '''

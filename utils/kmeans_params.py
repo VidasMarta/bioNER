@@ -2,7 +2,7 @@ import argparse
 import json
 import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score, davies_bouldin_score
+from sklearn.metrics import silhouette_score
 from typing import List, Dict, Any
 import utils.parsing_embedding as pe
 import os
@@ -21,12 +21,10 @@ def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
 
     inertia = km.inertia_
     silhouette = silhouette_score(real_emb, labels)
-    dbi = davies_bouldin_score(real_emb, labels)
 
     return {
         "inertia": inertia,
         "silhouette": silhouette,
-        "davies_bouldin": dbi,
         "labels": labels,
         "centroids": km.cluster_centers_,
     }
@@ -55,7 +53,6 @@ def main(args):
             "k": k,
             "inertia": res["inertia"],
             "silhouette": silhouette,
-            "davies_bouldin": res["davies_bouldin"],
         })
 
         # Choose best K based on silhouette
