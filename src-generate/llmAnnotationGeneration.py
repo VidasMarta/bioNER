@@ -103,7 +103,7 @@ def create_rule_json(doc, nlp, term)-> Tuple[list,list]:
     # tokenize the term with spaCy as well (so alignment is consistent)
     term_tokens = [t.text.lower() for t in nlp(term[0].lower())]
     term_len = len(term_tokens)
-
+    #TODO: is the lemmatization inside utils.check_last_token needed here?
     # search for the term sequence in tokens
     for i in range(len(tokens) - term_len + 1):
         if tokens_lower[i:i+term_len] == term_tokens:

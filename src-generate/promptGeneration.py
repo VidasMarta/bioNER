@@ -110,7 +110,7 @@ PROMPT = {
         Use the following examples as inspiration for style and structure from provided part of speech tags and dependency parsing tags.
         Examples:
         {text}
-        Your task is to produce just the sentence.
+        Your task is to produce just the sentence that does not contain any disease or diagnosis.
         Sentence:
         """,
         
