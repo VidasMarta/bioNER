@@ -3,8 +3,9 @@ import json
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import normalize
 from typing import List, Dict, Any
-import utils.parsing_embedding as pe
+import parsing_embedding as pe
 import os
 
 def load_syntax_data(path: str) -> List[Dict[str, Any]]:
@@ -16,7 +17,9 @@ def compute_embeddings(parsed_data: List[Dict[str, Any]]) -> np.ndarray:
     return pe.get_graph_embedding(graphs)
 
 def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
+    real_emb = normalize(real_emb)
     km = KMeans(n_clusters=k, random_state=42)
+    
     labels = km.fit_predict(real_emb)
 
     inertia = km.inertia_
