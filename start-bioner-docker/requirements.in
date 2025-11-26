@@ -1,9 +1,10 @@
 karateclub
 transformers
 networkx
-scikit_learn
+scikit-learn
 matplotlib
 spacy
+jupyterlab
 nltk
 optuna
 umap-learn

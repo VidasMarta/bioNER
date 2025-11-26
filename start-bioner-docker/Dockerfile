@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
+FROM pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime
 # FROM ubuntu:focal-20231003
 ARG DEBIAN_FRONTEND=noninteractive
 ARG USER_UID=1050
@@ -25,5 +25,11 @@ RUN  pip install --upgrade pip && \
 RUN useradd $USER_NAME -u $USER_UID -g $USER_GID -m -s /bin/bash
 RUN chown -R $USER_UID:$USER_GID /workspace
 
-RUN python3 -m spacy download en_core_web_lg
-RUN python3 -m spacy download en_core_web_trf
+RUN python3 -m spacy download en_core_web_lg && \
+  python3 -m spacy download en_core_web_trf && \
+  python3 -m spacy download en_core_web_sm
+
+RUN python3 /workspace/test_imports.py \
+    && echo "All imports succeeded!" \
+    || (echo "Some imports failed!" && exit 1)
+

@@ -7,6 +7,13 @@ import obonet
 from typing import List, Dict, Any, Optional, Tuple
 import argparse
 import pandas as pd
+import subprocess
+import sys
+
+
+SPACY_NLP = None
+
+
 def remove_code_fences(text: str) -> str:
     return re.sub(r'```[\w]*\n?', '', text).strip()
 
@@ -91,6 +98,19 @@ def parse_text_entities_format(args: argparse.Namespace, text: str) -> Tuple[str
         return text, []
     
 
+def get_spacy_model(model: str):
+    global SPACY_NLP
+    if SPACY_NLP is None:
+        try:
+            import spacy
+            SPACY_NLP = spacy.load(model)
+        except OSError:
+            subprocess.run(["python3", "-m", "spacy", "download", model])
+            import spacy
+            SPACY_NLP = spacy.load(model)
+    else:
+        return SPACY_NLP
+        
 """python3 utils.py"""
 
 

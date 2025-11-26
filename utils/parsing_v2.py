@@ -308,6 +308,7 @@ if __name__ == "__main__":
     except OSError:
         subprocess.run([sys.executable, "-m", "spacy", "download", args.model])
         import spacy
+        
 
     # PARSE, SAVE AND CREATE STATS OF MESH NCBI 
     # abstracts, annotations = parse_text_file(args.input_file)
@@ -340,7 +341,7 @@ if __name__ == "__main__":
         f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
         f"{corpus_labels.count('generated_train')} from Generated.")
     
-    nlp = spacy.load(args.model)
+    nlp = get_spacy_model(args.model)
     extract_syntax_features(
         nlp,
         ids, 

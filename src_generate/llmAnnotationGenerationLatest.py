@@ -33,8 +33,6 @@ def argparse_args():
                         help='URL of the llama.cpp inference server (default: http://127.0.0.1:8080).')
     parser.add_argument('--num_sentences', type=int, default=1, 
                         help='Number of sentences to produce by LLM.')
-    parser.add_argument('--system_prompt_key', type=str, default='generation', 
-                        help="Key for selecting system prompt from predefined prompt templates (default: 'generation').")
     parser.add_argument('--temperature', type=float, default=0.2, 
                         help='Sampling temperature for the LLM. (default: 0.2).')
     parser.add_argument('--max_tokens', type=int, default=2000, 
