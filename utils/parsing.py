@@ -1,9 +1,10 @@
+# TODO: delete script
 import argparse
 import spacy
 import json
 import numpy as np
 from pathlib import Path
-from nltk.tokenize.treebank import TreebankWordDetokenizer
+from nltk.tokenize.treebank import TreebankWordDetokenizer # TODO: 
 from typing import List, Dict, Tuple
 import subprocess
 import sys

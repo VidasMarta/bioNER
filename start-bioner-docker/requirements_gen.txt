@@ -1,0 +1,11 @@
+karateclub 
+networkx 
+numpy
+tqdm 
+PyYAML 
+scikit_learn 
+regex 
+umap-learn 
+obonet 
+requests
+matplotlib

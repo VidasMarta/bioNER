@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import subprocess
 import sys
 from pathlib import Path
-from nltk.tokenize.treebank import TreebankWordDetokenizer
+# from nltk.tokenize.treebank import TreebankWordDetokenizer
+from spacy.tokens import Doc
 from typing import List, Dict, Tuple
 
 
@@ -236,7 +237,7 @@ def extract_entities(entry):
 
     return entities
 
-def load_corpuses(ncbi_path, gen_path):
+def load_corpuses(ncbi_path, gen_path, nlp):
     corpus_list = []
     id = 0
     with open(ncbi_path, "r", encoding="utf-8") as f:
@@ -245,11 +246,11 @@ def load_corpuses(ncbi_path, gen_path):
             id += 1
             corpus_list.append((id, entry["sentence"], entry["entities"], "NCBI_train", entry["abstract_id"]))
     
-    detok = TreebankWordDetokenizer()
     with open(gen_path, "r", encoding="utf-8") as f:
         for line in f:
             entry = json.loads(line.strip())
-            sentence = detok.detokenize(entry["tokens"])
+            doc = Doc(nlp.vocab, words=entry["tokens"])
+            sentence = doc.text
             entities = extract_entities(entry)
             id += 1
             corpus_list.append((id, sentence, entities, "generated_train", None))
@@ -335,13 +336,14 @@ if __name__ == "__main__":
 
 
     # EXTRACT SYNATX FEATURES FOR BOTH DATASETS
-    corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path)
+    nlp = get_spacy_model(args.model)
+    
+    corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path, nlp)
     ids, sentences, entities, corpus_labels, abstract_id = zip(*corpus_list)
     print(f"Loaded {len(sentences)} sentences: "
         f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
         f"{corpus_labels.count('generated_train')} from Generated.")
     
-    nlp = get_spacy_model(args.model)
     extract_syntax_features(
         nlp,
         ids, 

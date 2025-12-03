@@ -1,0 +1,16 @@
+spacy 
+numpy 
+scikit-learn 
+tqdm 
+transformers 
+TorchCRF 
+seqeval 
+matplotlib
+joblib 
+optuna
+datasets
+umap-learn
+seaborn
+pandas
+regex
+PyYAML

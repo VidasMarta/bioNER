@@ -1,7 +1,6 @@
 import os
 import typing
 import numpy as np
-import spacy
 import itertools
 from pprint import pprint
 import networkx as nx
@@ -109,10 +108,10 @@ if __name__ == '__main__':
             for k in tqdm(range(5, 25)):
                 kmeans_result = kp.evaluate_k(sample, k)
                 entry[str(k)] = {
-                    'inertia': kmeans_result['inertia'],
-                    'silhouette': kmeans_result['silhouette'],
+                    'inertia': str(kmeans_result['inertia']),
+                    'silhouette': str(kmeans_result['silhouette']),
                     # 'centroids': kmeans_result['centroids'].tolist(),
                     # 'labels': kmeans_result['labels'].tolist() 
                 }
-                with open(output_path, "a") as f:
+                with open(output_path_kmeans, "a") as f:
                     f.write(json.dumps(entry) + "\n")
