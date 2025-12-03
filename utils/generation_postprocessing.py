@@ -146,6 +146,8 @@ def argparse_args():
     parser.add_argument('--generated_postprocessed', type=str, default='',
                         help='Path to the generated sentences after postprocessing.')
     parser.add_argument('--starting_id', type=int, help='Id of last generated sentence.')
+    parser.add_argument('--spacy_model', type=str, default="en_core_web_sm")
+
     return parser.parse_args()
 
 if __name__ == "__main__":

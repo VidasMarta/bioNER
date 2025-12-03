@@ -12,6 +12,7 @@ import utils.parsing_v2 as parser
 import utils.kmeans_params as kmeans_params
 import umap
 import src_generate.utils as utils
+import subprocess
 import matplotlib.pyplot as plt
 
 def argparse_args():
@@ -344,9 +345,15 @@ def adaptive_syntax_generation(
             regen_terms = regen_terms[:3]
         new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
 
-        #TODO: run generation_postprocessing!!! (SPACY_ENV)
+        #TODO new, check if it works  (SPACY_ENV)
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
-        # python3 generation_postprocessing.py --generated new_path --generated_postprocessed postprocessed --starting_id len(synth_data) + 1
+        subprocess.run([
+            "python3", "generation_postprocessing.py",
+            "--generated", new_path,
+            "--generated_postprocessed", postprocessed,
+            "--starting_id", str(len(synth_data) + 1),
+            "--spacy_model", args.spacy_model
+        ])
 
         '''if os.path.exists(new_path):
             with open(new_path, "r") as f:

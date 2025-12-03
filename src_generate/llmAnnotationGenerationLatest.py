@@ -131,6 +131,7 @@ def generate_sentence_samples(
                     # Fallback single-shot mode
                     user_template = 'syn_generation'
                     used_ids = []
+                    kshot_text_block = None
 
                 # -----------------------------------------------------------------
                 # Send request to LLM
