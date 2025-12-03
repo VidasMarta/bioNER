@@ -9,7 +9,6 @@ from src_generate.llmAnnotationGenerationLatest import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import utils.parsing_embedding as pe
-import utils.parsing_v2 as parser
 import utils.kmeans_params as kmeans_params
 import umap
 import src_generate.utils as utils
@@ -241,7 +240,7 @@ def adaptive_syntax_generation(
         args.k_min = 2
         args.k_max = 10
         kmeans_params.main(args)  # Call the kmeans_params script to compute clusters
-
+    
     real_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(cluster_dir, "cluster_centroids.npy"))
 
@@ -348,13 +347,16 @@ def adaptive_syntax_generation(
 
         #TODO new, check if it works  (SPACY_ENV)
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
-        subprocess.run([
-            "~/conda/bin/python3", "utils/generation_postprocessing.py",
+        sub_results = subprocess.run([
+            "/opt/conda/bin/python3", "bioNER/utils/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
             "--spacy_model", args.spacy_model
-        ])
+        ], capture_output=True, text=True)
+        if args.verbose:
+            print("STDOUT:\n", sub_results.stdout)
+            print("STDERR:\n", sub_results.stderr)
 
         '''if os.path.exists(new_path):
             with open(new_path, "r") as f:
@@ -409,24 +411,28 @@ def main(args: argparse.Namespace):
     random.seed(args.random_seed)
 
     parsed_data_path = os.path.join(args.output_directory, "syntax_features.jsonl")
-
+    os.makedirs(args.output_directory, exist_ok=True)
     # Load and parse data
     # SPACY ENV
-    subprocess.run([
-            "~/conda/bin/python3", "utils/parsing_v2.py",
+    print("[INFO] started SYNTAX FEATURES GENERATION!")
+    
+    sub_results = subprocess.run([
+            "/opt/conda/bin/python3", "bioNER/utils/parsing_v2.py",
             "--parsed_mesh_file", args.NCBI_train,
             "--gen_train_path", args.Generated_train,
             "--output_path_features", parsed_data_path,
             "--rewrite",
             "--gen_pipeline",
             "--spacy_model", args.spacy_model
-        ])
-    
+        ], capture_output=True, text=True)
+    if args.verbose:
+        print("STDOUT:\n", sub_results.stdout)
+        print("STDERR:\n", sub_results.stderr)
     with open(parsed_data_path, "r") as f:
         all_data = [json.loads(line) for line in f] 
     ncbi_data = [entry for entry in all_data if entry.get("corpus") == "NCBI_train"]
     synth_data = [entry for entry in all_data if entry.get("corpus") == "generated_train"]
-
+    print(f"[INFO] SAVED: SYNTAX FEATURES GENERATION! {parsed_data_path}")
     with open(args.NCBI_kshot, ) as f:
         kshot_data = [json.loads(line) for line in f]
 
@@ -446,11 +452,11 @@ def main(args: argparse.Namespace):
 
 '''
 python3 bioNER/generation_pipeline.py \
-    --NCBI_train data/NCBI-Disease/ \
-    --NCBI_kshot data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
-    --Generated_train data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
+    --NCBI_train data/ncbi/trf/ncbi_ner_train.json \
+    --NCBI_kshot data/ncbi/trf/ncbi_ner_train_10pct.json \
+    --Generated_train data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json \
     --output_directory data/generation_pipeline/ \
-    --server_url http://172.20.0.2:8484 \
+    --server_url http://172.20.0.4:8484 \
     --num_sentences 3
     --system_prompt_key generation \
     --temperature 0 \
@@ -465,13 +471,31 @@ python3 bioNER/generation_pipeline.py \
     --test \
     --cluster_dir data/generation_pipeline/kmeans_clusters \
     --overlap_threshold 0.75
-    
-    --server_url http://172.17.0.1:8484 \
+
+/opt/conda/envs/gen/bin/python3 bioNER/generation_pipeline.py \
+    --NCBI_train data/ncbi/trf/ncbi_ner_train.json \
+    --NCBI_kshot data/ncbi/trf/ncbi_ner_train_10pct.json \
+    --Generated_train data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json \
+    --output_directory data/generation_pipeline/ \
+    --server_url http://172.20.0.4:8484 \
+    --num_sentences 3
+    --system_prompt_key generation \
+    --temperature 0 \
+    --max_tokens 500 \
+    --input_file_type list\
+    --spacy_model en_core_web_lg \
+    --kshot_size 3 \
+    --embedding_hiperparameters bioNER/experiments/gl2vec_hiperparams.json \
+    --min_samples_per_cluster 10 \
+    --weighted_threshold 0.75 \
+    --max_iterations 5 \
+    --test \
+    --cluster_dir data/generation_pipeline/kmeans_clusters \
+    --overlap_threshold 0.75 --verbose
 '''
 
 if __name__ == "__main__":
     args = argparse_args()
-    SPACY_NLP = utils.get_spacy_model(args.spacy_model)
     args.logger = setup_logger(args)
     args.logger.info(f"Output directory: {args.output_directory}")
     main(args)

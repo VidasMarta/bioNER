@@ -351,7 +351,7 @@ if __name__ == "__main__":
 
     # EXTRACT SYNATX FEATURES FOR BOTH DATASETS
     if args.gen_pipeline:
-        nlp = spacy_load_model(args.spacy)
+        nlp = spacy_load_model(args.spacy_model)
         
         corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path, nlp)
         ids, sentences, entities, corpus_labels, abstract_id = zip(*corpus_list)

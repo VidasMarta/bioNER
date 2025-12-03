@@ -112,5 +112,5 @@ if __name__ == '__main__':
                 # 'centroids': kmeans_result['centroids'].tolist(),
                 # 'labels': kmeans_result['labels'].tolist() 
             }
-            with open(output_path_kmeans, "a") as f:
-                f.write(json.dumps(entry) + "\n")
+        with open(output_path_kmeans, "a") as f:
+            f.write(json.dumps(entry) + "\n")
