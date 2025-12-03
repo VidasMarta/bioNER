@@ -104,14 +104,13 @@ if __name__ == '__main__':
             # "embedding": [emb.tolist() for emb in embeddings_gl_data],
         }
 
-        for sample in tqdm(embeddings_gl_data):
-            for k in tqdm(range(5, 25)):
-                kmeans_result = kp.evaluate_k(sample, k)
-                entry[str(k)] = {
-                    'inertia': str(kmeans_result['inertia']),
-                    'silhouette': str(kmeans_result['silhouette']),
-                    # 'centroids': kmeans_result['centroids'].tolist(),
-                    # 'labels': kmeans_result['labels'].tolist() 
-                }
-                with open(output_path_kmeans, "a") as f:
-                    f.write(json.dumps(entry) + "\n")
+        for k in tqdm(range(5, 25)):
+            kmeans_result = kp.evaluate_k(embeddings_gl_data, k)
+            entry[str(k)] = {
+                'inertia': str(kmeans_result['inertia']),
+                'silhouette': str(kmeans_result['silhouette']),
+                # 'centroids': kmeans_result['centroids'].tolist(),
+                # 'labels': kmeans_result['labels'].tolist() 
+            }
+            with open(output_path_kmeans, "a") as f:
+                f.write(json.dumps(entry) + "\n")

@@ -218,7 +218,7 @@ def adaptive_syntax_generation(
     real_data: List[Dict[str, Any]],
     kshot_data: List[Dict[str, Any]],
     initial_synth_data: List[Dict[str, Any]],
-):
+)-> tuple[List[Dict[str, Any]], Any]:
     """
     Iteratively generate synthetic sentences until GL2Vec embedding overlap
     with NCBI syntax distribution exceeds threshold or max_iterations reached.
@@ -349,7 +349,7 @@ def adaptive_syntax_generation(
         #TODO new, check if it works  (SPACY_ENV)
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         subprocess.run([
-            "python3", "generation_postprocessing.py",
+            "~/conda/bin/python3", "generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
