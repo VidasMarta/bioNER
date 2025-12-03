@@ -9,7 +9,7 @@ from karateclub import Graph2Vec
 from karateclub import GL2Vec
 import json
 # from sklearn.preprocessing import normalize
-import kmeans_params as kp
+from . import kmeans_params as kp
 from tqdm import tqdm
 
 def build_dependency_graphs(data):
@@ -100,24 +100,19 @@ if __name__ == '__main__':
         # Save each embedding with its hyperparameters
         entry = {
             "id": int(i),
-            "sent": sent_ids_list,
+            # "sent": sent_ids_list,
             "hyperparameters": combo,
-            "embedding": [emb.tolist() for emb in embeddings_gl_data],
+            # "embedding": [emb.tolist() for emb in embeddings_gl_data],
         }
-        f.write(json.dumps(entry) + "\n")
-    f.close()
-    
-    with open(output_path, 'r') as file:
-        grid_search_emb = [json.loads(line) for line in file]
 
-    for sample in tqdm(grid_search_emb):
-        emb_arr = np.array(sample['embedding'])
-        for k in tqdm(range(5, 15)):
-            kmeans_result = kp.evaluate_k(emb_arr, k)
-            kmeans_result["id"] = sample["id"]
-            kmeans_result['hyperparameters'] = sample['hyperparameters']
-            kmeans_result['k'] = k
-            kmeans_result['centroids'] = kmeans_result['centroids'].tolist()
-            kmeans_result['labels'] = kmeans_result['labels'].tolist()
-            with open(output_path_kmeans, 'a') as file:
-                file.write(json.dumps(kmeans_result) + "\n")
+        for sample in tqdm(embeddings_gl_data):
+            for k in tqdm(range(5, 25)):
+                kmeans_result = kp.evaluate_k(sample, k)
+                entry[str(k)] = {
+                    'inertia': kmeans_result['inertia'],
+                    'silhouette': kmeans_result['silhouette'],
+                    # 'centroids': kmeans_result['centroids'].tolist(),
+                    # 'labels': kmeans_result['labels'].tolist() 
+                }
+                with open(output_path, "a") as f:
+                    f.write(json.dumps(entry) + "\n")

@@ -11,7 +11,7 @@ import utils.parsing_embedding as pe
 import utils.parsing_v2 as parser
 import utils.kmeans_params as kmeans_params
 import umap
-import spacy
+import src_generate.utils as utils
 import matplotlib.pyplot as plt
 
 def argparse_args():
@@ -224,7 +224,7 @@ def adaptive_syntax_generation(
     iteration = 0
     synth_data = initial_synth_data
     output_dir = args.output_directory
-
+    #TODO:json graph embeddings hiperparameters
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
     # KARATE ENV
@@ -444,12 +444,12 @@ def main(args: argparse.Namespace):
 
 
 '''
-python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
-    --NCBI_train /home/mkeber/syn-bioner/data/NCBI-Disease/ \
-    --NCBI_kshot /home/mkeber/syn-bioner/data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
-    --Generated_train /home/mkeber/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
-    --output_directory /home/mkeber/syn-bioner/data/generation_pipeline/ \
-    --server_url http://0.0.0.0:8484 \
+python3 bioNER/generation_pipeline.py \
+    --NCBI_train data/NCBI-Disease/ \
+    --NCBI_kshot data/NCBI-Disease/lg/ncbi_ner_train_10pct.json \
+    --Generated_train data/NCBI-Disease/synthetic_10_trial/generated_10_3000.josn \
+    --output_directory data/generation_pipeline/ \
+    --server_url http://172.20.0.2:8484 \
     --num_sentences 3
     --system_prompt_key generation \
     --temperature 0 \
@@ -457,12 +457,12 @@ python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
     --input_file_type list\
     --spacy_model en_core_web_lg \
     --kshot_size 3 \
-    --embedding_hiperparameters  \
+    --embedding_hiperparameters bioNER/experiments/gl2vec_hiperparams.json \
     --min_samples_per_cluster 10 \
     --weighted_threshold 0.75 \
     --max_iterations 5 \
     --test \
-    --cluster_dir /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters
+    --cluster_dir data/generation_pipeline/kmeans_clusters \
     --overlap_threshold 0.75
     
     --server_url http://172.17.0.1:8484 \
@@ -470,7 +470,7 @@ python3 /home/mkeber/syn-bioner/bioNER/generation_pipeline.py \
 
 if __name__ == "__main__":
     args = argparse_args()
-    SPACY_NLP = spacy.load(args.spacy_model)
+    SPACY_NLP = utils.get_spacy_model(args.spacy_model)
     args.logger = setup_logger(args)
     args.logger.info(f"Output directory: {args.output_directory}")
     main(args)

@@ -1,0 +1,8 @@
+{
+    'wl_iterations': 1, 
+    'dimensions': 16, 
+    'workers': 24, 
+    'learning_rate': 0.04, 
+    'min_count': 2, 
+    'epochs': 20
+}
