@@ -227,6 +227,7 @@ def adaptive_syntax_generation(
 
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
+    # KARATE ENV
     real_graphs, _ = pe.build_dependency_graphs(real_data)
     real_emb, model = pe.get_graph_embedding(real_graphs) #TODO ovdje podesiti parametre za gl2vec model
 
@@ -242,16 +243,8 @@ def adaptive_syntax_generation(
     real_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(cluster_dir, "cluster_centroids.npy"))
 
-    # with open(os.path.join(cluster_dir, "cluster_config.json")) as f:
-    #    config = json.load(f)
-    # args.n_clusters = config["best_k"]
-
-
-    # kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
-    # real_labels = kmeans.fit_predict(real_emb)
-    # centroids_real = kmeans.cluster_centers_
-
     # Save NCBI examples with cluster labels for later k-shot selection
+    # KARATE ENV
     ncbi_clustered_path = os.path.join(output_dir, "kshot_ncbi_clustered.jsonl")
     kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
     kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
@@ -268,6 +261,7 @@ def adaptive_syntax_generation(
 
     while  iteration <= args.max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+        # KARATE ENV
         synth_graphs, _ = pe.build_dependency_graphs(synth_data)
         synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
 
@@ -345,9 +339,16 @@ def adaptive_syntax_generation(
         # Generate new samples from uncovered clusters using LLM
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}")
         os.makedirs(iter_output, exist_ok=True)
+        # SPACY ENV
+        if args.test:
+            regen_terms = regen_terms[:3]
         new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
 
-        if os.path.exists(new_path):
+        #TODO: run generation_postprocessing!!! (SPACY_ENV)
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
+        # python3 generation_postprocessing.py --generated new_path --generated_postprocessed postprocessed --starting_id len(synth_data) + 1
+
+        '''if os.path.exists(new_path):
             with open(new_path, "r") as f:
                 new_sentences = [json.loads(line) for line in f]
         else:
@@ -366,9 +367,9 @@ def adaptive_syntax_generation(
             new_entities,
             new_labels,
             os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
-        )
+        )'''
 
-        with open(os.path.join(iter_output, f"syntax_features_iter_{iteration}.json"), "r") as f:
+        with open(postprocessed, "r") as f:
             newly_parsed_sentences = json.load(f)
 
         terms_to_replace = set(regen_terms)
@@ -413,6 +414,7 @@ def main(args: argparse.Namespace):
     parsed_data_path = os.path.join(args.output_directory, "syntax_features.jsonl")
 
     # Load and parse data
+    # SPACY ENV
     load_and_parse_data(
         args.NCBI_train,
         args.Generated_train,
