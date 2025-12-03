@@ -14,15 +14,15 @@ RUN apt-get update && \
   apt-get install -y libpq-dev gcc python3-dev curl && \
   rm -rf /var/lib/apt/lists/*
 
+# Create conda environment karateclub
+WORKDIR /workspace
+COPY . /workspace
 # Use bash so we can "conda activate"
 SHELL ["/bin/bash", "-c"]
-# Create conda environment karateclub
 RUN conda create -y -n gen python=3.10 && \
     source activate gen && \
     pip install --upgrade-strategy only-if-needed -r requirements_gen.txt
-     
-WORKDIR /workspace
-COPY . /workspace
+
 RUN pip install --upgrade pip && \
   pip install --upgrade-strategy only-if-needed -r requirements_base.txt && \
   python3 -m spacy download en_core_web_lg && \
@@ -36,4 +36,3 @@ RUN chown -R $USER_UID:$USER_GID /workspace
 RUN python3 /workspace/test_imports.py \
     && echo "All imports succeeded!" \
     || (echo "Some imports failed!" && exit 1)
-
