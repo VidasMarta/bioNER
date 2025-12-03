@@ -8,7 +8,6 @@ from src_generate import promptGeneration, utils
 SPACY_NLP = None
 
 def spacy_load_model(model_name: str):
-
     global SPACY_NLP
     if SPACY_NLP is None:
         SPACY_NLP = get_spacy(model_name)

@@ -349,7 +349,7 @@ def adaptive_syntax_generation(
         #TODO new, check if it works  (SPACY_ENV)
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         subprocess.run([
-            "~/conda/bin/python3", "generation_postprocessing.py",
+            "~/conda/bin/python3", "utils/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
@@ -400,22 +400,6 @@ def adaptive_syntax_generation(
 
     return synth_data, weighted_coverage
 
-def load_and_parse_data(ncbi_path: str, gen_path: str, output_path_features: str, model: Any):
-    quadruple = parser.load_corpuses(ncbi_path, gen_path)
-    ids, sentences, entities, corpus_labels = zip(*quadruple)
-    print(f"Loaded {len(sentences)} sentences: "
-        f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
-        f"{corpus_labels.count('generated_train')} from Generated.")
-    
-    parser.extract_syntax_features(
-        SPACY_NLP,
-        ids, 
-        sentences,
-        entities,
-        corpus_labels,
-        output_path_features
-    )
-
 def main(args: argparse.Namespace):    
     ''' 
     iterative generation pipeline (LLM generation -(parsing)-> UMAP/clustering -> condition 
@@ -428,11 +412,15 @@ def main(args: argparse.Namespace):
 
     # Load and parse data
     # SPACY ENV
-    load_and_parse_data(
-        args.NCBI_train,
-        args.Generated_train,
-        parsed_data_path,
-        SPACY_NLP)
+    subprocess.run([
+            "~/conda/bin/python3", "utils/parsing_v2.py",
+            "--parsed_mesh_file", args.NCBI_train,
+            "--gen_train_path", args.Generated_train,
+            "--output_path_features", parsed_data_path,
+            "--rewrite",
+            "--gen_pipeline",
+            "--spacy_model", args.spacy_model
+        ])
     
     with open(parsed_data_path, "r") as f:
         all_data = [json.loads(line) for line in f] 
