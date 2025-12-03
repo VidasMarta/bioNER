@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import random
 from typing import Any, Dict, List
 from sklearn.cluster import KMeans
 from src_generate.llmAnnotationGenerationLatest import main as generate_sentence_samples
@@ -149,8 +150,8 @@ def compute_cluster_coverage(
         "weighted_coverage": weighted_coverage
     }
     logger_file = os.path.join(output_dir, "logger.jsonl")
-    with open(logger_file, "w") as f:
-        f.write(json.dump(log) + "\n")
+    with open(logger_file, "a") as f:
+        f.write(json.dumps(log) + "\n")
 
     return cluster_overlaps, uncovered_clusters, weighted_coverage, cluster_sizes, synth_labels
 
@@ -260,7 +261,7 @@ def adaptive_syntax_generation(
     if args.test:
         args.max_iterations = 3
 
-    while  iteration <= args.max_iterations:
+    while  iteration < args.max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         # KARATE ENV
         synth_graphs, _ = pe.build_dependency_graphs(synth_data)
@@ -346,7 +347,7 @@ def adaptive_syntax_generation(
         new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
 
         #TODO new, check if it works  (SPACY_ENV)
-        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         subprocess.run([
             "python3", "generation_postprocessing.py",
             "--generated", new_path,
@@ -377,21 +378,24 @@ def adaptive_syntax_generation(
         )'''
 
         with open(postprocessed, "r") as f:
-            newly_parsed_sentences = json.load(f)
+            newly_parsed_sentences = [json.loads(line) for line in f]
 
-        terms_to_replace = set(regen_terms)
-        indices_to_replace = [i for i, entry in enumerate(synth_data) if entry.get("term") in terms_to_replace]
-
-        # Remove in reverse order to preserve indexing
-        for idx in sorted(indices_to_replace, reverse=True):
-            del synth_data[idx]
+        if cluster_terms: #remove sentences form this cluster whose terms were selected for regeneration
+            terms_to_replace = set(cluster_terms)
+            indices_to_replace = [i for i, entry in enumerate(synth_data)
+                                if entry.get("term") in terms_to_replace
+                                and synth_labels[i] == cluster_id] 
+            # Remove in reverse order to preserve indexing
+            for idx in sorted(indices_to_replace, reverse=True):
+                del synth_data[idx]
 
         # Add new regenerated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
 
         iteration += 1
-
+        
+    #TODO potencijalno problem jer se cluster_overlap i to definira u while petlji
     visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
 
     return synth_data, weighted_coverage
@@ -417,6 +421,8 @@ def main(args: argparse.Namespace):
     iterative generation pipeline (LLM generation -(parsing)-> UMAP/clustering -> condition 
     (while % uncovered NCBI specific clusters) -(k-shot on extracted NCBI specific cluster)-> LLM generation
     '''
+    np.random.seed(args.random_seed)
+    random.seed(args.random_seed)
 
     parsed_data_path = os.path.join(args.output_directory, "syntax_features.jsonl")
 

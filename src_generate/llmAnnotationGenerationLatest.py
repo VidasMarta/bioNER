@@ -111,27 +111,36 @@ def generate_sentence_samples(
                 # Sample k examples randomly for this term
                 # -----------------------------------------------------------------
                 if kshot_examples:
-                    if np.random.rand() < args.no_entity_ratio:
-                        # generate sentence with no entity
-                        kshot_text_block, used_ids = utils.sample_k_examples(args, no_entity_examples)
-                        user_template = 'kshot_genre_no_entity'
+                    # Choose whether this sentence should contain an entity
+                    want_no_entity = np.random.rand() < args.no_entity_ratio
+
+                    if want_no_entity:
+                        # Prefer no-entity examples
+                        if len(no_entity_examples) > 0:
+                            pool = no_entity_examples
+                            user_template = 'kshot_genre_no_entity'
+                        else:
+                            # fallback
+                            pool = entity_examples
+                            user_template = 'kshot_num_sent_genre_entity'
                     else:
-                        # generate sentence with an entity
-                        kshot_text_block, used_ids = utils.sample_k_examples(args, entity_examples)
-                        user_template = 'kshot_num_sent_genre_entity'
-                        # shot_text = promptGeneration.PROMPT[user_template].format(
-                        #     number_of_sentences=args.num_sentences,
-                        #     condition=term[0],
-                        #     genre=promptGeneration.Genre.ABSTRACT.value,
-                        #     text=kshot_text_block
-                        # )
+                        # Prefer entity examples
+                        if len(entity_examples) > 0:
+                            pool = entity_examples
+                            user_template = 'kshot_num_sent_genre_entity'
+                        else:
+                            # fallback
+                            pool = no_entity_examples
+                            user_template = 'kshot_genre_no_entity'
+
+                    # FINAL fallback if both empty (should not happen)
+                    if len(pool) == 0:
+                        kshot_text_block = ""
+                        used_ids = []
+                    else:
+                        kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
 
                     args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
-                else:
-                    # Fallback single-shot mode
-                    user_template = 'syn_generation'
-                    used_ids = []
-                    kshot_text_block = None
 
                 # -----------------------------------------------------------------
                 # Send request to LLM
