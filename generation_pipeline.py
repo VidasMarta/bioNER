@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import random
 from typing import Any, Dict, List
 from sklearn.cluster import KMeans
 from src_generate.llmAnnotationGenerationLatest import main as generate_sentence_samples
@@ -12,6 +13,7 @@ import utils.parsing_v2 as parser
 import utils.kmeans_params as kmeans_params
 import umap
 import src_generate.utils as utils
+import subprocess
 import matplotlib.pyplot as plt
 
 def argparse_args():
@@ -148,8 +150,8 @@ def compute_cluster_coverage(
         "weighted_coverage": weighted_coverage
     }
     logger_file = os.path.join(output_dir, "logger.jsonl")
-    with open(logger_file, "w") as f:
-        f.write(json.dump(log) + "\n")
+    with open(logger_file, "a") as f:
+        f.write(json.dumps(log) + "\n")
 
     return cluster_overlaps, uncovered_clusters, weighted_coverage, cluster_sizes, synth_labels
 
@@ -227,6 +229,7 @@ def adaptive_syntax_generation(
     #TODO:json graph embeddings hiperparameters
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
+    # KARATE ENV
     real_graphs, _ = pe.build_dependency_graphs(real_data)
     real_emb, model = pe.get_graph_embedding(real_graphs) #TODO ovdje podesiti parametre za gl2vec model
 
@@ -242,16 +245,8 @@ def adaptive_syntax_generation(
     real_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(cluster_dir, "cluster_centroids.npy"))
 
-    # with open(os.path.join(cluster_dir, "cluster_config.json")) as f:
-    #    config = json.load(f)
-    # args.n_clusters = config["best_k"]
-
-
-    # kmeans = KMeans(n_clusters=args.n_clusters, random_state=args.random_seed)
-    # real_labels = kmeans.fit_predict(real_emb)
-    # centroids_real = kmeans.cluster_centers_
-
     # Save NCBI examples with cluster labels for later k-shot selection
+    # KARATE ENV
     ncbi_clustered_path = os.path.join(output_dir, "kshot_ncbi_clustered.jsonl")
     kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
     kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
@@ -266,8 +261,9 @@ def adaptive_syntax_generation(
     if args.test:
         args.max_iterations = 3
 
-    while  iteration <= args.max_iterations:
+    while  iteration < args.max_iterations:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+        # KARATE ENV
         synth_graphs, _ = pe.build_dependency_graphs(synth_data)
         synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
 
@@ -345,9 +341,22 @@ def adaptive_syntax_generation(
         # Generate new samples from uncovered clusters using LLM
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}")
         os.makedirs(iter_output, exist_ok=True)
+        # SPACY ENV
+        if args.test:
+            regen_terms = regen_terms[:3]
         new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
 
-        if os.path.exists(new_path):
+        #TODO new, check if it works  (SPACY_ENV)
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
+        subprocess.run([
+            "python3", "generation_postprocessing.py",
+            "--generated", new_path,
+            "--generated_postprocessed", postprocessed,
+            "--starting_id", str(len(synth_data) + 1),
+            "--spacy_model", args.spacy_model
+        ])
+
+        '''if os.path.exists(new_path):
             with open(new_path, "r") as f:
                 new_sentences = [json.loads(line) for line in f]
         else:
@@ -366,24 +375,27 @@ def adaptive_syntax_generation(
             new_entities,
             new_labels,
             os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
-        )
+        )'''
 
-        with open(os.path.join(iter_output, f"syntax_features_iter_{iteration}.json"), "r") as f:
-            newly_parsed_sentences = json.load(f)
+        with open(postprocessed, "r") as f:
+            newly_parsed_sentences = [json.loads(line) for line in f]
 
-        terms_to_replace = set(regen_terms)
-        indices_to_replace = [i for i, entry in enumerate(synth_data) if entry.get("term") in terms_to_replace]
-
-        # Remove in reverse order to preserve indexing
-        for idx in sorted(indices_to_replace, reverse=True):
-            del synth_data[idx]
+        if cluster_terms: #remove sentences form this cluster whose terms were selected for regeneration
+            terms_to_replace = set(cluster_terms)
+            indices_to_replace = [i for i, entry in enumerate(synth_data)
+                                if entry.get("term") in terms_to_replace
+                                and synth_labels[i] == cluster_id] 
+            # Remove in reverse order to preserve indexing
+            for idx in sorted(indices_to_replace, reverse=True):
+                del synth_data[idx]
 
         # Add new regenerated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
 
         iteration += 1
-
+        
+    #TODO potencijalno problem jer se cluster_overlap i to definira u while petlji
     visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
 
     return synth_data, weighted_coverage
@@ -409,10 +421,13 @@ def main(args: argparse.Namespace):
     iterative generation pipeline (LLM generation -(parsing)-> UMAP/clustering -> condition 
     (while % uncovered NCBI specific clusters) -(k-shot on extracted NCBI specific cluster)-> LLM generation
     '''
+    np.random.seed(args.random_seed)
+    random.seed(args.random_seed)
 
     parsed_data_path = os.path.join(args.output_directory, "syntax_features.jsonl")
 
     # Load and parse data
+    # SPACY ENV
     load_and_parse_data(
         args.NCBI_train,
         args.Generated_train,
