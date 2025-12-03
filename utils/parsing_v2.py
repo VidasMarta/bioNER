@@ -16,6 +16,25 @@ from pathlib import Path
 from spacy.tokens import Doc
 from typing import List, Dict, Tuple
 
+SPACY_NLP = None
+
+def spacy_load_model(model_name: str):
+    global SPACY_NLP
+    if SPACY_NLP is None:
+        SPACY_NLP = get_spacy(model_name)
+        return SPACY_NLP
+    return SPACY_NLP   
+
+def get_spacy(model_name: str):
+    import spacy
+    try: return spacy.load(model_name)
+    except Exception as e:
+        print(f"Error loading spaCy model: {e}")
+        os.system(f"python3 -m spacy download {model_name}")
+        print(f"Downloading {model_name} model")
+        import spacy
+        return spacy.load(model_name)
+
 
 def parse_text_file(input_file):
     abstracts = {}
@@ -294,22 +313,17 @@ def parse_args():
     parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/ncbi_ner_sentence_stats.json")
     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/plots/")
     parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)', default=0.10)  
-    parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')  
+    parser.add_argument('--spacy_model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')  
     parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="data/ncbi/gen2_json/train.json")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
     parser.add_argument('--rewrite', action='store_true', help='Whether to rewrite existing features file')
+    parser.add_argument('--gen_pipeline', action='store_true', help='Run as a part of generation pipeline for loading datasets.')
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
     for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file, args.histograms, args.output_path_features]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-    try:
-        spacy.load(args.model)
-    except OSError:
-        subprocess.run([sys.executable, "-m", "spacy", "download", args.model])
-        import spacy
-        
 
     # PARSE, SAVE AND CREATE STATS OF MESH NCBI 
     # abstracts, annotations = parse_text_file(args.input_file)
@@ -336,35 +350,36 @@ if __name__ == "__main__":
 
 
     # EXTRACT SYNATX FEATURES FOR BOTH DATASETS
-    nlp = get_spacy_model(args.model)
-    
-    corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path, nlp)
-    ids, sentences, entities, corpus_labels, abstract_id = zip(*corpus_list)
-    print(f"Loaded {len(sentences)} sentences: "
-        f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
-        f"{corpus_labels.count('generated_train')} from Generated.")
-    
-    extract_syntax_features(
-        nlp,
-        ids, 
-        sentences,
-        entities,
-        corpus_labels,
-        abstract_id,
-        args.output_path_features,
-        args.rewrite
-    )
+    if args.gen_pipeline:
+        nlp = spacy_load_model(args.spacy)
+        
+        corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path, nlp)
+        ids, sentences, entities, corpus_labels, abstract_id = zip(*corpus_list)
+        print(f"Loaded {len(sentences)} sentences: "
+            f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
+            f"{corpus_labels.count('generated_train')} from Generated.")
+        
+        extract_syntax_features(
+            nlp,
+            ids, 
+            sentences,
+            entities,
+            corpus_labels,
+            abstract_id,
+            args.output_path_features,
+            args.rewrite
+        )
 
     # EXTRACT % ABSTRACTS 
-    subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
-    available_abstracts = args.output_path_features
-    previous_pct = 1
+    # subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
+    # available_abstracts = args.output_path_features
+    # previous_pct = 1
 
-    for pct in subset_pcts:
-        samples_pct = pct / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
-        filtered_abstracts = filter_by_abstract_ids(available_abstracts, args.filtered_parsed_mesh_file, samples_pct, pct)
-        available_abstracts = filtered_abstracts
-        previous_pct = pct
+    # for pct in subset_pcts:
+    #    samples_pct = pct / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
+    #    filtered_abstracts = filter_by_abstract_ids(available_abstracts, args.filtered_parsed_mesh_file, samples_pct, pct)
+    #    available_abstracts = filtered_abstracts
+    #    previous_pct = pct
 
 
 
