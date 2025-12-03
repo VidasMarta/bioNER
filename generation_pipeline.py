@@ -225,7 +225,6 @@ def adaptive_syntax_generation(
     iteration = 0
     synth_data = initial_synth_data
     output_dir = args.output_directory
-    #TODO:json graph embeddings hiperparameters
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
     # KARATE ENV
@@ -260,7 +259,8 @@ def adaptive_syntax_generation(
     if args.test:
         args.max_iterations = 3
 
-    while  iteration < args.max_iterations:
+
+    while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         # KARATE ENV
         synth_graphs, _ = pe.build_dependency_graphs(synth_data)
@@ -287,12 +287,18 @@ def adaptive_syntax_generation(
         print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
         print(f"[INFO] Uncovered clusters: {uncovered_clusters}")
 
-        # Stopping condition
+        # Stopping conditionsS
         if weighted_coverage >= args.weighted_threshold and not uncovered_clusters:
             print(
                 f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
                 f"(all clusters sufficiently represented)."
             )
+            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
+            break
+
+        elif iteration == args.max_iterations:
+            print("[STOP] Max iteration reached target reached.")
+            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
             break
 
         # Adaptive regeneration: guided by uncovered clusters
@@ -345,7 +351,6 @@ def adaptive_syntax_generation(
             regen_terms = regen_terms[:3]
         new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
 
-        #TODO new, check if it works  (SPACY_ENV)
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", "bioNER/utils/generation_postprocessing.py",
@@ -357,27 +362,6 @@ def adaptive_syntax_generation(
         if args.verbose:
             print("STDOUT:\n", sub_results.stdout)
             print("STDERR:\n", sub_results.stderr)
-
-        '''if os.path.exists(new_path):
-            with open(new_path, "r") as f:
-                new_sentences = [json.loads(line) for line in f]
-        else:
-            print("[WARN] No new synthetic data found, stopping.")
-            break
-        # parse new sentences for syntax features
-        new_ids = list(range(len(synth_data), len(synth_data) + len(new_sentences)))
-        new_texts = [entry["sentence"] for entry in new_sentences]
-        new_entities = [entry.get("entities", []) for entry in new_sentences]
-        new_labels = ["generated_train"] * len(new_sentences)
-
-        parser.extract_syntax_features(
-            SPACY_NLP,
-            new_ids,
-            new_texts,
-            new_entities,
-            new_labels,
-            os.path.join(iter_output, f"syntax_features_iter_{iteration}.json")
-        )'''
 
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
@@ -396,9 +380,6 @@ def adaptive_syntax_generation(
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
 
         iteration += 1
-        
-    #TODO potencijalno problem jer se cluster_overlap i to definira u while petlji
-    visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
 
     return synth_data, weighted_coverage
 
