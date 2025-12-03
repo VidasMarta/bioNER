@@ -1,30 +1,57 @@
-embedding_hiperparameters:
-  GL2Vec:
-    wl_iterations: 1
-    dimensions: 32
-    workers: 24
-    learning_rate: 0.05
-    min_count: 2
-    epochs: 20
+#embedding_hiperparameters:
+#  GL2Vec:
+wl_iterations: 1
+dimensions: 32
+workers: 24
+learning_rate: 0.05
+min_count: 2
+epochs: 20
 
-  kmeans:
-    k: 5
-    cluster_dir: /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters
-    k_min: 5
-    k_max: 15
+#  kmeans:
+k: 5
+cluster_dir: /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters
+k_min: 5
+k_max: 15
 
-server:
-  server_url: http://0.0.0.0:8484
-  temperature: 0
-  max_tokens: 500
+#server:
+server_url: http://0.0.0.0:8484
+temperature: 0
+max_tokens: 500
+num_sentences: 3
+system_prompt_key: generation
+use_context: 
+obo_file_path: 
+reprocess: false
+include_pos: true
+include_dep: true
+no_entity_ratio: 0.25
 
-generate:
-  kshot_size: 3
-  input_file_type: "list"
-  min_samples_per_cluster: 10
-  weighted_threshold: 1.5
-  max_iterations: 5
-  overlap_threshold: 1.5
+
+#generate:
+kshot_size: 3
+input_file_type: list 
+min_samples_per_cluster: 10
+weighted_threshold: 1.5
+max_iterations: 5
+overlap_threshold: 1.5
+NCBI_train: data/ncbi/trf/ncbi_ner_train.json
+NCBI_kshot: data/ncbi/trf/ncbi_ner_train_10pct.json
+Generated_train: data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json
+output_directory: data/generation_pipeline/
+spacy_model: en_core_web_trf
+
+#general:
+random_seed: 42
+test: true
+verbose: true
+
+#pipeline:
+min_samples_per_cluster: 10 # Minimum number of synthetic samples required per cluster to consider it covered.
+weighted_threshold: 0.75 # Weighted coverage threshold to stop iterations (global overlap).
+max_iterations: 5 
+overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
+
+
 
 
 

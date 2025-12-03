@@ -4,6 +4,8 @@ import os
 import random
 from typing import Any, Dict, List
 from sklearn.cluster import KMeans
+import yaml
+import settings
 from src_generate.llmAnnotationGenerationLatest import main as generate_sentence_samples
 from src_generate.llmAnnotationGenerationLatest import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
@@ -17,6 +19,8 @@ import matplotlib.pyplot as plt
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
+    parser.add_argument('--config_file', type=str, default='~/experiments/default_generate.yml', help='Path to config file with all arguments.')
+    """
     parser.add_argument('--NCBI_train', type=str, default='',
                         help='Path to the NCBI_train.')
     parser.add_argument('--NCBI_kshot', type=str, default='',
@@ -42,11 +46,11 @@ def argparse_args():
     parser.add_argument('--obo_file_path', type=str, default='', 
                         help='Directory where sample sentences are outputed using JSON format.')
     parser.add_argument('--reprocess', action='store_true', 
-                        help="""If set, recalculate the generation for allready existing 
-                        sentences using terms.""")
+                        help="If set, recalculate the generation for allready existing 
+                        sentences using terms.")
     parser.add_argument('--test', action='store_true', 
-                        help="""If set, recalculate the generation for allready existing 
-                        sentences using terms.""")
+                        help="If set, recalculate the generation for allready existing 
+                        sentences using terms.")
     parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
                         help='spaCy model to use for tokenization (default: en_core_web_sm).')
     parser.add_argument('--kshot_size', type=int, default=3, 
@@ -69,7 +73,7 @@ def argparse_args():
                         help='Maximum number of iterations for adaptive generation.')
     parser.add_argument('--cluster_dir', type=str, default='',
                         help='Directory containing precomputed cluster centroids and labels.')
-    parser.add_argument('--overlap_threshold', type=float, default=0.75, help='Wanted cluster overlap treshold per cluster.')
+    parser.add_argument('--overlap_threshold', type=float, default=0.75, help='Wanted cluster overlap treshold per cluster.')"""
 
 
     return parser.parse_args()
@@ -476,7 +480,9 @@ python3 bioNER/generation_pipeline.py \
 '''
 
 if __name__ == "__main__":
-    args = argparse_args()
-    args.logger = setup_logger(args)
-    args.logger.info(f"Output directory: {args.output_directory}")
+    init_args = argparse_args()
+    with open(init_args.config_file, 'r') as file:
+        args = yaml.safe_load(file)
+    logger = setup_logger(args)
+    logger.info(f"Output directory: {args.output_directory}")
     main(args)
