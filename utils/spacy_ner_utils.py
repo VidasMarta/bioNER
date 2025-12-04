@@ -46,7 +46,6 @@ def load_data(nlp, jsonl_path):
             ents = [Span(doc, start, end, label=label) for start, end, label in spans]
             doc.ents = ents
 
-            pred_doc = nlp.make_doc(" ".join(tokens))
-            example = Example(pred_doc, doc)
+            example = Example(doc, doc)  # gold-standard is same doc for now
             examples.append(example)
     return examples
