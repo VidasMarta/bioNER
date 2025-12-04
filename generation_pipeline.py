@@ -16,6 +16,7 @@ import umap
 import src_generate.utils as utils
 import subprocess
 import matplotlib.pyplot as plt
+from utils.pipeline_ner_model import train_and_eval_bioner
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
@@ -208,7 +209,6 @@ def adaptive_syntax_generation(
     if args.test:
         args.max_iterations = 3
 
-
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         # KARATE ENV
@@ -327,6 +327,30 @@ def adaptive_syntax_generation(
         # Add new regenerated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
+
+        if args.ner_model_eval:
+            train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
+
+            with open(train_path, "w") as f:
+                for ex in synth_data:
+                    f.write(json.dumps(ex) + "\n")
+
+            print("[NER] Started spacy NER model training.")
+            sub_results = subprocess.run([
+                "/opt/conda/bin/python3", "train_spacy_ner.py",
+                "--train", postprocessed,
+                "--output", f"{output_dir}/ner_model_iter_{iteration}",
+                "--n_iter", args.num_train_iter,
+            ], capture_output=True, text=True)
+
+            print("[NER] Spacy NER model evaluating.")
+            logger_file = os.path.join(output_dir, "logger.jsonl")
+            sub_results = subprocess.run([
+                "/opt/conda/bin/python3", "eval_spacy_ner.py",
+                "--model", f"{output_dir}/ner_model_iter_{iteration}",
+                "--test", args.ncbi_dev_set,
+                "--logger", logger_file,
+            ], capture_output=True, text=True)
 
         iteration += 1
 

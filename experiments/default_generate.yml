@@ -51,6 +51,12 @@ weighted_threshold: 0.75 # Weighted coverage threshold to stop iterations (globa
 max_iterations: 5 
 overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
 
+#bioNER
+ner_model_eval: true
+ncbi_dev_set: data/ncbi/devel.json
+num_train_iter: 20
+
+
 
 
 
