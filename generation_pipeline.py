@@ -20,61 +20,6 @@ import matplotlib.pyplot as plt
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
     parser.add_argument('--config_file', type=str, default='~/experiments/default_generate.yml', help='Path to config file with all arguments.')
-    """
-    parser.add_argument('--NCBI_train', type=str, default='',
-                        help='Path to the NCBI_train.')
-    parser.add_argument('--NCBI_kshot', type=str, default='',
-                        help='Path to the NCBI subset (10, 20 or 50 pct) to use as k-shot pool.')
-    parser.add_argument('--Generated_train', type=str, default='', #TODO: možda cijeli generated, ne samo train
-                        help='Path to the Generated_train.')
-    parser.add_argument('--output_directory', type=str, required=True, 
-                        help='Directory where sample sentences are outputed using JSON format.')
-    parser.add_argument('--server_url', type=str, default="http://127.0.0.1:8080", 
-                        help='URL of the llama.cpp inference server (default: http://127.0.0.1:8080).')
-    parser.add_argument('--num_sentences', type=int, default=1, 
-                        help='Number of sentences to produce by LLM.')
-    parser.add_argument('--system_prompt_key', type=str, default='generation', 
-                        help="Key for selecting system prompt from predefined prompt templates (default: 'generation').")
-    parser.add_argument('--temperature', type=float, default=0.2, 
-                        help='Sampling temperature for the LLM. (default: 0.2).')
-    parser.add_argument('--max_tokens', type=int, default=2000, 
-                        help='Maximum number of tokens to generate in LLM response (default: 2000).')
-    parser.add_argument('--verbose', action='store_true', 
-                        help='If set, print detailed debug output including LLM responses.')
-    parser.add_argument('--use_context', action='store_true', 
-                        help='If set, include context of the ontology term')    
-    parser.add_argument('--obo_file_path', type=str, default='', 
-                        help='Directory where sample sentences are outputed using JSON format.')
-    parser.add_argument('--reprocess', action='store_true', 
-                        help="If set, recalculate the generation for allready existing 
-                        sentences using terms.")
-    parser.add_argument('--test', action='store_true', 
-                        help="If set, recalculate the generation for allready existing 
-                        sentences using terms.")
-    parser.add_argument('--spacy_model', type=str, default='en_core_web_sm', 
-                        help='spaCy model to use for tokenization (default: en_core_web_sm).')
-    parser.add_argument('--kshot_size', type=int, default=3, 
-                        help='Number of examples to use for each prompt.')
-    parser.add_argument('--random_seed', type=int, default=42, 
-                        help='Random seed for reproducibility.')
-    parser.add_argument('--include_pos', action='store_true', 
-                        help='Include POS tags in k-shot examples.')
-    parser.add_argument('--include_dep', action='store_true', 
-                        help='Include dependency tags in k-shot examples.')
-    parser.add_argument('--no_entity_ratio', type=float, default=0.25, #TODO ovo izračunati iz NCBI traina
-                        help='Ratio of sentences without entities.')
-    parser.add_argument('--n_clusters', type=int, default=5,
-                        help='Number of clusters for KMeans clustering of syntax embeddings.')
-    parser.add_argument('--min_samples_per_cluster', type=int, default=10,
-                        help='Minimum number of synthetic samples required per cluster to consider it covered.')
-    parser.add_argument('--weighted_threshold', type=float, default=0.75,
-                        help='Weighted coverage threshold to stop iterations (global overlap).')
-    parser.add_argument('--max_iterations', type=int, default=5,
-                        help='Maximum number of iterations for adaptive generation.')
-    parser.add_argument('--cluster_dir', type=str, default='',
-                        help='Directory containing precomputed cluster centroids and labels.')
-    parser.add_argument('--overlap_threshold', type=float, default=0.75, help='Wanted cluster overlap treshold per cluster.')"""
-
 
     return parser.parse_args()
 
@@ -436,53 +381,16 @@ def main(args: argparse.Namespace):
 
 
 '''
-python3 bioNER/generation_pipeline.py \
-    --NCBI_train data/ncbi/trf/ncbi_ner_train.json \
-    --NCBI_kshot data/ncbi/trf/ncbi_ner_train_10pct.json \
-    --Generated_train data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json \
-    --output_directory data/generation_pipeline/ \
-    --server_url http://172.20.0.4:8484 \
-    --num_sentences 3
-    --system_prompt_key generation \
-    --temperature 0 \
-    --max_tokens 500 \
-    --input_file_type list\
-    --spacy_model en_core_web_lg \
-    --kshot_size 3 \
-    --embedding_hiperparameters bioNER/experiments/gl2vec_hiperparams.json \
-    --min_samples_per_cluster 10 \
-    --weighted_threshold 0.75 \
-    --max_iterations 5 \
-    --test \
-    --cluster_dir data/generation_pipeline/kmeans_clusters \
-    --overlap_threshold 0.75
-
 /opt/conda/envs/gen/bin/python3 bioNER/generation_pipeline.py \
-    --NCBI_train data/ncbi/trf/ncbi_ner_train.json \
-    --NCBI_kshot data/ncbi/trf/ncbi_ner_train_10pct.json \
-    --Generated_train data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json \
-    --output_directory data/generation_pipeline/ \
-    --server_url http://172.20.0.4:8484 \
-    --num_sentences 3
-    --system_prompt_key generation \
-    --temperature 0 \
-    --max_tokens 500 \
-    --input_file_type list\
-    --spacy_model en_core_web_lg \
-    --kshot_size 3 \
-    --embedding_hiperparameters bioNER/experiments/gl2vec_hiperparams.json \
-    --min_samples_per_cluster 10 \
-    --weighted_threshold 0.75 \
-    --max_iterations 5 \
-    --test \
-    --cluster_dir data/generation_pipeline/kmeans_clusters \
-    --overlap_threshold 0.75 --verbose
+    --config_file ~/experiments/default_generate.yaml
 '''
+
 
 if __name__ == "__main__":
     init_args = argparse_args()
     with open(init_args.config_file, 'r') as file:
-        args = yaml.safe_load(file)
+        yaml_args = yaml.safe_load(file)
+    args = argparse.Namespace(**yaml_args)
     logger = setup_logger(args)
     logger.info(f"Output directory: {args.output_directory}")
     main(args)
