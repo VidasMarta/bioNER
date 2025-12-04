@@ -22,7 +22,7 @@ def train(output_dir, train_path, n_iter=20):
         for ent in example.reference.ents:
             ner.add_label(ent.label_)
 
-    nlp.begin_training()
+    optimizer = nlp.begin_training()
 
     for it in range(n_iter):
         random.shuffle(train_examples)
@@ -30,7 +30,7 @@ def train(output_dir, train_path, n_iter=20):
 
         batches = minibatch(train_examples, size=8)
         for batch in batches:
-            nlp.update(batch, drop=0.3, losses=losses)
+            nlp.update(batch, drop=0.3, losses=losses, sgd=optimizer)
 
         print(f"Iter {it}: Loss = {losses}")
 
