@@ -36,7 +36,7 @@ max_iterations: 5
 overlap_threshold: 1.5
 NCBI_train:  /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
 NCBI_kshot:  /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json
-Generated_train:  /home/mvidas/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json
+Generated_train:  /home/mvidas/syn-bioner/data/synthetic_10_trial/generated_sentences_20251114.json
 output_directory:  /home/mvidas/syn-bioner/data/generation_pipeline/
 spacy_model: en_core_web_trf
 
