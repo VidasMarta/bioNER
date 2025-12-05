@@ -183,8 +183,7 @@ def adaptive_syntax_generation(
 
     print(f"[INFO] Clustering real embeddings into {args.k} syntax clusters...") 
     if not os.path.exists(args.cluster_dir):
-        args.parsed_features = os.path.join(output_dir, "syntax_features.jsonl") 
-        kmeans_params.main(args)  # Call the kmeans_params script to compute clusters
+        kmeans_params.main(args, real_emb)  # Call the kmeans_params script to compute clusters
     
     real_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(args.cluster_dir, "cluster_centroids.npy"))

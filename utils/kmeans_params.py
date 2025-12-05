@@ -34,14 +34,15 @@ def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
         "centroids": km.cluster_centers_,
     }
 
-def main(args):
+def main(args, emb):
     os.makedirs(args.cluster_dir, exist_ok=True)
 
-    print("[INFO] Loading parsed syntax data...")
-    data = load_syntax_data(args.parsed_features)
+    if not emb:
+        print("[INFO] Loading parsed syntax data...")
+        data = load_syntax_data(args.parsed_features)
 
-    print("[INFO] Computing embeddings...")
-    emb, model = compute_embeddings(data)
+        print("[INFO] Computing embeddings...")
+        emb, model = compute_embeddings(data)
 
     results = []
     best_k = None
@@ -101,4 +102,4 @@ if __name__ == "__main__":
     parser.add_argument("--k_min", type=int, default=2)
     parser.add_argument("--k_max", type=int, default=20)
     args = parser.parse_args()
-    main(args)
+    main(args, None)
