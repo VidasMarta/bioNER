@@ -361,20 +361,23 @@ def main(args: argparse.Namespace):
     os.makedirs(args.output_directory, exist_ok=True)
     # Load and parse data
     # SPACY ENV
-    print("[INFO] started SYNTAX FEATURES GENERATION!")
+
+    if not os.path.exists(parsed_data_path):
+        print("[INFO] started SYNTAX FEATURES GENERATION!")
     
-    sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/parsing_v2.py",
-            "--parsed_mesh_file", args.NCBI_train,
-            "--gen_train_path", args.Generated_train,
-            "--output_path_features", parsed_data_path,
-            "--rewrite",
-            "--gen_pipeline",
-            "--spacy_model", args.spacy_model
-        ], capture_output=True, text=True)
-    if args.verbose:
-        print("STDOUT:\n", sub_results.stdout)
-        print("STDERR:\n", sub_results.stderr)
+        sub_results = subprocess.run([
+                "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/parsing_v2.py",
+                "--parsed_mesh_file", args.NCBI_train,
+                "--gen_train_path", args.Generated_train,
+                "--output_path_features", parsed_data_path,
+                "--rewrite",
+                "--gen_pipeline",
+                "--spacy_model", args.spacy_model
+            ], capture_output=True, text=True)
+        if args.verbose:
+            print("STDOUT:\n", sub_results.stdout)
+            print("STDERR:\n", sub_results.stderr)
+            
     with open(parsed_data_path, "r") as f:
         all_data = [json.loads(line) for line in f] 
     ncbi_data = [entry for entry in all_data if entry.get("corpus") == "NCBI_train"]
