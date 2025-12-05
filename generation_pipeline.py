@@ -3,9 +3,7 @@ import json
 import os
 import random
 from typing import Any, Dict, List
-from sklearn.cluster import KMeans
 import yaml
-import settings
 from src_generate.llmAnnotationGenerationLatest import main as generate_sentence_samples
 from src_generate.llmAnnotationGenerationLatest import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
@@ -13,10 +11,8 @@ import numpy as np
 import utils.parsing_embedding as pe
 import utils.kmeans_params as kmeans_params
 import umap
-import src_generate.utils as utils
 import subprocess
 import matplotlib.pyplot as plt
-from utils.pipeline_ner_model import train_and_eval_bioner
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
