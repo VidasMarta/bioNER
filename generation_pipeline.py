@@ -174,7 +174,6 @@ def adaptive_syntax_generation(
     """
     iteration = 0
     synth_data = initial_synth_data
-    output_dir = args.output_directory
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
     # KARATE ENV
@@ -190,7 +189,7 @@ def adaptive_syntax_generation(
 
     # Save NCBI examples with cluster labels for later k-shot selection
     # KARATE ENV
-    ncbi_clustered_path = os.path.join(output_dir, "kshot_ncbi_clustered.jsonl")
+    ncbi_clustered_path = os.path.join(args.output_directory, "kshot_ncbi_clustered.jsonl")
     kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
     kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
     similarities = cosine_similarity(kshot_emb, centroids_real)
@@ -223,7 +222,7 @@ def adaptive_syntax_generation(
             centroids_real,
             args.overlap_threshold,
             iteration,
-            output_dir,
+            args.output_directory,
             args.min_samples_per_cluster
         )
 
@@ -237,12 +236,12 @@ def adaptive_syntax_generation(
                 f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
                 f"(all clusters sufficiently represented)."
             )
-            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
+            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
             break
 
         elif iteration == args.max_iterations:
             print("[STOP] Max iteration reached target reached.")
-            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, output_dir)
+            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
             break
 
         # Adaptive regeneration: guided by uncovered clusters
@@ -276,13 +275,13 @@ def adaptive_syntax_generation(
 
         # Select cluster-specific k-shot examples for uncovered clusters
         kshot_examples = get_cluster_specific_kshot(
-            os.path.join(output_dir, "kshot_ncbi_clustered.jsonl"),
+            os.path.join(args.output_directory, "kshot_ncbi_clustered.jsonl"),
             uncovered_clusters,
             kshot_size=args.kshot_size
         )
 
         # Save temporarily for prompt conditioning
-        kshot_file = os.path.join(output_dir, f"kshot_iter_{iteration}.jsonl")
+        kshot_file = os.path.join(args.output_directory, f"kshot_iter_{iteration}.jsonl")
         with open(kshot_file, "w") as f:
             for ex in kshot_examples:
                 f.write(json.dumps(ex) + "\n")
@@ -334,15 +333,15 @@ def adaptive_syntax_generation(
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "train_spacy_ner.py",
                 "--train", postprocessed,
-                "--output", f"{output_dir}/ner_model_iter_{iteration}",
+                "--output", f"{args.output_directory}/ner_model_iter_{iteration}",
                 "--n_iter", args.num_train_iter,
             ], capture_output=True, text=True)
 
             print("[NER] Spacy NER model evaluating.")
-            logger_file = os.path.join(output_dir, "logger.jsonl")
+            logger_file = os.path.join(args.output_directory, "logger.jsonl")
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "eval_spacy_ner.py",
-                "--model", f"{output_dir}/ner_model_iter_{iteration}",
+                "--model", f"{args.output_directory}/ner_model_iter_{iteration}",
                 "--test", args.ncbi_dev_set,
                 "--logger", logger_file,
             ], capture_output=True, text=True)
