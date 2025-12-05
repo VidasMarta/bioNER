@@ -37,12 +37,12 @@ def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
 def main(args, emb):
     os.makedirs(args.cluster_dir, exist_ok=True)
 
-    if not emb:
+    if emb is None:
         print("[INFO] Loading parsed syntax data...")
         data = load_syntax_data(args.parsed_features)
 
         print("[INFO] Computing embeddings...")
-        emb, model = compute_embeddings(data)
+        emb, _ = compute_embeddings(data)
 
     results = []
     best_k = None
