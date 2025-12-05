@@ -7,7 +7,6 @@ import networkx as nx
 from karateclub import Graph2Vec
 from karateclub import GL2Vec
 import json
-# from sklearn.preprocessing import normalize
 from . import kmeans_params as kp
 from tqdm import tqdm
 
@@ -44,20 +43,21 @@ def build_dependency_graphs(data):
         graphs[sent_id] = G
     return graphs, sent_ids_list
  
-def get_graph_embedding(graphs, embedding_type="gl2vec", model=None, wl_iterations=1, 
+def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iterations=1, 
                         dimensions=32, workers=32, learning_rate=0.1,
                         min_count=2, epochs=20):
 
-    if model is None and embedding_type == "gl2vec" :
-        model = GL2Vec(wl_iterations=wl_iterations, dimensions=dimensions, 
-                       workers=workers, learning_rate=learning_rate, 
-                       min_count=min_count, epochs=epochs)
-    elif model is None and embedding_type == "graph2vec":
-        model = Graph2Vec(wl_iterations=wl_iterations, dimensions=dimensions, 
-                          workers=workers, learning_rate=learning_rate,
-                          min_count=min_count, epochs=epochs)
-    else:
-        raise Exception(f"No such embedding type {embedding_type}!")
+    if model is None:
+        if embedding_type == "gl2vec" :
+            model = GL2Vec(wl_iterations=wl_iterations, dimensions=dimensions, 
+                        workers=workers, learning_rate=learning_rate, 
+                        min_count=min_count, epochs=epochs)
+        elif embedding_type == "graph2vec":
+            model = Graph2Vec(wl_iterations=wl_iterations, dimensions=dimensions, 
+                            workers=workers, learning_rate=learning_rate,
+                            min_count=min_count, epochs=epochs)
+        else:
+            raise Exception(f"No such embedding type {embedding_type}!")
     model.fit(list(graphs.values()))
     embeddings = model.get_embedding()
     embeddings_data = np.array(embeddings)

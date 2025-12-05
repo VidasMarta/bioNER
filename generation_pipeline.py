@@ -175,7 +175,7 @@ def adaptive_syntax_generation(
     # KARATE ENV
     real_graphs, _ = pe.build_dependency_graphs(real_data)
     real_emb, model = pe.get_graph_embedding(real_graphs, embedding_type="gl2vec",
-                                              wl_iterations=args.wl_terations, dimensions=args.dimensions, 
+                                              wl_iterations=args.wl_iterations, dimensions=args.dimensions, 
                                               workers=args.workers, learning_rate= args.learning_rate, 
                                               min_count = args.min_count, epochs = args.epochs)
 
@@ -377,7 +377,7 @@ def main(args: argparse.Namespace):
         if args.verbose:
             print("STDOUT:\n", sub_results.stdout)
             print("STDERR:\n", sub_results.stderr)
-            
+
     with open(parsed_data_path, "r") as f:
         all_data = [json.loads(line) for line in f] 
     ncbi_data = [entry for entry in all_data if entry.get("corpus") == "NCBI_train"]
@@ -401,8 +401,7 @@ def main(args: argparse.Namespace):
 
 
 '''
-/opt/conda/envs/gen/bin/python3 generation_pipeline.py \
-    --config_file ~/experiments/default_generate.yaml
+singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/generation_pipeline.py
 '''
 
 
