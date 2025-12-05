@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
-    parser.add_argument('--config_file', type=str, default='~/syn-bioner/bioNER/experiments/default_generate.yml', help='Path to config file with all arguments.')
+    parser.add_argument('--config_file', type=str, default='/home/mvidas/syn-bioner/bioNER/experiments/default_generate.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
 

@@ -9,7 +9,7 @@ epochs: 20
 
 #  kmeans:
 k: 5
-cluster_dir:  ~/syn-bioner/data/generation_pipeline/kmeans_clusters/
+cluster_dir:  /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/
 k_min: 5
 k_max: 15
 
@@ -34,10 +34,10 @@ min_samples_per_cluster: 10
 weighted_threshold: 1.5
 max_iterations: 5
 overlap_threshold: 1.5
-NCBI_train:  ~/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
-NCBI_kshot:  ~/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json
-Generated_train:  ~/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json
-output_directory:  ~/syn-bioner/data/generation_pipeline/
+NCBI_train:  /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
+NCBI_kshot:  /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json
+Generated_train:  /home/mvidas/syn-bioner/data/NCBI-Disease/synthetic_10_trial/generated_10_3000.json
+output_directory:  /home/mvidas/syn-bioner/data/generation_pipeline/
 spacy_model: en_core_web_trf
 
 #general:
@@ -53,7 +53,7 @@ overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
 
 #bioNER
 ner_model_eval: true
-ncbi_dev_set:  ~/syn-bioner/data/ncbi/devel.json
+ncbi_dev_set:  /home/mvidas/syn-bioner/data/ncbi/devel.json
 num_train_iter: 20
 
 
