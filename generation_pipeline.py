@@ -295,7 +295,7 @@ def adaptive_syntax_generation(
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "utils/generation_postprocessing.py",
+            "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
@@ -330,7 +330,7 @@ def adaptive_syntax_generation(
 
             print("[NER] Started spacy NER model training.")
             sub_results = subprocess.run([
-                "/opt/conda/bin/python3", "train_spacy_ner.py",
+                "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
                 "--train", postprocessed,
                 "--output", f"{args.output_directory}/ner_model_iter_{iteration}",
                 "--n_iter", args.num_train_iter,
@@ -339,7 +339,7 @@ def adaptive_syntax_generation(
             print("[NER] Spacy NER model evaluating.")
             logger_file = os.path.join(args.output_directory, "logger.jsonl")
             sub_results = subprocess.run([
-                "/opt/conda/bin/python3", "eval_spacy_ner.py",
+                "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
                 "--model", f"{args.output_directory}/ner_model_iter_{iteration}",
                 "--test", args.ncbi_dev_set,
                 "--logger", logger_file,
@@ -364,7 +364,7 @@ def main(args: argparse.Namespace):
     print("[INFO] started SYNTAX FEATURES GENERATION!")
     
     sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "utils/parsing_v2.py",
+            "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/parsing_v2.py",
             "--parsed_mesh_file", args.NCBI_train,
             "--gen_train_path", args.Generated_train,
             "--output_path_features", parsed_data_path,
