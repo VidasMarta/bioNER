@@ -181,17 +181,13 @@ def adaptive_syntax_generation(
     real_graphs, _ = pe.build_dependency_graphs(real_data)
     real_emb, model = pe.get_graph_embedding(real_graphs) #TODO ovdje podesiti parametre za gl2vec model
 
-    print(f"[INFO] Clustering real embeddings into {args.n_clusters} syntax clusters...") 
-    cluster_dir = args.cluster_dir
-    if not os.path.exists(cluster_dir):
-        args.parsed_features = os.path.join(output_dir, "syntax_features.jsonl")
-        args.output_dir = os.path.join(output_dir, "kmeans_clusters")   
-        args.k_min = 2
-        args.k_max = 10
+    print(f"[INFO] Clustering real embeddings into {args.k} syntax clusters...") 
+    if not os.path.exists(args.cluster_dir):
+        args.parsed_features = os.path.join(output_dir, "syntax_features.jsonl") 
         kmeans_params.main(args)  # Call the kmeans_params script to compute clusters
     
-    real_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
-    centroids_real = np.load(os.path.join(cluster_dir, "cluster_centroids.npy"))
+    real_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
+    centroids_real = np.load(os.path.join(args.cluster_dir, "cluster_centroids.npy"))
 
     # Save NCBI examples with cluster labels for later k-shot selection
     # KARATE ENV

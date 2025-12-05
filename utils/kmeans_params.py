@@ -35,7 +35,7 @@ def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
     }
 
 def main(args):
-    os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(args.cluster_dir, exist_ok=True)
 
     print("[INFO] Loading parsed syntax data...")
     data = load_syntax_data(args.parsed_features)
@@ -68,36 +68,36 @@ def main(args):
             best_centroids = res["centroids"]
 
     # Save evaluation table
-    eval_path = os.path.join(args.output_dir, "cluster_evaluation.json")
+    eval_path = os.path.join(args.cluster_dir, "cluster_evaluation.json")
     with open(eval_path, "w") as f:
         for res in results:
             f.write(json.dumps(res) + '\n')
     print(f"[INFO] Saved clustering evaluation → {eval_path}")
 
     # Save best cluster assignments
-    np.save(os.path.join(args.output_dir, "cluster_labels.npy"), best_labels)
-    np.save(os.path.join(args.output_dir, "cluster_centroids.npy"), best_centroids)
+    np.save(os.path.join(args.cluster_dir, "cluster_labels.npy"), best_labels)
+    np.save(os.path.join(args.cluster_dir, "cluster_centroids.npy"), best_centroids)
 
     # Save config
     config = {
         "best_k": best_k,
         "silhouette": str(best_score)
     }
-    with open(os.path.join(args.output_dir, "cluster_config.json"), "w") as f:
+    with open(os.path.join(args.cluster_dir, "cluster_config.json"), "w") as f:
         json.dump(config, f, indent=2)
 
     print(f"[SUCCESS] Best K = {best_k} (silhouette={best_score:.4f})")
-    print(f"[INFO] Labels and centroids saved in {args.output_dir}")
+    print(f"[INFO] Labels and centroids saved in {args.cluster_dir}")
 
 
 """python3 utils/kmeans_params.py --parsed_features /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json \
---output_dir /home/mkeber/syn-bioner/data/clustering --k_min 2 --k_max 4 """
+--cluster_dir /home/mkeber/syn-bioner/data/clustering --k_min 2 --k_max 4 """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Determine optimal number of syntax clusters.")
     parser.add_argument("--parsed_features", type=str, required=True,
                         help="Path to syntax_features.jsonl")
-    parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--cluster_dir", type=str, required=True)
     parser.add_argument("--k_min", type=int, default=2)
     parser.add_argument("--k_max", type=int, default=20)
     args = parser.parse_args()
