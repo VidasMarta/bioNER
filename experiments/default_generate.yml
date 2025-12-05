@@ -1,10 +1,10 @@
 #embedding_hiperparameters:
 #  GL2Vec:
 wl_iterations: 1
-dimensions: 32
+dimensions: 16
 workers: 24
 learning_rate: 0.05
-min_count: 2
+min_count: 1
 epochs: 20
 
 #  kmeans:

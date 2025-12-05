@@ -178,7 +178,10 @@ def adaptive_syntax_generation(
     print("[INFO] Building real NCBI dependency graphs...")
     # KARATE ENV
     real_graphs, _ = pe.build_dependency_graphs(real_data)
-    real_emb, model = pe.get_graph_embedding(real_graphs) #TODO ovdje podesiti parametre za gl2vec model
+    real_emb, model = pe.get_graph_embedding(real_graphs, embedding_type="gl2vec",
+                                              wl_iterations=args.wl_terations, dimensions=args.dimensions, 
+                                              workers=args.workers, learning_rate= args.learning_rate, 
+                                              min_count = args.min_count, epochs = args.epochs)
 
     print(f"[INFO] Clustering real embeddings into {args.k} syntax clusters...") 
     if not os.path.exists(args.cluster_dir):
