@@ -295,7 +295,7 @@ def adaptive_syntax_generation(
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "bioNER/utils/generation_postprocessing.py",
+            "/opt/conda/bin/python3", "utils/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
@@ -364,7 +364,7 @@ def main(args: argparse.Namespace):
     print("[INFO] started SYNTAX FEATURES GENERATION!")
     
     sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "bioNER/utils/parsing_v2.py",
+            "/opt/conda/bin/python3", "utils/parsing_v2.py",
             "--parsed_mesh_file", args.NCBI_train,
             "--gen_train_path", args.Generated_train,
             "--output_path_features", parsed_data_path,
@@ -398,7 +398,7 @@ def main(args: argparse.Namespace):
 
 
 '''
-/opt/conda/envs/gen/bin/python3 bioNER/generation_pipeline.py \
+/opt/conda/envs/gen/bin/python3 generation_pipeline.py \
     --config_file ~/experiments/default_generate.yaml
 '''
 
