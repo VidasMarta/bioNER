@@ -151,7 +151,7 @@ def argparse_args():
     parser.add_argument('--generated_postprocessed', type=str, default='',
                         help='Path to the generated sentences after postprocessing.')
     parser.add_argument('--starting_id', type=int, help='Id of last generated sentence.')
-    parser.add_argument('--config_file', type=int, help='Number of sentences LLM was supposed to generate.', default='/home/mvidas/syn-bioner/bioNER/experiments/default_generate.yml')
+    parser.add_argument('--config_file', type=str, help='Number of sentences LLM was supposed to generate.', default='/home/mvidas/syn-bioner/bioNER/experiments/default_generate.yml')
 
     return parser.parse_args()
 
