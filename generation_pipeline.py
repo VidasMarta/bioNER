@@ -5,7 +5,7 @@ import random
 from typing import Any, Dict, List
 import yaml
 from src_generate.llmAnnotationGenerationLatest import *
-from src_generate.llmAnnotationGenerationLatest import setup_logger
+from src_generate.utils import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import utils.parsing_embedding as pe

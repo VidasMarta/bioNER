@@ -1,3 +1,5 @@
+from datetime import datetime
+import logging
 import re
 import string
 import json
@@ -101,6 +103,22 @@ def get_spacy_model(model: str):
             SPACY_NLP = spacy.load(model)
     else:
         return SPACY_NLP
+    
+def setup_logger(args):
+    log_dir = args.output_directory
+    os.makedirs(log_dir, exist_ok=True)
+    date_str = datetime.now().strftime("%Y%m%d")
+    log_path = os.path.join(log_dir, f"{date_str}_tags_generation.log")
+    logger = logging.getLogger("tags_generation")
+    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    fh = logging.FileHandler(log_path, encoding="utf-8")
+    fh.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    fh.setFormatter(formatter)
+    if not logger.hasHandlers():
+        logger.addHandler(fh)
+    logger.propagate = False
+    return logger
         
 """python3 utils.py"""
 

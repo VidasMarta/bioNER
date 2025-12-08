@@ -5,7 +5,6 @@ from typing import List, Dict, Any, Optional, Tuple
 import tqdm
 import os
 import numpy as np
-import logging
 from datetime import datetime
 from collections import defaultdict  
 import obonet
@@ -316,21 +315,6 @@ def main(args: argparse.Namespace):
 
     generate_sentence_samples(args, args.kshot_path, term_list)
     
-def setup_logger(args):
-    log_dir = args.output_directory
-    os.makedirs(log_dir, exist_ok=True)
-    date_str = datetime.now().strftime("%Y%m%d")
-    log_path = os.path.join(log_dir, f"{date_str}_tags_generation.log")
-    logger = logging.getLogger("tags_generation")
-    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
-    fh = logging.FileHandler(log_path, encoding="utf-8")
-    fh.setLevel(logging.DEBUG if args.verbose else logging.INFO)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-    fh.setFormatter(formatter)
-    if not logger.hasHandlers():
-        logger.addHandler(fh)
-    logger.propagate = False
-    return logger
 
 """
 With included pos and dep
@@ -375,6 +359,6 @@ python3 bioNER/src-generate/llmAnnotationGeneration.py \
 """
 if __name__ == "__main__":
     args = argparse_args()
-    args.logger = setup_logger(args)
+    args.logger = utils.setup_logger(args)
     args.logger.info(f"Output directory: {args.output_directory}")
     main(args)
