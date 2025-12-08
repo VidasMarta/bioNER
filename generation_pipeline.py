@@ -260,6 +260,7 @@ def adaptive_syntax_generation(
             cluster_mask = synth_labels == cluster_id
             indices_in_cluster = [i for i in range(len(synth_data)) if cluster_mask[i] and "entities" in synth_data[i]] 
             cluster_terms = [synth_data[i].get("entities") for i in indices_in_cluster]
+            
 
             # If not enough terms in this cluster, sample some from the global synthetic pool as backup
             if len(cluster_terms) < num_new:
@@ -277,9 +278,17 @@ def adaptive_syntax_generation(
                     ))
                     cluster_terms.extend(extra_terms)
 
+            #Some sentences have multiple terms (entities)
+            clean_cluster_terms = []
+            for t in cluster_terms:
+                if isinstance(t, list):
+                    clean_cluster_terms.extend(t)
+                elif isinstance(t, str):
+                    clean_cluster_terms.append(t)
+
 
             # Randomly pick terms for this cluster’s regeneration quota
-            selected_terms = np.random.choice(cluster_terms, size=num_new, replace=False)
+            selected_terms = np.random.choice(clean_cluster_terms, size=num_new, replace=False)
             regen_terms.extend(selected_terms)
 
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
@@ -318,8 +327,8 @@ def adaptive_syntax_generation(
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
 
-        if cluster_terms: #remove sentences form this cluster whose terms were selected for regeneration
-            terms_to_replace = set(cluster_terms)
+        if clean_cluster_terms: #remove sentences form this cluster whose terms were selected for regeneration
+            terms_to_replace = set(clean_cluster_terms)
             indices_to_replace = [i for i, entry in enumerate(synth_data)
                                 if entry.get("entities") in terms_to_replace
                                 and synth_labels[i] == cluster_id] 

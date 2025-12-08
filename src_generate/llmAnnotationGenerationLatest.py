@@ -66,7 +66,7 @@ def setup(args):
     output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.json')
     return output_path
 
-def load_kshot_examples(kshot_path):
+def load_kshot_examples(args, kshot_path):
     kshot_examples = []
     if kshot_path and os.path.exists(kshot_path):
         kshot_examples = utils.load_training_samples(kshot_path)
@@ -145,7 +145,7 @@ def generate_sentences_per_cluster(
     user_template: str = 'genre_prompt'
 ) -> str:
     output_path = setup(args)
-    kshot_examples = load_kshot_examples(kshot_path)
+    kshot_examples = load_kshot_examples(args, kshot_path)
 
     for cluster in clusters:
         try:
@@ -191,7 +191,7 @@ def generate_sentence_samples(
     returns path to the output JSON file.
     """
     output_path = setup(args)
-    kshot_examples = load_kshot_examples(kshot_path)
+    kshot_examples = load_kshot_examples(args, kshot_path)
     
     # Filter by havig entity or not in a kshot_examples pool
     entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
