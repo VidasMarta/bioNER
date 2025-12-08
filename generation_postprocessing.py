@@ -41,18 +41,19 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     return [sent.text for sent in doc.sents if sent.text.strip()]
 
 
-def create_rule_json(doc, nlp, term)-> Tuple[list,list]:         
+def create_rule_json(doc, nlp, term, entities)-> Tuple[list,list]:      
     tokens = [token.text for token in doc]
     tokens_lower = [token.lower() for token in tokens]
     tokens_lower = utils.check_last_token(tokens_lower)
     tags = [2] * len(tokens)  # default all "O" = 2
     # tokenize the term with spaCy as well (so alignment is consistent)
-    term_tokens = [t.text.lower() for t in nlp(term[0].lower())]
+    term_tokens = [t.text.lower() for t in nlp(term.lower())]
     term_len = len(term_tokens)
     #TODO: is the lemmatization inside utils.check_last_token needed here?
     # search for the term sequence in tokens
     for i in range(len(tokens) - term_len + 1):
         if tokens_lower[i:i+term_len] == term_tokens:
+            entities.append(term)
             tags[i] = 0  # B-DISEASE
             for j in range(1, term_len):
                 tags[i+j] = 1  # I-DISEASE
@@ -81,7 +82,8 @@ def create_json(args: argparse.Namespace, text: str,
     # TODO: add proposed entities from parsing step Where and why?
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
-    tags, tokens = create_rule_json(doc, nlp, term)
+    entities = []
+    tags, tokens = create_rule_json(doc, nlp, term, entities)
     terms = term #[term[0].lower()]
     #term_ids = [term[1]]
     if 0 in tags:
@@ -94,7 +96,7 @@ def create_json(args: argparse.Namespace, text: str,
                 #term_ids.append('NaN')
                 print(f'[INFO] Additional disease term found in generated text: {term_llm} for original term {term}.')
                 print(f'[INFO] Generated sentence: {text}')
-                tags_llm, tokens_llm = create_rule_json(doc, nlp, term_llm)
+                tags_llm, _ = create_rule_json(doc, nlp, term_llm, entities)
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE
                         merged_tags[i] = 0
@@ -109,7 +111,7 @@ def create_json(args: argparse.Namespace, text: str,
     json_data = {
         "abstract_id": None,
         "sentence": text,
-        "entities": terms,
+        "entities": entities,
         "corpus": corpus,
         "pos": pos_tags, 
         "dep": dep_rels, 
