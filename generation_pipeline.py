@@ -312,7 +312,9 @@ def adaptive_syntax_generation(
         if args.test:
             regen_terms = regen_terms[:3]
         #new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
-        new_path = generate_sentences_per_cluster(args, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
+        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
+
+        print(f"[INFO] Generation finished...")
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
@@ -337,9 +339,9 @@ def adaptive_syntax_generation(
                 and synth_labels[i] == cluster_id
             ]
     
-    # Remove in reverse order to preserve indexing
-    for idx in sorted(indices_to_replace, reverse=True):
-        del synth_data[idx]
+        # Remove in reverse order to preserve indexing
+        for idx in sorted(indices_to_replace, reverse=True):
+            del synth_data[idx]
 
 
         # Add new regenerated ones
@@ -369,8 +371,9 @@ def adaptive_syntax_generation(
                 "--test", args.ncbi_dev_set,
                 "--logger", logger_file,
             ], capture_output=True, text=True)
-
+        
         iteration += 1
+
 
     return synth_data, weighted_coverage
 

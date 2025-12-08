@@ -59,11 +59,11 @@ def argparse_args():
 
     return parser.parse_args()
 
-def setup(args):
+def setup(args, iter_output):
     date_today = datetime.today().strftime("%Y%m%d")
     np.random.seed(getattr(args, "random_seed", 42))  # Fixed seed for reproducibility
 
-    output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.json')
+    output_path = os.path.join(iter_output, f'generated_sentences_{date_today}.json')
     return output_path
 
 def load_kshot_examples(args, kshot_path):
@@ -137,6 +137,7 @@ def save_generated_sentences(args, output_path, method, response, term, used_ids
 
 def generate_sentences_per_cluster(
     args: argparse.Namespace,
+    iter_output: str, 
     kshot_path: str,
     term_list: List[str], 
     clusters: List[int],
