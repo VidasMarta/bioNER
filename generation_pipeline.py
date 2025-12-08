@@ -286,8 +286,7 @@ def adaptive_syntax_generation(
         # Select cluster-specific k-shot examples for uncovered clusters
         kshot_examples = get_cluster_specific_kshot(
             os.path.join(args.output_directory, "kshot_ncbi_clustered.jsonl"),
-            uncovered_clusters,
-            kshot_size=args.kshot_size
+            uncovered_clusters
         )
 
         # Save temporarily for prompt conditioning
