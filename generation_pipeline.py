@@ -188,15 +188,16 @@ def adaptive_syntax_generation(
     # Save NCBI examples with cluster labels for later k-shot selection
     # KARATE ENV
     ncbi_clustered_path = os.path.join(args.output_directory, "kshot_ncbi_clustered.jsonl")
-    kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
-    kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
-    similarities = cosine_similarity(kshot_emb, centroids_real)
-    kshot_labels = np.argmax(similarities, axis=1)
-    with open(ncbi_clustered_path, "w") as f:
-        for sample, label in zip(kshot_data, kshot_labels):
-            sample["cluster_id"] = int(label)
-            f.write(json.dumps(sample) + "\n")
-    print(f"[INFO] Saved NCBI examples with cluster IDs → {ncbi_clustered_path}")
+    if not os.path.exists(ncbi_clustered_path):
+        kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
+        kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
+        similarities = cosine_similarity(kshot_emb, centroids_real)
+        kshot_labels = np.argmax(similarities, axis=1)
+        with open(ncbi_clustered_path, "w") as f:
+            for sample, label in zip(kshot_data, kshot_labels):
+                sample["cluster_id"] = int(label)
+                f.write(json.dumps(sample) + "\n")
+        print(f"[INFO] Saved NCBI examples with cluster IDs → {ncbi_clustered_path}")
 
     if args.test:
         args.max_iterations = 2
