@@ -116,16 +116,16 @@ def save_generated_sentences(args, output_path, method, response, term, used_ids
     text = response.json()['content'].strip()
     text = utils.clean_text(text)
     text = utils.remove_code_fences(text)
-    parsed_text, entities = utils.parse_text_entities_format(args, text)
+    #parsed_text, entities = utils.parse_text_entities_format(args, text)
     if args.verbose:
-        args.logger.info(f"Generated text is: {parsed_text}")
-        args.logger.info(
-                f"Extracted entities proposed by LLM: {entities}\n Term is: {term}")
+        args.logger.info(f"Generated text is: {text}")
+        args.logger.info(f"Term is: {term}")
+                #f"Extracted entities proposed by LLM: {entities}\n Term is: {term}")
     record = {}
     with open(output_path, method, encoding='utf-8') as file:
-        for t, ent in zip(parsed_text, entities):
+        for t in text: #t, ent in zip(text, entities):
             record["text"] = t
-            record["entity"] = ent
+            record["entity"] = []
             record["term"] = term
             record["kshot_example_ids"] = used_ids
             record["include_pos"] = getattr(args, "include_pos", True)
