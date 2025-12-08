@@ -30,7 +30,7 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     # if LLM generated more than one sentence return empty dict
     if len(list(doc.sents)) > args.num_sentences: 
         print('Multiple sentences loop of LLM generation error.')
-        args.logger.info(f'Multiple sentences loop of LLM generation error: \n Sentences: {text}')
+        print(f'[INFO] Multiple sentences loop of LLM generation error: \n Sentences: {text}')
         # remove sentences after args.num_sentences
         doc = list(doc.sents)[:args.num_sentences]
         doc = nlp(" ".join([str(s) for s in doc]))
@@ -82,8 +82,8 @@ def create_json(args: argparse.Namespace, text: str,
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     tags, tokens = create_rule_json(doc, nlp, term)
-    terms = [term[0].lower()]
-    term_ids = [term[1]]
+    terms = term #[term[0].lower()]
+    #term_ids = [term[1]]
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
         terms_llm = check_additional_disease_tags(args, tokens, term[0].lower())
@@ -91,9 +91,9 @@ def create_json(args: argparse.Namespace, text: str,
         for term_llm in terms_llm:
             if term_llm[0].lower() != term[0].lower():
                 terms.append(term_llm[0].lower())
-                term_ids.append('NaN')
-                args.logger.info(f'Additional disease term found in generated text: {term_llm} for original term {term}.')
-                args.logger.info(f'Generated sentence: {text}')
+                #term_ids.append('NaN')
+                print(f'[INFO] Additional disease term found in generated text: {term_llm} for original term {term}.')
+                print(f'[INFO] Generated sentence: {text}')
                 tags_llm, tokens_llm = create_rule_json(doc, nlp, term_llm)
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE
