@@ -246,6 +246,7 @@ def adaptive_syntax_generation(
 
         # Adaptive regeneration: guided by uncovered clusters
         regen_terms = []
+        terms_per_cluster = []
 
         for cluster_id in uncovered_clusters:
             # Determine regeneration strength (0–1): the lower the overlap, the higher the regen weight
@@ -290,6 +291,7 @@ def adaptive_syntax_generation(
             # Randomly pick terms for this cluster’s regeneration quota
             selected_terms = np.random.choice(clean_cluster_terms, size=num_new, replace=False)
             regen_terms.extend(selected_terms)
+            terms_per_cluster.append(num_new)
 
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
 
@@ -309,8 +311,8 @@ def adaptive_syntax_generation(
         # SPACY ENV
         if args.test:
             regen_terms = regen_terms[:3]
-        new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
-        #new_path = generate_sentences_per_cluster(args, kshot_file, regen_terms, uncovered_clusters)
+        #new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
+        new_path = generate_sentences_per_cluster(args, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
@@ -327,14 +329,18 @@ def adaptive_syntax_generation(
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
 
-        if clean_cluster_terms: #remove sentences form this cluster whose terms were selected for regeneration
+        if clean_cluster_terms:  # remove sentences from this cluster whose terms were selected for regeneration
             terms_to_replace = set(clean_cluster_terms)
-            indices_to_replace = [i for i, entry in enumerate(synth_data)
-                                if entry.get("entities") in terms_to_replace
-                                and synth_labels[i] == cluster_id] 
-            # Remove in reverse order to preserve indexing
-            for idx in sorted(indices_to_replace, reverse=True):
-                del synth_data[idx]
+            indices_to_replace = [
+                i for i, entry in enumerate(synth_data)
+                if any(ent in terms_to_replace for ent in entry.get("entities", []))
+                and synth_labels[i] == cluster_id
+            ]
+    
+    # Remove in reverse order to preserve indexing
+    for idx in sorted(indices_to_replace, reverse=True):
+        del synth_data[idx]
+
 
         # Add new regenerated ones
         synth_data.extend(newly_parsed_sentences)

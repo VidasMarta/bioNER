@@ -140,6 +140,7 @@ def generate_sentences_per_cluster(
     kshot_path: str,
     term_list: List[str], 
     clusters: List[int],
+    num_of_terms_pc: List[int],
     method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
@@ -147,25 +148,31 @@ def generate_sentences_per_cluster(
     output_path = setup(args)
     kshot_examples = load_kshot_examples(args, kshot_path)
 
-    for cluster in clusters:
+    start = 0 
+    for i, cluster in enumerate(clusters):
         try:
             kshot_pool = [ex for ex in kshot_examples if ex.get("cluster_id") == cluster]
             entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
             no_entity_examples = [ex for ex in kshot_pool if not ex.get("entities")]
 
-            term = np.random.choice(term_list, replace=False) #take a random term
-            kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
-            args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
+            end = start + num_of_terms_pc[i]
+            terms = term_list[start:end]
+            start = end
 
-            response = promptGeneration.message_request(
-                    args,
-                    term,
-                    system_template=system_template,
-                    user_template=user_template,
-                    text=kshot_text_block
-                )
-            
-            save_generated_sentences(args, output_path, method, response, term, used_ids)
+            for term in terms:
+                term = np.random.choice(term_list, replace=False) #take a random term
+                kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
+                args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
+
+                response = promptGeneration.message_request(
+                        args,
+                        term,
+                        system_template=system_template,
+                        user_template=user_template,
+                        text=kshot_text_block
+                    )
+                
+                save_generated_sentences(args, output_path, method, response, term, used_ids)
         except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
