@@ -90,7 +90,7 @@ def create_json(args: argparse.Namespace, text: str,
     #term_ids = [term[1]]
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
-        terms_llm = check_additional_disease_tags(args, tokens, term[0].lower())
+        terms_llm = check_additional_disease_tags(args, tokens, term.lower())
         # TODO provjeriti da nema više istih entiteta a nema ih u tekstu
         for term_llm in terms_llm:
             if term_llm[0].lower() != term[0].lower():
