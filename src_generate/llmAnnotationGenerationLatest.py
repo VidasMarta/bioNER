@@ -124,7 +124,7 @@ def save_generated_sentences(args, output_path, method, response, term, used_ids
     record = {}
     with open(output_path, method, encoding='utf-8') as file:
         for t, ent in zip(parsed_text, entities):
-            record["text"] = parsed_text
+            record["text"] = t
             record["entity"] = ent
             record["term"] = term
             record["kshot_example_ids"] = used_ids
