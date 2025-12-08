@@ -59,6 +59,120 @@ def argparse_args():
 
     return parser.parse_args()
 
+def setup(args):
+    date_today = datetime.today().strftime("%Y%m%d")
+    np.random.seed(getattr(args, "random_seed", 42))  # Fixed seed for reproducibility
+
+    output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.json')
+    return output_path
+
+def load_kshot_examples(kshot_path):
+    kshot_examples = []
+    if kshot_path and os.path.exists(kshot_path):
+        kshot_examples = utils.load_training_samples(kshot_path)
+        if args.verbose:
+            print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {kshot_path}")
+    else:
+        print(f"[INFO] No k-shot examples loaded. BUG! Check path: {kshot_path}")
+        print(f"{os.path.exists(kshot_path)} {os.getcwd()}")
+
+    return kshot_examples
+
+def sample_kshot(args, no_entity_examples, entity_examples, kshot):
+    if kshot:
+        # Choose whether this sentence should contain an entity
+        want_no_entity = np.random.rand() < args.no_entity_ratio
+
+        if want_no_entity:
+                            # Prefer no-entity examples
+            if len(no_entity_examples) > 0:
+                pool = no_entity_examples
+                user_template = 'kshot_genre_no_entity'
+            else:
+                # fallback
+                pool = entity_examples
+                user_template = 'kshot_num_sent_genre_entity'
+        else:
+            # Prefer entity examples
+            if len(entity_examples) > 0:
+                pool = entity_examples
+                user_template = 'kshot_num_sent_genre_entity'
+            else:
+                # fallback
+                pool = no_entity_examples
+                user_template = 'kshot_genre_no_entity'
+
+    # FINAL fallback if both empty (should not happen)
+    if len(pool) == 0:
+        kshot_text_block = ""
+        used_ids = []
+    else:
+        kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
+
+    return kshot_text_block, user_template, used_ids
+
+
+def save_generated_sentences(args, output_path, method, response, term, used_ids):
+    text = response.json()['content'].strip()
+    text = utils.clean_text(text)
+    text = utils.remove_code_fences(text)
+    text, entities = utils.parse_text_entities_format(args, text)
+    if args.verbose:
+        args.logger.info(f"Generated text is: {text}")
+        args.logger.info(
+                f"Extracted entities proposed by LLM: {entities}\n Term is: {term}")
+    record = {}
+    with open(output_path, method, encoding='utf-8') as file:
+        for t, ent in zip(text, entities):
+            record["text"] = t
+            record["entity"] = ent
+            record["term"] = term
+            record["kshot_example_ids"] = used_ids
+            record["include_pos"] = getattr(args, "include_pos", True)
+            record["include_dep"] = getattr(args, "include_dep", True)
+            record["random_seed"] = getattr(args, "random_seed", 42)
+            file.write(json.dumps(record))
+            file.write("\n")
+
+
+def generate_sentences_per_cluster(
+    args: argparse.Namespace,
+    kshot_path: str,
+    term_list: List[str], 
+    clusters: List[int],
+    method: str = 'a',
+    system_template: str = 'role_prompt',
+    user_template: str = 'genre_prompt'
+) -> str:
+    output_path = setup(args)
+    kshot_examples = load_kshot_examples(kshot_path)
+
+    for cluster in clusters:
+        try:
+            kshot_pool = [ex for ex in kshot_examples if ex.get("cluster_id") == cluster]
+            entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
+            no_entity_examples = [ex for ex in kshot_pool if not ex.get("entities")]
+
+            term = np.random.choice(term_list, replace=False) #take a random term
+            kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
+            args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
+
+            response = promptGeneration.message_request(
+                    args,
+                    term,
+                    system_template=system_template,
+                    user_template=user_template,
+                    text=kshot_text_block
+                )
+            
+            save_generated_sentences(args, output_path, method, response, term, used_ids)
+        except Exception as e:
+                args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
+                args.logger.info(f"Response content: {response.json().get('content', '')}")
+                if args.verbose:
+                    print(f"[ERROR] Term {term}: {e}")
+    return output_path
+
     
 def generate_sentence_samples(
     args: argparse.Namespace,
@@ -76,120 +190,33 @@ def generate_sentence_samples(
 
     returns path to the output JSON file.
     """
-
-    # -------------------------------------------------------------------------
-    # Setup
-    # -------------------------------------------------------------------------
-    date_today = datetime.today().strftime("%Y%m%d")
-    np.random.seed(getattr(args, "random_seed", 42))  # Fixed seed for reproducibility
-
-    output_path = os.path.join(args.output_directory, f'generated_sentences_{date_today}.json')
-
-    # -------------------------------------------------------------------------
-    # Load k-shot examples
-    # -------------------------------------------------------------------------
-    kshot_examples = []
-    if kshot_path and os.path.exists(kshot_path):
-        kshot_examples = utils.load_training_samples(kshot_path)
-        if args.verbose:
-            print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {kshot_path}")
-    else:
-        print(f"[INFO] No k-shot examples loaded. BUG! Check path: {kshot_path}")
-        print(f"{os.path.exists(kshot_path)} {os.getcwd()}")
-    # TODO: sampling logic for k-shot examples
+    output_path = setup(args)
+    kshot_examples = load_kshot_examples(kshot_path)
+    
     # Filter by havig entity or not in a kshot_examples pool
     entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
     no_entity_examples = [ex for ex in kshot_examples if not ex.get("entities")]
 
-    # -------------------------------------------------------------------------
-    # Generation loop
-    # -------------------------------------------------------------------------
     for i, term in enumerate(tqdm.tqdm(term_list)):
         with open(output_path, method, encoding='utf-8') as file:
             try:
-                # -----------------------------------------------------------------
-                # Sample k examples randomly for this term
-                # -----------------------------------------------------------------
                 if kshot_examples:
-                    # Choose whether this sentence should contain an entity
-                    want_no_entity = np.random.rand() < args.no_entity_ratio
+                    kshot = True
+                else:
+                    kshot = False
+                kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, kshot)
 
-                    if want_no_entity:
-                        # Prefer no-entity examples
-                        if len(no_entity_examples) > 0:
-                            pool = no_entity_examples
-                            user_template = 'kshot_genre_no_entity'
-                        else:
-                            # fallback
-                            pool = entity_examples
-                            user_template = 'kshot_num_sent_genre_entity'
-                    else:
-                        # Prefer entity examples
-                        if len(entity_examples) > 0:
-                            pool = entity_examples
-                            user_template = 'kshot_num_sent_genre_entity'
-                        else:
-                            # fallback
-                            pool = no_entity_examples
-                            user_template = 'kshot_genre_no_entity'
+                args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
 
-                    # FINAL fallback if both empty (should not happen)
-                    if len(pool) == 0:
-                        kshot_text_block = ""
-                        used_ids = []
-                    else:
-                        kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
-
-                    args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
-
-                # -----------------------------------------------------------------
-                # Send request to LLM
-                # -----------------------------------------------------------------
                 response = promptGeneration.message_request(
                         args,
-                        term[0],
+                        term,
                         system_template=system_template,
                         user_template=user_template,
                         text=kshot_text_block
                     )
-                # print(response.json())
-                text = response.json()['content'].strip()
-                text = utils.clean_text(text)
-                text = utils.remove_code_fences(text)
-                # TODO: parsing Sentence: ... Entities: [...] format
-                text, entities = utils.parse_text_entities_format(args, text)
-                if args.verbose:
-                    args.logger.info(f"Generated text is: {text}")
-                    args.logger.info(
-                        f"Extracted entities proposed by LLM: {entities}\n Term is: {term[0]}")
-                record = {}
-                for t, ent in zip(text, entities):
-                    record["text"] = t
-                    record["entity"] = ent
-                    record["term"] = term
-                    record["kshot_example_ids"] = used_ids
-                    record["include_pos"] = getattr(args, "include_pos", True)
-                    record["include_dep"] = getattr(args, "include_dep", True)
-                    record["random_seed"] = getattr(args, "random_seed", 42)
-                    file.write(json.dumps(record))
-                    file.write("\n")    
-
-                '''sentences = check_generated_size(args, text)
-                # -----------------------------------------------------------------
-                # Write generated sentences as JSON
-                # -----------------------------------------------------------------
-                for sent in sentences:
-                    # TODO: add proposed entities from parsing step
-                    text_json = create_json(args, sent, term, entities=entities)
-                    if text_json:
-                        # Store metadata about k-shot context
-                        text_json["kshot_example_ids"] = used_ids
-                        text_json["include_pos"] = getattr(args, "include_pos", True)
-                        text_json["include_dep"] = getattr(args, "include_dep", True)
-                        text_json["random_seed"] = getattr(args, "random_seed", 42)
-
-                        file.write(json.dumps(text_json))
-                        file.write("\n")'''
+                
+                save_generated_sentences(args, output_path, method, response, term, used_ids)  
 
             except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for term {term}: {e}")
