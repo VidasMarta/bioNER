@@ -146,7 +146,7 @@ def generate_sentences_per_cluster(
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
 ) -> str:
-    output_path = setup(args)
+    output_path = setup(args, iter_output)
     kshot_examples = load_kshot_examples(args, kshot_path)
 
     start = 0 
