@@ -6,7 +6,6 @@ from typing import List, Optional, Tuple
 import yaml
 
 from src_generate import promptGeneration, utils
-from src_generate.llmAnnotationGenerationLatest import setup_logger
 
 SPACY_NLP = None
 
