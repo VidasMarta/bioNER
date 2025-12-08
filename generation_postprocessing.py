@@ -160,6 +160,9 @@ if __name__ == "__main__":
     with open(init_args.config_file, 'r') as file:
         yaml_args = yaml.safe_load(file)
     args = argparse.Namespace(**yaml_args)
+    args.generated = init_args.generated
+    args.starting_id = init_args.starting_id
+    args.generated_postprocessed = init_args.generated_postprocessed
     logger = utils.setup_logger(args)
     SPACY_NLP = spacy_load_model(args.spacy_model)
     load_data(args)
