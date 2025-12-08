@@ -85,9 +85,8 @@ def create_json(args: argparse.Namespace, text: str,
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     entities = []
-    terms = [term]
-    tags, tokens = create_rule_json(doc, nlp, terms, entities)
-    #terms = [term[0].lower()]
+    tags, tokens = create_rule_json(doc, nlp, term, entities)
+    terms = [term] #[term[0].lower()]
     #term_ids = [term[1]]
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
