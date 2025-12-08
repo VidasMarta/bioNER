@@ -74,9 +74,9 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
     cleaned_content = utils.remove_code_fences(response.json()['content'])    
     try:
         term_llm = eval(cleaned_content)
-        return [(term, 'NaN') for term in term_llm]
+        return [term for term in term_llm] #return [(term, 'NaN') for term in term_llm]
     except Exception as e:
-        return [(term, 'NaN')]
+        return term #[(term, 'NaN')]
 
 
 def create_json(args: argparse.Namespace, text: str, 
