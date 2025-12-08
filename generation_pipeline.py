@@ -4,7 +4,7 @@ import os
 import random
 from typing import Any, Dict, List
 import yaml
-from src_generate.llmAnnotationGenerationLatest import generate_sentence_samples
+from src_generate.llmAnnotationGenerationLatest import *
 from src_generate.llmAnnotationGenerationLatest import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -204,6 +204,7 @@ def adaptive_syntax_generation(
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
+        os.makedirs(iter_output, exist_ok=True)
         # KARATE ENV
         synth_graphs, _ = pe.build_dependency_graphs(synth_data)
         synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
@@ -296,11 +297,11 @@ def adaptive_syntax_generation(
                 f.write(json.dumps(ex) + "\n")
 
         # Generate new samples from uncovered clusters using LLM
-        os.makedirs(iter_output, exist_ok=True)
         # SPACY ENV
         if args.test:
             regen_terms = regen_terms[:3]
         new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
+        #new_path = generate_sentences_per_cluster(args, kshot_file, regen_terms, uncovered_clusters)
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
