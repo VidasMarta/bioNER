@@ -257,13 +257,13 @@ def adaptive_syntax_generation(
 
             # Collect synthetic terms already assigned to this cluster
             cluster_mask = synth_labels == cluster_id
-            indices_in_cluster = [i for i in range(len(synth_data)) if cluster_mask[i] and "term" in synth_data[i]] 
-            cluster_terms = [synth_data[i].get("term") for i in indices_in_cluster]
+            indices_in_cluster = [i for i in range(len(synth_data)) if cluster_mask[i] and "entities" in synth_data[i]] 
+            cluster_terms = [synth_data[i].get("entities") for i in indices_in_cluster]
 
             # If not enough terms in this cluster, sample some from the global synthetic pool as backup
             if len(cluster_terms) < num_new:
                 print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
-                global_terms = [d["term"] for d in synth_data if "term" in d]
+                global_terms = [d["entities"] for d in synth_data if "entities" in d]
 
                 if len(global_terms) == 0:
                     print("[WARN] No global terms available for regeneration at all.")
@@ -322,7 +322,7 @@ def adaptive_syntax_generation(
         if cluster_terms: #remove sentences form this cluster whose terms were selected for regeneration
             terms_to_replace = set(cluster_terms)
             indices_to_replace = [i for i, entry in enumerate(synth_data)
-                                if entry.get("term") in terms_to_replace
+                                if entry.get("entities") in terms_to_replace
                                 and synth_labels[i] == cluster_id] 
             # Remove in reverse order to preserve indexing
             for idx in sorted(indices_to_replace, reverse=True):

@@ -10,7 +10,7 @@ epochs: 20
 #  kmeans:
 cluster_dir:  /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/
 k_min: 5
-k_max: 15
+k_max: 25
 
 #server:
 server_url: http://0.0.0.0:8484
