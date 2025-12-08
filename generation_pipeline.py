@@ -179,7 +179,7 @@ def adaptive_syntax_generation(
                                               workers=args.workers, learning_rate= args.learning_rate, 
                                               min_count = args.min_count, epochs = args.epochs)
 
-    print(f"[INFO] Clustering real embeddings into {args.k} syntax clusters...") 
+    print(f"[INFO] Clustering real embeddings into syntax clusters...") 
     if not os.path.exists(args.cluster_dir):
         kmeans_params.main(args, real_emb)  # Call the kmeans_params script to compute clusters
     
@@ -262,9 +262,20 @@ def adaptive_syntax_generation(
 
             # If not enough terms in this cluster, sample some from the global synthetic pool as backup
             if len(cluster_terms) < num_new:
-                extra_terms = [synth_data[i].get("term") for i in np.random.choice(range(len(synth_data)), num_new - len(cluster_terms), replace=False) 
-                               if "term" in synth_data[i]]
-                cluster_terms.extend(extra_terms)
+                print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
+                global_terms = [d["term"] for d in synth_data if "term" in d]
+
+                if len(global_terms) == 0:
+                    print("[WARN] No global terms available for regeneration at all.")
+                else:
+                    needed = num_new - len(cluster_terms)
+                    extra_terms = list(np.random.choice(
+                        global_terms,
+                        size=min(needed, len(global_terms)),
+                        replace=False
+                    ))
+                    cluster_terms.extend(extra_terms)
+
 
             # Randomly pick terms for this cluster’s regeneration quota
             selected_terms = np.random.choice(cluster_terms, size=num_new, replace=False)

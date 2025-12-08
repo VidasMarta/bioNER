@@ -8,7 +8,6 @@ min_count: 1
 epochs: 20
 
 #  kmeans:
-k: 5
 cluster_dir:  /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/
 k_min: 5
 k_max: 15
@@ -52,7 +51,7 @@ max_iterations: 5
 overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
 
 #bioNER
-ner_model_eval: true
+ner_model_eval: false
 ncbi_dev_set:  /home/mvidas/syn-bioner/data/ncbi/devel.json
 num_train_iter: 20
 
