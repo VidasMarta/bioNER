@@ -8,7 +8,7 @@ import numpy as np
 import logging
 from datetime import datetime
 from collections import defaultdict  
-
+import obonet
 from src_generate import promptGeneration
 from src_generate import utils
 
@@ -225,7 +225,14 @@ def generate_sentence_samples(
                     print(f"[ERROR] Term {term}: {e}")
     return output_path
 
-    
+def get_diseases(args: argparse.Namespace):
+    graph = obonet.read_obo(args.obo_file_path)
+    do_terms = [(data["name"], node) for node, data in graph.nodes(data=True) if "name" in data]
+    if args.verbose:
+        print(f"Number of nodes (terms): {graph.number_of_nodes()}")
+        print(f"Number of edges (relations): {graph.number_of_edges()}")
+        print('First 20 terms: ', do_terms[:20])  # Show first 20 terms
+    return do_terms 
 
 def generate_term_list(args: argparse.Namespace):
     entities = []

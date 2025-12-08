@@ -3,7 +3,6 @@ import string
 import json
 import os
 import numpy as np
-import obonet
 from typing import List, Dict, Any, Optional, Tuple
 import argparse
 import pandas as pd
@@ -30,14 +29,6 @@ def check_last_token(tokens_lower: List[str]) -> List[str]:
     tokens_lower[-1] = tokens_lower[-1].rstrip(string.punctuation)
     return tokens_lower
 
-def get_diseases(args: argparse.Namespace):
-    graph = obonet.read_obo(args.obo_file_path)
-    do_terms = [(data["name"], node) for node, data in graph.nodes(data=True) if "name" in data]
-    if args.verbose:
-        print(f"Number of nodes (terms): {graph.number_of_nodes()}")
-        print(f"Number of edges (relations): {graph.number_of_edges()}")
-        print('First 20 terms: ', do_terms[:20])  # Show first 20 terms
-    return do_terms
 
 def create_concept_txt_file(file_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/CONCEPT.csv',
                             output_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/concepts.txt'):
