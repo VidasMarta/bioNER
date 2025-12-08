@@ -107,14 +107,17 @@ def create_json(args: argparse.Namespace, text: str,
     dep_rels = [token.dep_ for token in doc]
     parents = [token.head.i for token in doc] #index of parent token
     corpus = "generated_train"
-    json_data = {"tags": tags, 
-                "tokens": tokens, 
-                "term": terms, 
-                "term_id": term_ids, 
-                "pos": pos_tags, 
-                "dep": dep_rels, 
-                "parents": parents, 
-                "corpus": corpus}
+    json_data = {
+        "abstract_id": None,
+        "sentence": text,
+        "entities": terms,
+        "corpus": corpus,
+        "pos": pos_tags, 
+        "dep": dep_rels, 
+        "parents": parents,
+        "tags": tags, 
+        "tokens": tokens, 
+    }
 
     return json_data
 
@@ -123,6 +126,7 @@ def load_data(args: argparse.Namespace):
         with open(args.generated, "r") as f:
             new_data = [json.loads(line) for line in f]
 
+    print("[INFO] Loaded generated data for post processing.")
     with open(args.generated_postprocessed, "w") as f:
         id = args.starting_id
         for data in new_data:
@@ -136,7 +140,7 @@ def load_data(args: argparse.Namespace):
                 f.write(json.dumps(text_json))
                 f.write("\n")
                 id += 1
-    return
+    
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")

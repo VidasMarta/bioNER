@@ -199,7 +199,7 @@ def adaptive_syntax_generation(
     print(f"[INFO] Saved NCBI examples with cluster IDs → {ncbi_clustered_path}")
 
     if args.test:
-        args.max_iterations = 3
+        args.max_iterations = 2
 
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
