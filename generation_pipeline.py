@@ -4,7 +4,7 @@ import os
 import random
 from typing import Any, Dict, List
 import yaml
-from src_generate.llmAnnotationGenerationLatest import main as generate_sentence_samples
+from src_generate.llmAnnotationGenerationLatest import generate_sentence_samples
 from src_generate.llmAnnotationGenerationLatest import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
