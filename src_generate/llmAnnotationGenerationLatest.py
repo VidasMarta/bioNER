@@ -150,6 +150,7 @@ def generate_sentences_per_cluster(
 
     start = 0 
     for i, cluster in enumerate(clusters):
+        print(f"[INFO] Sentence generation for cluster {cluster}")
         try:
             kshot_pool = [ex for ex in kshot_examples if ex.get("cluster_id") == cluster]
             entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
@@ -161,24 +162,25 @@ def generate_sentences_per_cluster(
 
             for term in terms:
                 print(f"[INFO] Generating sentence for term: {term}")
-                term = np.random.choice(term_list, replace=False) #take a random term
+                selected_term = np.random.choice(term_list, replace=False) #take a random term
                 kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
-                args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
+                args.logger.info(f"K-shot examples used for term '{selected_term}': {used_ids}")
 
                 response = promptGeneration.message_request(
                         args,
-                        term,
+                        selected_term,
                         system_template=system_template,
                         user_template=user_template,
                         text=kshot_text_block
                     )
                 
-                save_generated_sentences(args, output_path, method, response, term, used_ids)
+                save_generated_sentences(args, output_path, method, response, selected_term, used_ids)
         except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
                 if args.verbose:
                     print(f"[ERROR] Term {term}: {e}")
+
     return output_path
 
     
