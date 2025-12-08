@@ -123,16 +123,15 @@ def save_generated_sentences(args, output_path, method, response, term, used_ids
                 #f"Extracted entities proposed by LLM: {entities}\n Term is: {term}")
     record = {}
     with open(output_path, method, encoding='utf-8') as file:
-        for t in text: #t, ent in zip(text, entities):
-            record["text"] = t
-            record["entity"] = []
-            record["term"] = term
-            record["kshot_example_ids"] = used_ids
-            record["include_pos"] = getattr(args, "include_pos", True)
-            record["include_dep"] = getattr(args, "include_dep", True)
-            record["random_seed"] = getattr(args, "random_seed", 42)
-            file.write(json.dumps(record))
-            file.write("\n")
+        record["text"] = text
+        record["entity"] = []
+        record["term"] = term
+        record["kshot_example_ids"] = used_ids
+        record["include_pos"] = getattr(args, "include_pos", True)
+        record["include_dep"] = getattr(args, "include_dep", True)
+        record["random_seed"] = getattr(args, "random_seed", 42)
+        file.write(json.dumps(record))
+        file.write("\n")
 
 
 def generate_sentences_per_cluster(
@@ -161,6 +160,7 @@ def generate_sentences_per_cluster(
             start = end
 
             for term in terms:
+                print(f"[INFO] Generating sentence for term: {term}")
                 term = np.random.choice(term_list, replace=False) #take a random term
                 kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
                 args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
