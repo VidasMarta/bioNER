@@ -86,7 +86,7 @@ def create_json(args: argparse.Namespace, text: str,
     doc = nlp(text)
     entities = []
     tags, tokens = create_rule_json(doc, nlp, term, entities)
-    terms = term #[term[0].lower()]
+    terms = [term] #[term[0].lower()]
     #term_ids = [term[1]]
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
