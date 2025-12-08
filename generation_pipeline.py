@@ -314,7 +314,7 @@ def adaptive_syntax_generation(
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/generation_postprocessing.py",
+            "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
