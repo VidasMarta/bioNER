@@ -3,7 +3,10 @@ import os
 import json
 from typing import List, Optional, Tuple
 
+import yaml
+
 from src_generate import promptGeneration, utils
+from src_generate.llmAnnotationGenerationLatest import setup_logger
 
 SPACY_NLP = None
 
@@ -30,7 +33,7 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     # if LLM generated more than one sentence return empty dict
     if len(list(doc.sents)) > args.num_sentences: 
         print('Multiple sentences loop of LLM generation error.')
-        print(f'[INFO] Multiple sentences loop of LLM generation error: \n Sentences: {text}')
+        args.logger.info(f'Multiple sentences loop of LLM generation error: \n Sentences: {text}')
         # remove sentences after args.num_sentences
         doc = list(doc.sents)[:args.num_sentences]
         doc = nlp(" ".join([str(s) for s in doc]))
@@ -94,8 +97,8 @@ def create_json(args: argparse.Namespace, text: str,
             if term_llm[0].lower() != term[0].lower():
                 terms.append(term_llm[0].lower())
                 #term_ids.append('NaN')
-                print(f'[INFO] Additional disease term found in generated text: {term_llm} for original term {term}.')
-                print(f'[INFO] Generated sentence: {text}')
+                args.logger.info('Additional disease term found in generated text: {term_llm} for original term {term}.')
+                args.logger.info('Generated sentence: {text}')
                 tags_llm, _ = create_rule_json(doc, nlp, term_llm, entities)
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE
@@ -127,7 +130,7 @@ def load_data(args: argparse.Namespace):
         with open(args.generated, "r") as f:
             new_data = [json.loads(line) for line in f]
 
-    print("[INFO] Loaded generated data for post processing.")
+    #print("[INFO] Loaded generated data for post processing.")
     with open(args.generated_postprocessed, "w") as f:
         id = args.starting_id
         for data in new_data:
@@ -149,12 +152,15 @@ def argparse_args():
     parser.add_argument('--generated_postprocessed', type=str, default='',
                         help='Path to the generated sentences after postprocessing.')
     parser.add_argument('--starting_id', type=int, help='Id of last generated sentence.')
-    parser.add_argument('--num_sentences', type=int, help='Number of sentences LLM was supposed to generate.')
-    parser.add_argument('--spacy_model', type=str, default="en_core_web_sm")
+    parser.add_argument('--config_file', type=int, help='Number of sentences LLM was supposed to generate.', default='/home/mvidas/syn-bioner/bioNER/experiments/default_generate.yml')
 
     return parser.parse_args()
 
 if __name__ == "__main__":
-    args = argparse_args()
+    init_args = argparse_args()
+    with open(init_args.config_file, 'r') as file:
+        yaml_args = yaml.safe_load(file)
+    args = argparse.Namespace(**yaml_args)
+    logger = setup_logger(args)
     SPACY_NLP = spacy_load_model(args.spacy_model)
     load_data(args)
