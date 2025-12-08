@@ -93,8 +93,8 @@ def create_json(args: argparse.Namespace, text: str,
         terms_llm = check_additional_disease_tags(args, tokens, term.lower())
         # TODO provjeriti da nema više istih entiteta a nema ih u tekstu
         for term_llm in terms_llm:
-            if term_llm[0].lower() != term[0].lower():
-                terms.append(term_llm[0].lower())
+            if term_llm.lower() != term.lower():
+                terms.append(term_llm.lower())
                 #term_ids.append('NaN')
                 args.logger.info('Additional disease term found in generated text: {term_llm} for original term {term}.')
                 args.logger.info('Generated sentence: {text}')
