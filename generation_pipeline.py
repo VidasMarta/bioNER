@@ -323,7 +323,7 @@ def adaptive_syntax_generation(
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
-            "--num_sentences", args.num_sentences,
+            "--num_sentences", str(args.num_sentences),
             "--spacy_model", args.spacy_model
         ], capture_output=True, text=True)
         if args.verbose:
