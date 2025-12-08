@@ -77,8 +77,7 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
 
 
 def create_json(args: argparse.Namespace, text: str, 
-                term: Tuple[str, str], 
-                entities: Optional[List[str]] = None) -> List[dict]:
+                term: Tuple[str, str]) -> List[dict]:
     # TODO: add proposed entities from parsing step Where and why?
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
@@ -131,11 +130,10 @@ def load_data(args: argparse.Namespace):
         id = args.starting_id
         for data in new_data:
             text = data["text"]
-            entity = data["entity"]
             term = data["term"]
             sentences = check_generated_size(args, text)
             for sent in sentences:
-                text_json = create_json(args, sent, term, entities=entity)
+                text_json = create_json(args, sent, term)
                 text_json["id"] = id
                 f.write(json.dumps(text_json))
                 f.write("\n")

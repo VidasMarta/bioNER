@@ -311,7 +311,7 @@ def adaptive_syntax_generation(
         # Generate new samples from uncovered clusters using LLM
         # SPACY ENV
         if args.test:
-            regen_terms = regen_terms[:3]
+            pass #regen_terms = regen_terms[:3]
         #new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
         new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
 
