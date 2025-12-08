@@ -154,16 +154,19 @@ def generate_sentences_per_cluster(
     print("Sum per cluster:", sum(num_of_terms_pc))
 
     for i, cluster in enumerate(clusters):
-        print(f"[INFO], cluster {cluster}, #terms {num_of_terms_pc[i]}")
         try:
             kshot_pool = [ex for ex in kshot_examples if ex.get("cluster_id") == cluster]
             entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
             no_entity_examples = [ex for ex in kshot_pool if not ex.get("entities")]
 
-            end = start + num_of_terms_pc[i]
+            k = num_of_terms_pc[i]
+            end = start + k
             terms = term_list[start:end]
-            start = end
+
+            print(f"[INFO], cluster {cluster}, #terms {k}")
             print(f"[DEBUG] Cluster {cluster} | start={start} | end={end} | terms={terms}")
+
+            start = end
 
             if not terms:
                 print(f"[WARNING] No terms for cluster {cluster}")
