@@ -100,7 +100,7 @@ def compute_cluster_coverage(
 
     return cluster_overlaps, uncovered_clusters, weighted_coverage, cluster_sizes, synth_labels
 
-def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters, kshot_size=5):
+def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters):
     """Return a list of NCBI examples sampled from uncovered clusters."""
     with open(ncbi_clustered_path, "r") as f:
         data = [json.loads(line) for line in f]
@@ -110,8 +110,7 @@ def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters, kshot_si
         print("[WARN] No NCBI examples found for uncovered clusters, using random fallback.")
         filtered = data
     
-    np.random.shuffle(filtered)
-    return filtered[:kshot_size]
+    return filtered
 
 
 def visualize_embeddings_clusterwise(
@@ -204,6 +203,7 @@ def adaptive_syntax_generation(
 
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
         # KARATE ENV
         synth_graphs, _ = pe.build_dependency_graphs(synth_data)
         synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
@@ -291,13 +291,12 @@ def adaptive_syntax_generation(
         )
 
         # Save temporarily for prompt conditioning
-        kshot_file = os.path.join(args.output_directory, f"kshot_iter_{iteration}.jsonl")
+        kshot_file = os.path.join(iter_output, f"kshot_iter_{iteration}.jsonl")
         with open(kshot_file, "w") as f:
             for ex in kshot_examples:
                 f.write(json.dumps(ex) + "\n")
 
         # Generate new samples from uncovered clusters using LLM
-        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}")
         os.makedirs(iter_output, exist_ok=True)
         # SPACY ENV
         if args.test:
@@ -343,7 +342,7 @@ def adaptive_syntax_generation(
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
                 "--train", postprocessed,
-                "--output", f"{args.output_directory}/ner_model_iter_{iteration}",
+                "--output", f"{iter_output}/ner_model",
                 "--n_iter", args.num_train_iter,
             ], capture_output=True, text=True)
 
@@ -351,7 +350,7 @@ def adaptive_syntax_generation(
             logger_file = os.path.join(args.output_directory, "logger.jsonl")
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
-                "--model", f"{args.output_directory}/ner_model_iter_{iteration}",
+                "--model", f"{iter_output}/ner_model",
                 "--test", args.ncbi_dev_set,
                 "--logger", logger_file,
             ], capture_output=True, text=True)
@@ -422,5 +421,6 @@ if __name__ == "__main__":
         yaml_args = yaml.safe_load(file)
     args = argparse.Namespace(**yaml_args)
     logger = setup_logger(args)
+    args.logger = logger
     logger.info(f"Output directory: {args.output_directory}")
     main(args)
