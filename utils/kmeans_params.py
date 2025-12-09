@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import normalize
 from typing import List, Dict, Any
-import parsing_embedding as pe
+import utils.parsing_embedding as pe
 import os
 
 def load_syntax_data(path: str) -> List[Dict[str, Any]]:
