@@ -270,6 +270,11 @@ def adaptive_syntax_generation(
                 for i in indices_in_cluster
             ]
 
+            print(f"[DEBUG] cluster_id={cluster_id}")
+            print(f"[DEBUG] cluster_mask sum={cluster_mask.sum() if hasattr(cluster_mask, 'sum') else sum(cluster_mask)}")
+            print(f"[DEBUG] indices_in_cluster={indices_in_cluster}")
+
+
             # -- If too few locally, pull from global pool --
             if len(cluster_terms) < num_new:
                 print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
@@ -304,55 +309,6 @@ def adaptive_syntax_generation(
             terms_per_cluster.append(sample_size)
 
 
-        '''for cluster_id in uncovered_clusters:
-            # Determine regeneration strength (0–1): the lower the overlap, the higher the regen weight
-            regen_weight = 1.0 - cluster_overlaps[cluster_id]
-
-            # Determine how many new samples to generate for this cluster
-            # TODO jel nam ovo ok?
-            # You can tune scaling constant (args.min_samples_per_cluster acts as base target)
-            if args.test:
-                num_new = 3
-            else:
-                num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
-
-            # Collect synthetic terms already assigned to this cluster
-            cluster_mask = synth_labels == cluster_id
-            indices_in_cluster = [i for i in range(len(synth_data)) if cluster_mask[i] and "entities" in synth_data[i]] 
-            cluster_terms = [(synth_data[i].get("entities"), synth_data[i].get("term_id", [])) for i in indices_in_cluster]
-            
-
-            # If not enough terms in this cluster, sample some from the global synthetic pool as backup
-            if len(cluster_terms) < num_new:
-                print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
-                global_terms = [(d.get("entities"), d.get("term_id", [])) for d in synth_data if "entities" in d]
-
-                if len(global_terms) == 0:
-                    print("[WARN] No global terms available for regeneration at all.")
-                else:
-                    needed = num_new - len(cluster_terms)
-                    extra_terms = list(random.sample(
-                        global_terms,
-                        min(needed, len(global_terms))
-                    ))
-                    cluster_terms.extend(extra_terms)
-
-            clean_cluster_terms = []
-            for entities, term_ids in cluster_terms:
-                # entities might be a list if there are multiple entities in the sentence
-                if isinstance(entities, list):
-                    for e, tid in zip(entities, term_ids):
-                        clean_cluster_terms.append((e, tid))
-                else:
-                    clean_cluster_terms.append((entities, term_ids))
-
-
-
-            # Randomly pick terms for this cluster’s regeneration quota
-            selected_terms = random.sample(clean_cluster_terms, num_new)
-            regen_terms.extend(selected_terms)
-            terms_per_cluster.append(num_new)'''
-
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
 
         # Select cluster-specific k-shot examples for uncovered clusters
@@ -382,8 +338,7 @@ def adaptive_syntax_generation(
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(len(synth_data) + 1),
-            "--num_sentences", str(args.num_sentences),
-            "--spacy_model", args.spacy_model
+            "--config_file", args.config_file
         ], capture_output=True, text=True)
         if args.verbose:
             print("STDOUT:\n", sub_results.stdout)
