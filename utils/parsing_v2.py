@@ -263,7 +263,8 @@ def load_corpuses(ncbi_path, gen_path, nlp):
         json_data = json.load(f)
         for entry in json_data:
             id += 1
-            corpus_list.append((id, entry["sentence"], entry["entities"], "NCBI_train", entry["abstract_id"]))
+            entities = entry["entities"]
+            corpus_list.append((id, entry["sentence"], entities, "NCBI_train", entry["abstract_id"], [None]*len(entities)))
     
     with open(gen_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -272,17 +273,17 @@ def load_corpuses(ncbi_path, gen_path, nlp):
             sentence = doc.text
             entities = extract_entities(entry)
             id += 1
-            corpus_list.append((id, sentence, entities, "generated_train", None))
+            corpus_list.append((id, sentence, entities, "generated_train", None, entry["term_id"]))
     
     return corpus_list
 
 
-def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, abstract_ids,
+def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, abstract_ids, term_ids,
                             output_path, rewrite):
     features = []
     if os.path.exists(output_path) and not rewrite:
         return 
-    for (id, sent, entity, corpus_name, abstract_id) in zip(ids, sentences, entities, corpus_labels, abstract_ids):
+    for (id, sent, entity, corpus_name, abstract_id, term_id) in zip(ids, sentences, entities, corpus_labels, abstract_ids, term_ids):
         doc = nlp(sent)
         pos_tags = [token.pos_ for token in doc]
         dep_rels = [token.dep_ for token in doc]
@@ -293,6 +294,7 @@ def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, abstra
             "id": id,
             "sentence": doc.text,
             "entities": entity,
+            "term_id": term_id,
             "corpus": corpus_name,
             "pos": pos_tags,
             "dep": dep_rels,
@@ -354,7 +356,7 @@ if __name__ == "__main__":
         nlp = spacy_load_model(args.spacy_model)
         
         corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path, nlp)
-        ids, sentences, entities, corpus_labels, abstract_id = zip(*corpus_list)
+        ids, sentences, entities, corpus_labels, abstract_id, term_id = zip(*corpus_list)
         print(f"Loaded {len(sentences)} sentences: "
             f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
             f"{corpus_labels.count('generated_train')} from Generated.")
@@ -366,6 +368,7 @@ if __name__ == "__main__":
             entities,
             corpus_labels,
             abstract_id,
+            term_id,
             args.output_path_features,
             args.rewrite
         )
