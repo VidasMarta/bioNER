@@ -293,12 +293,19 @@ def adaptive_syntax_generation(
             # ---- UNRAVEL ENTITIES INTO UNIFORM TUPLES ----
             # clean_cluster_terms = list of (entity_string, term_id)
             clean_cluster_terms = []
-            for entity, term_id in cluster_terms:
-                if isinstance(entity, list):
-                    for e, tid in zip(entity, term_id):
+            for entities, term_ids in cluster_terms:
+                if isinstance(entities, list):
+                    # pad term_ids to match entities length
+                    if not term_ids:
+                        term_ids = [None] * len(entities)
+                    elif len(term_ids) < len(entities):
+                        term_ids = term_ids + [None] * (len(entities) - len(term_ids))
+                    for e, tid in zip(entities, term_ids):
                         clean_cluster_terms.append((e, tid))
                 else:
-                    clean_cluster_terms.append((entity, term_id))
+                    tid = term_ids[0] if term_ids else None
+                    clean_cluster_terms.append((entities, tid))
+
 
             print(f"[DEBUG] # clean cluster terms = {len(clean_cluster_terms)}")
             sample_size = min(num_new, len(clean_cluster_terms))
@@ -327,8 +334,6 @@ def adaptive_syntax_generation(
 
         # Generate new samples from uncovered clusters using LLM
         # SPACY ENV
-        if args.test:
-            pass #regen_terms = regen_terms[:3]
         #new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
         new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
 
