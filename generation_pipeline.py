@@ -365,7 +365,7 @@ def adaptive_syntax_generation(
             newly_parsed_sentences = [json.loads(line) for line in f]
 
         replaced = 0
-        assert len(selected_indices) == len(newly_parsed_sentences), "Gen sent mismatch!"
+        assert len(selected_indices) == len(newly_parsed_sentences), f"Gen sent mismatch {len(selected_indices)}; {len(newly_parsed_sentences)}!"
         for idx, new_sentence in zip(selected_indices, newly_parsed_sentences):
             synth_data[idx] = new_sentence
             replaced += 1
