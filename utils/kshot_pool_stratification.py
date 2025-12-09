@@ -9,7 +9,7 @@ def compute_coverage(data, selected_abstract_ids, total_size):
         return sum(1 for item in data if item["abstract_id"] in selected_abstract_ids) / total_size
 
 
-def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, cluster_dir, seed=42):
+def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
         data = json.load(f)
