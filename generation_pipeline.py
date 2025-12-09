@@ -295,9 +295,6 @@ def adaptive_syntax_generation(
                     num_of_cterm += num
 
             print(f"[DEBUG] # cluster terms = {num_of_cterm}")
-            if num_of_cterm > 0:
-                example_key = next(iter(idx_cterm))
-                print(f"example: {idx_cterm[example_key]}")
 
             # -- If too few locally, pull from global pool --
             if num_of_cterm < num_new:
