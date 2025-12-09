@@ -231,7 +231,7 @@ def adaptive_syntax_generation(
         print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
         print(f"[INFO] Uncovered clusters: {uncovered_clusters}")
 
-        # Stopping conditionsS
+        # Stopping conditions
         if weighted_coverage >= args.weighted_threshold and not uncovered_clusters:
             print(
                 f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
@@ -270,10 +270,9 @@ def adaptive_syntax_generation(
                 for i in indices_in_cluster
             ]
 
-            print(f"[DEBUG] cluster_id={cluster_id}")
-            print(f"[DEBUG] cluster_mask sum={cluster_mask.sum() if hasattr(cluster_mask, 'sum') else sum(cluster_mask)}")
-            print(f"[DEBUG] indices_in_cluster={indices_in_cluster}")
-
+            print(f"[DEBUG] # cluster terms = {len(cluster_terms)}")
+            if len(cluster_terms) > 0:
+                print(f"example: {cluster_terms[1]}")
 
             # -- If too few locally, pull from global pool --
             if len(cluster_terms) < num_new:
@@ -301,9 +300,12 @@ def adaptive_syntax_generation(
                 else:
                     clean_cluster_terms.append((entity, term_id))
 
+            print(f"[DEBUG] # clean cluster terms = {len(clean_cluster_terms)}")
             sample_size = min(num_new, len(clean_cluster_terms))
             # Random selection
+            print(f"[DEBUG] sample_size = {sample_size}")
             selected_terms = random.sample(clean_cluster_terms, sample_size)
+            print(f"[DEBUG] # selected terms = {len(selected_terms)}")
 
             regen_terms.extend(selected_terms)
             terms_per_cluster.append(sample_size)
@@ -456,5 +458,6 @@ if __name__ == "__main__":
     args = argparse.Namespace(**yaml_args)
     logger = setup_logger(args)
     args.logger = logger
+    args.config_file = init_args.config_file
     logger.info(f"Output directory: {args.output_directory}")
     main(args)
