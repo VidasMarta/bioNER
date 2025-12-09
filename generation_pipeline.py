@@ -269,6 +269,7 @@ def adaptive_syntax_generation(
         # Adaptive regeneration: guided by uncovered clusters
         regen_terms = []
         terms_per_cluster = []
+        regen_idxs = []
         
 
         for cluster_id in uncovered_clusters:
@@ -326,6 +327,7 @@ def adaptive_syntax_generation(
 
             print(f"[DEBUG] # selected terms = {len(selected_terms)}")
             regen_terms.extend(selected_terms)
+            regen_idxs.extend(selected_indices)
             terms_per_cluster.append(sample_size)
 
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
@@ -365,8 +367,8 @@ def adaptive_syntax_generation(
             newly_parsed_sentences = [json.loads(line) for line in f]
 
         replaced = 0
-        assert len(selected_indices) == len(newly_parsed_sentences), f"Gen sent mismatch {len(selected_indices)}; {len(newly_parsed_sentences)}!"
-        for idx, new_sentence in zip(selected_indices, newly_parsed_sentences):
+        assert len(regen_idxs) == len(newly_parsed_sentences), f"Gen sent mismatch {len(regen_idxs)}; {len(newly_parsed_sentences)}!"
+        for idx, new_sentence in zip(regen_idxs, newly_parsed_sentences):
             synth_data[idx] = new_sentence
             replaced += 1
 
