@@ -250,6 +250,61 @@ def adaptive_syntax_generation(
         terms_per_cluster = []
 
         for cluster_id in uncovered_clusters:
+            regen_weight = 1.0 - cluster_overlaps[cluster_id]
+
+            if args.test:
+                num_new = 3
+            else:
+                num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
+
+            # Collect synthetic terms already assigned to this cluster
+            cluster_mask = synth_labels == cluster_id
+            indices_in_cluster = [
+                i for i in range(len(synth_data))
+                if cluster_mask[i] and "entities" in synth_data[i]
+            ]
+
+            # cluster_terms = list of tuples: (entities, term_ids)
+            cluster_terms = [
+                (synth_data[i].get("entities"), synth_data[i].get("term_id", []))
+                for i in indices_in_cluster
+            ]
+
+            # -- If too few locally, pull from global pool --
+            if len(cluster_terms) < num_new:
+                print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
+
+                global_terms = [
+                    (d.get("entities"), d.get("term_id", []))
+                    for d in synth_data if "entities" in d
+                ]
+
+                if len(global_terms) == 0:
+                    print("[WARN] No global terms available for regeneration at all.")
+                else:
+                    needed = num_new - len(cluster_terms)
+                    extra_terms = random.sample(global_terms, min(needed, len(global_terms)))
+                    cluster_terms.extend(extra_terms)
+
+            # ---- UNRAVEL ENTITIES INTO UNIFORM TUPLES ----
+            # clean_cluster_terms = list of (entity_string, term_id)
+            clean_cluster_terms = []
+            for entity, term_id in cluster_terms:
+                if isinstance(entity, list):
+                    for e, tid in zip(entity, term_id):
+                        clean_cluster_terms.append((e, tid))
+                else:
+                    clean_cluster_terms.append((entity, term_id))
+
+            sample_size = min(num_new, len(clean_cluster_terms))
+            # Random selection
+            selected_terms = random.sample(clean_cluster_terms, sample_size)
+
+            regen_terms.extend(selected_terms)
+            terms_per_cluster.append(sample_size)
+
+
+        '''for cluster_id in uncovered_clusters:
             # Determine regeneration strength (0–1): the lower the overlap, the higher the regen weight
             regen_weight = 1.0 - cluster_overlaps[cluster_id]
 
@@ -296,7 +351,7 @@ def adaptive_syntax_generation(
             # Randomly pick terms for this cluster’s regeneration quota
             selected_terms = random.sample(clean_cluster_terms, num_new)
             regen_terms.extend(selected_terms)
-            terms_per_cluster.append(num_new)
+            terms_per_cluster.append(num_new)'''
 
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
 
