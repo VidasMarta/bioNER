@@ -17,8 +17,7 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
     cluster_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     clustered_data = []
     for sample, label in zip(data, cluster_labels):
-        sample['cluster_id'] = label
-        print(sample)
+        sample['cluster_id'] = str(label)
         clustered_data.append(sample)
     data = clustered_data
 
