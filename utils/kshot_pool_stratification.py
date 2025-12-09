@@ -64,24 +64,25 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
     parser.add_argument('--pcts', type=float, nargs="+", required=True, help='Percentages...')  
-    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
-    parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
-    parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="/home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/")
+    parser.add_argument('--input_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="")
+    parser.add_argument('--output_path', type=str, required=False, help='Path where to save output ', default="")
+    parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="")
     return parser.parse_args()
 
-'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --filtered_parsed_mesh_file /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json --output_path_features /home/mvidas/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json --cluster_dir /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters'''
-
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --input_file /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
+--output_path /home/mvidas/syn-bioner/data/ncbi/trf/
+-cluster_dir /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/'''
 if __name__ == "__main__":
     args = parse_args()
-    for path in [args.filtered_parsed_mesh_file, args.output_path_features]:
+    for path in [args.filtered_parsed_mesh_file, args.output_path]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
-    available_abstracts = args.output_path_features
+    available_abstracts = args.input_file
     previous_pct = 1
 
     for pct in subset_pcts:
         samples_pct = pct / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
-        filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.filtered_parsed_mesh_file, args.cluster_dir, samples_pct)
+        filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.output_path, args.cluster_dir, samples_pct)
         available_abstracts = filtered_abstracts
         previous_pct = pct
