@@ -77,36 +77,38 @@ def load_kshot_examples(args, kshot_path):
 
     return kshot_examples
 
-def sample_kshot(args, no_entity_examples, entity_examples, kshot):
-    if kshot:
-        # Choose whether this sentence should contain an entity
-        want_no_entity = np.random.rand() < args.no_entity_ratio
+def sample_kshot(args, no_entity_examples, entity_examples):
+    # Choose whether this sentence should contain an entity
+    want_no_entity = np.random.rand() < args.no_entity_ratio
 
-        if want_no_entity:
+    if want_no_entity:
                             # Prefer no-entity examples
-            if len(no_entity_examples) > 0:
-                pool = no_entity_examples
-                user_template = 'kshot_genre_no_entity'
-            else:
-                # fallback
-                pool = entity_examples
-                user_template = 'kshot_num_sent_genre_entity'
+        if len(no_entity_examples) > 0:
+            pool = no_entity_examples
+            user_template = 'kshot_genre_no_entity'
         else:
-            # Prefer entity examples
-            if len(entity_examples) > 0:
-                pool = entity_examples
-                user_template = 'kshot_num_sent_genre_entity'
-            else:
-                # fallback
-                pool = no_entity_examples
-                user_template = 'kshot_genre_no_entity'
+            # fallback
+            pool = entity_examples
+            user_template = 'kshot_num_sent_genre_entity'
+    else:
+        # Prefer entity examples
+        if len(entity_examples) > 0:
+            pool = entity_examples
+            user_template = 'kshot_num_sent_genre_entity'
+        else:
+            # fallback
+            pool = no_entity_examples
+            user_template = 'kshot_genre_no_entity'
 
-        # FINAL fallback if both empty (should not happen)
-        if len(pool) == 0:
-            kshot_text_block = ""
-            used_ids = []
-        else:
-            kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
+    # FINAL fallback if both empty (should not happen)
+    print(f"[INFO] wnat no entity: {want_no_entity}")
+    print(f"[INFO] pool: {len(pool)}")
+    if len(pool) == 0:
+        kshot_text_block = ""
+        used_ids = []
+        print("[DEBUG] This shouldn't be happening...")
+    else:
+        kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
 
     return kshot_text_block, user_template, used_ids
 
@@ -139,7 +141,7 @@ def generate_sentences_per_cluster(
     kshot_path: str,
     term_list: List[tuple], 
     clusters: List[int],
-    num_of_terms_pc: List[int],
+    num_of_terms_pc: List[int], #number of terms per cluster
     method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
@@ -168,7 +170,7 @@ def generate_sentences_per_cluster(
 
             for term in terms:
                 print(f"[INFO] Generating sentence for term: {term[0]}")
-                kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
+                kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples)
                 args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
 
                 response = promptGeneration.message_request(
@@ -214,11 +216,7 @@ def generate_sentence_samples(
 
     for i, term in enumerate(tqdm.tqdm(term_list)):
         try:
-            if kshot_examples:
-                kshot = True
-            else:
-                kshot = False
-            kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, kshot)
+            kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples)
 
             args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
 
