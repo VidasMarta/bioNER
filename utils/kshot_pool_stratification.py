@@ -18,6 +18,7 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
     clustered_data = []
     for sample, label in zip(data, cluster_labels):
         sample['cluster_id'] = label
+        print(sample)
         clustered_data.append(sample)
     data = clustered_data
 
