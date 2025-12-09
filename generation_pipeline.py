@@ -276,7 +276,7 @@ def adaptive_syntax_generation(
                     print("[WARN] No global terms available for regeneration at all.")
                 else:
                     needed = num_new - len(cluster_terms)
-                    extra_terms = list(np.random.choice(
+                    extra_terms = list(random.sample(
                         global_terms,
                         size=min(needed, len(global_terms)),
                         replace=False
@@ -284,22 +284,18 @@ def adaptive_syntax_generation(
                     cluster_terms.extend(extra_terms)
 
             clean_cluster_terms = []
-            for entities, ids in cluster_terms:
+            for entities, term_ids in cluster_terms:
+                # entities might be a list if there are multiple entities in the sentence
                 if isinstance(entities, list):
-                    for idx, ent in enumerate(entities):
-                        if isinstance(ids, list) and idx < len(ids):
-                            clean_cluster_terms.append((ent, ids[idx]))
-                        else:
-                            clean_cluster_terms.append((ent, "NaN"))
-                elif isinstance(entities, str):
-                    if isinstance(ids, list):
-                        clean_cluster_terms.append((entities, ids[0] if ids else "NaN"))
-                    else:
-                        clean_cluster_terms.append((entities, ids))
+                    for e, tid in zip(entities, term_ids):
+                        clean_cluster_terms.append((e, tid))
+                else:
+                    clean_cluster_terms.append((entities, term_ids))
+
 
 
             # Randomly pick terms for this cluster’s regeneration quota
-            selected_terms = np.random.choice(clean_cluster_terms, size=num_new, replace=False)
+            selected_terms = random.sample(clean_cluster_terms, size=num_new, replace=False)
             regen_terms.extend(selected_terms)
             terms_per_cluster.append(num_new)
 
