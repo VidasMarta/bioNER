@@ -3,7 +3,6 @@ import json
 import os
 import random
 import numpy as np
-from torch import cosine_similarity
 import parsing_embedding as pe
 
 def compute_coverage(data, selected_abstract_ids, total_size):
@@ -15,7 +14,7 @@ def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, clust
     with open(input_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    cluster_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
+    cluster_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     for sample, label in zip(data, cluster_labels):
         sample['cluster_id'] = label
 
