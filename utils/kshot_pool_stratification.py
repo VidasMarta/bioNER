@@ -10,7 +10,7 @@ def compute_coverage(data, selected_abstract_ids, total_size):
 def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
-        data = [json.loads(line) for line in f]
+        data = json.load(f)
 
     np.random.seed(seed)
     total_size = len(data)
@@ -57,6 +57,8 @@ def parse_args():
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
     return parser.parse_args()
+
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --filtered_parsed_mesh_file data/ncbi/trf/ncbi_ner_train.json --output_path_features data/ncbi/trf/syntax_features_sent_tree_head.json'''
 
 if __name__ == "__main__":
     args = parse_args()
