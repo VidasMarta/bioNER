@@ -289,9 +289,9 @@ def adaptive_syntax_generation(
             idx_cterm = []
             num_of_cterm = 0
             for i in indices_in_cluster:
-                terms, num = extract_terms(synth_data[i])
+                terms, num = extract_terms(synth_data[i], i)
                 if num > 0:
-                    idx_cterm.append(terms)
+                    idx_cterm.extend(terms)
                     num_of_cterm += num
 
             print(f"[DEBUG] # cluster terms = {num_of_cterm}")
@@ -306,9 +306,9 @@ def adaptive_syntax_generation(
                 global_terms = []
                 num_of_gterm = 0
                 for i, sent in enumerate(synth_data):
-                    terms, num = extract_terms(sent)
+                    terms, num = extract_terms(sent, i)
                     if num > 0:
-                        global_terms.append(terms)
+                        global_terms.extend(terms)
                         num_of_gterm += num
 
                 if num_of_gterm == 0:
@@ -322,12 +322,10 @@ def adaptive_syntax_generation(
 
 
             print(f"[DEBUG] # cluster terms = {num_of_cterm}")
-            sample_size = min(num_new, num_of_cterm)
-            # Random selection
-            print(f"[DEBUG] sample_size = {sample_size}")
-            idxs = set([idx for idx, _, _ in idx_cterm])
-            selected_indices = random.sample(idxs, sample_size)
-            selected_terms = [idx_cterm[i] for i in selected_indices]
+            sample_size = min(num_new, len(idx_cterm))
+            selected = random.sample(idx_cterm, sample_size)
+            selected_indices = [idx for idx, _, _ in selected]
+            selected_terms = [(e, tid) for _, e, tid in selected]
 
             print(f"[DEBUG] # selected terms = {len(selected_terms)}")
             regen_terms.extend(selected_terms)
