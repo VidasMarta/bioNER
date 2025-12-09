@@ -12,7 +12,7 @@ def compute_coverage(data, selected_abstract_ids, total_size):
 def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
-        data = [json.loads(line) for line in f]
+        data = [json.loads(line) for line in f if line.strip()]
 
     cluster_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     clustered_data = []
