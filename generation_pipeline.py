@@ -359,7 +359,7 @@ def adaptive_syntax_generation(
             newly_parsed_sentences = [json.loads(line) for line in f]
 
         deleted = 0
-        if clean_cluster_terms:  # remove sentences from this cluster whose terms were selected for regeneration
+        for cluster_id in uncovered_clusters:
             terms_to_replace = set(clean_cluster_terms)
             indices_to_replace = [
                 i for i, entry in enumerate(synth_data)
@@ -377,6 +377,7 @@ def adaptive_syntax_generation(
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
         print(f"[INFO] Deleted {deleted} sentences from synthetic corpus.")
+        print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
 
         if args.ner_model_eval:
             train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
