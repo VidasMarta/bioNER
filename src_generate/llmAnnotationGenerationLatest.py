@@ -137,7 +137,7 @@ def generate_sentences_per_cluster(
     args: argparse.Namespace,
     iter_output: str, 
     kshot_path: str,
-    term_list: List[str], 
+    term_list: List[tuple], 
     clusters: List[int],
     num_of_terms_pc: List[int],
     method: str = 'a',
@@ -152,7 +152,7 @@ def generate_sentences_per_cluster(
     print("Total terms:", len(term_list))
     print("Sum per cluster:", sum(num_of_terms_pc))
 
-    for i, cluster in enumerate(clusters):
+    for i, cluster in enumerate(tqdm.tqdm(clusters)):
         try:
             kshot_pool = [ex for ex in kshot_examples if ex.get("cluster_id") == cluster]
             entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
@@ -167,24 +167,24 @@ def generate_sentences_per_cluster(
                 continue
 
             for term in terms:
-                print(f"[INFO] Generating sentence for term: {term}")
+                print(f"[INFO] Generating sentence for term: {term[0]}")
                 kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, True)
-                args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
+                args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
 
                 response = promptGeneration.message_request(
                         args,
-                        term,
+                        term[0],
                         system_template=system_template,
                         user_template=user_template,
                         text=kshot_text_block
                     )
                 
-                save_generated_sentences(args, output_path, method, response, term, used_ids)
+                save_generated_sentences(args, output_path, method, response, term[0], used_ids)
         except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
                 if args.verbose:
-                    print(f"[ERROR] Term {term}: {e}")
+                    print(f"[ERROR] Term {term[0]}: {e}")
 
     return output_path
 
@@ -192,7 +192,7 @@ def generate_sentences_per_cluster(
 def generate_sentence_samples(
     args: argparse.Namespace,
     kshot_path: str,
-    term_list: List[str], 
+    term_list: List[tuple], 
     method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
@@ -213,31 +213,30 @@ def generate_sentence_samples(
     no_entity_examples = [ex for ex in kshot_examples if not ex.get("entities")]
 
     for i, term in enumerate(tqdm.tqdm(term_list)):
-        with open(output_path, method, encoding='utf-8') as file:
-            try:
-                if kshot_examples:
-                    kshot = True
-                else:
-                    kshot = False
-                kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, kshot)
+        try:
+            if kshot_examples:
+                kshot = True
+            else:
+                kshot = False
+            kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples, kshot)
 
-                args.logger.info(f"K-shot examples used for term '{term}': {used_ids}")
+            args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
 
-                response = promptGeneration.message_request(
+            response = promptGeneration.message_request(
                         args,
-                        term,
+                        term[0],
                         system_template=system_template,
                         user_template=user_template,
                         text=kshot_text_block
-                    )
+                )
                 
-                save_generated_sentences(args, output_path, method, response, term, used_ids)  
+            save_generated_sentences(args, output_path, method, response, term[0], used_ids)  
 
-            except Exception as e:
-                args.logger.info(f"Failed to generate or parse sentence for term {term}: {e}")
-                args.logger.info(f"Response content: {response.json().get('content', '')}")
-                if args.verbose:
-                    print(f"[ERROR] Term {term}: {e}")
+        except Exception as e:
+            args.logger.info(f"Failed to generate or parse sentence for term {term[0]}: {e}")
+            args.logger.info(f"Response content: {response.json().get('content', '')}")
+            if args.verbose:
+                print(f"[ERROR] Term {term[0]}: {e}")
     return output_path
 
 def get_diseases(args: argparse.Namespace):
@@ -306,7 +305,7 @@ def main(args: argparse.Namespace):
     term_list = generate_term_list(args)
     
     if args.obo_file_path:
-        disease_terms = utils.get_diseases(args)
+        disease_terms = get_diseases(args)
         term_list += disease_terms
     # print(term_list[:150])
     if args.test:

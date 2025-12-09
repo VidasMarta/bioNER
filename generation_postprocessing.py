@@ -49,13 +49,13 @@ def create_rule_json(doc, nlp, term, entities)-> Tuple[list,list]:
     tokens_lower = utils.check_last_token(tokens_lower)
     tags = [2] * len(tokens)  # default all "O" = 2
     # tokenize the term with spaCy as well (so alignment is consistent)
-    term_tokens = [t.text.lower() for t in nlp(term.lower())]
+    term_tokens = [t.text.lower() for t in nlp(term[0].lower())]
     term_len = len(term_tokens)
     #TODO: is the lemmatization inside utils.check_last_token needed here?
     # search for the term sequence in tokens
     for i in range(len(tokens) - term_len + 1):
         if tokens_lower[i:i+term_len] == term_tokens:
-            entities.append(term)
+            entities.append(term[0])
             tags[i] = 0  # B-DISEASE
             for j in range(1, term_len):
                 tags[i+j] = 1  # I-DISEASE
@@ -80,23 +80,23 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
 
 
 def create_json(args: argparse.Namespace, text: str, 
-                term) -> List[dict]:
+                term:tuple) -> List[dict]:
     # TODO: add proposed entities from parsing step Where and why?
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     entities = []
     tags, tokens = create_rule_json(doc, nlp, term, entities)
-    terms = [term] #[term[0].lower()]
-    #term_ids = [term[1]]
+    terms = [term[0].lower()]
+    term_ids = [term[1]]
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
         terms_llm = check_additional_disease_tags(args, tokens, term.lower())
         # TODO provjeriti da nema više istih entiteta a nema ih u tekstu
         for term_llm in terms_llm:
-            if term_llm.lower() != term.lower():
-                terms.append(term_llm.lower())
-                #term_ids.append('NaN')
-                args.logger.info('Additional disease term found in generated text: {term_llm} for original term {term}.')
+            if term_llm[0].lower() != term[0].lower():
+                terms.append(term_llm[0].lower())
+                term_ids.append('NaN')
+                args.logger.info('Additional disease term found in generated text: {term_llm[0]} for original term {term[0]}.')
                 args.logger.info('Generated sentence: {text}')
                 tags_llm, _ = create_rule_json(doc, nlp, term_llm, entities)
                 for i in range(len(tags_llm)):
