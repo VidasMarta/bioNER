@@ -59,7 +59,7 @@ def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, clust
     
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
-    parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)')  
+    parser.add_argument('--pcts', type=float, nargs="+", required=True, help='Percentages...')  
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
     parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="/home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/")
