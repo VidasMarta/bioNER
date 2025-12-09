@@ -156,6 +156,22 @@ def visualize_embeddings_clusterwise(
     plt.savefig(full_path, dpi=200)
     print(f"[INFO] Saved UMAP visualization to {full_path}")
 
+def extract_terms(item):
+    terms = []
+    entity = item.get("entities")
+    term_id = item.get("term_id", [None])
+    if isinstance(entity, list):
+        if not term_id:
+            term_id = [None]*len(entity)
+        elif len(term_id) < len(entity):
+            term_id = term_id + [None]*(len(entity) - len(term_id))
+        for e, tid in zip(entity, term_id):
+            terms.append((e, tid))
+    else:
+        terms.append((entity, term_id))
+
+    return terms, len(entity)
+
 
 def adaptive_syntax_generation(
     args,
@@ -253,6 +269,7 @@ def adaptive_syntax_generation(
         # Adaptive regeneration: guided by uncovered clusters
         regen_terms = []
         terms_per_cluster = []
+        
 
         for cluster_id in uncovered_clusters:
             regen_weight = 1.0 - cluster_overlaps[cluster_id]
@@ -269,56 +286,48 @@ def adaptive_syntax_generation(
                 if cluster_mask[i] and "entities" in synth_data[i]
             ]
 
-            # cluster_terms = list of tuples: (entities, term_ids)
-            cluster_terms = [
-                (synth_data[i].get("entities"), synth_data[i].get("term_id", [None]))
-                for i in indices_in_cluster
-            ]
+            idx_cterm = {} #key:index, value:tuple(entity list, term_id list)
+            num_of_cterm = 0
+            for i in indices_in_cluster:
+                terms, num = extract_terms(synth_data[i])
+                if num > 0:
+                    idx_cterm[i] = terms
+                    num_of_cterm += num
 
-            print(f"[DEBUG] # cluster terms = {len(cluster_terms)}")
-            if len(cluster_terms) > 0:
-                print(f"example: {cluster_terms[1]}")
+            print(f"[DEBUG] # cluster terms = {num_of_cterm}")
+            if num_of_cterm > 0:
+                example_key = next(iter(idx_cterm))
+                print(f"example: {idx_cterm[example_key]}")
 
             # -- If too few locally, pull from global pool --
-            if len(cluster_terms) < num_new:
-                print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
+            if num_of_cterm < num_new:
+                print(f"[INFO] found {num_of_cterm} for cluster {cluster_id}, will get more globally.")
 
-                global_terms = [
-                    (d.get("entities"), d.get("term_id", [None]))
-                    for d in synth_data if "entities" in d
-                ]
+                global_terms = {}
+                num_of_gterm = 0
+                for i, sent in enumerate(synth_data):
+                    terms, num = extract_terms(sent)
+                    if num > 0:
+                        global_terms[i] = terms
+                        num_of_gterm += num
 
-                if len(global_terms) == 0:
+                if num_of_gterm == 0:
                     print("[WARN] No global terms available for regeneration at all.")
                 else:
-                    needed = num_new - len(cluster_terms)
-                    extra_terms = random.sample(global_terms, min(needed, len(global_terms)))
-                    cluster_terms.extend(extra_terms)
+                    needed = num_new - num_of_cterm
+                    extra_keys = random.sample(list(global_terms.keys()), min(needed, len(global_terms)))
+                    for k in extra_keys:
+                        idx_cterm[k] = global_terms[k]
+                        num_of_cterm += len(global_terms[k])
 
-            # ---- UNRAVEL ENTITIES INTO UNIFORM TUPLES ----
-            # clean_cluster_terms = list of (entity_string, term_id)
-            clean_cluster_terms = []
-            for entities, term_ids in cluster_terms:
-                if isinstance(entities, list):
-                    # pad term_ids to match entities length
-                    if not term_ids:
-                        term_ids = [None] * len(entities)
-                    elif len(term_ids) < len(entities):
-                        term_ids = term_ids + [None] * (len(entities) - len(term_ids))
-                    for e, tid in zip(entities, term_ids):
-                        clean_cluster_terms.append((e, tid))
-                else:
-                    tid = term_ids[0] if term_ids else None
-                    clean_cluster_terms.append((entities, tid))
-
-
-            print(f"[DEBUG] # clean cluster terms = {len(clean_cluster_terms)}")
-            sample_size = min(num_new, len(clean_cluster_terms))
+            print(f"[DEBUG] # cluster terms = {num_of_cterm}")
+            sample_size = min(num_new, num_of_cterm)
             # Random selection
             print(f"[DEBUG] sample_size = {sample_size}")
-            selected_terms = random.sample(clean_cluster_terms, sample_size)
-            print(f"[DEBUG] # selected terms = {len(selected_terms)}")
+            selected_indices = random.sample(list(idx_cterm.keys()), sample_size)
+            selected_terms = [idx_cterm[i] for i in selected_indices]
 
+            print(f"[DEBUG] # selected terms = {len(selected_terms)}")
             regen_terms.extend(selected_terms)
             terms_per_cluster.append(sample_size)
 
@@ -359,18 +368,10 @@ def adaptive_syntax_generation(
             newly_parsed_sentences = [json.loads(line) for line in f]
 
         replaced = 0
-        for cluster_id in uncovered_clusters:
-            terms_to_replace = set(clean_cluster_terms)
-            indices_to_replace = [
-                i for i, entry in enumerate(synth_data)
-                if any(ent in terms_to_replace for ent in entry.get("entities", []))
-                and synth_labels[i] == cluster_id
-            ]
-            print(f"[DEBUG] I have to replace {len(indices_to_replace)}")
-            for idx, new_sentence in zip(sorted(indices_to_replace, reverse=True), newly_parsed_sentences):
-                replaced += 1
-                synth_data[idx] = new_sentence
-
+        assert len(selected_indices) == len(newly_parsed_sentences), "Gen sent mismatch!"
+        for idx, new_sentence in zip(selected_indices, newly_parsed_sentences):
+            synth_data[idx] = new_sentence
+            replaced += 1
 
         # Add new regenerated ones
         #synth_data.extend(newly_parsed_sentences)
