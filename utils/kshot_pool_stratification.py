@@ -15,10 +15,10 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
         data = json.load(f)
 
     cluster_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
-    clustered_data = {}
+    clustered_data = []
     for sample, label in zip(data, cluster_labels):
         sample['cluster_id'] = label
-        clustered_data.add(sample)
+        clustered_data.append(sample)
     data = clustered_data
 
     np.random.seed(seed)
