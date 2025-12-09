@@ -316,7 +316,6 @@ def adaptive_syntax_generation(
 
             regen_terms.extend(selected_terms)
             terms_per_cluster.append(sample_size)
-        return
 
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
 
