@@ -278,8 +278,7 @@ def adaptive_syntax_generation(
                     needed = num_new - len(cluster_terms)
                     extra_terms = list(random.sample(
                         global_terms,
-                        size=min(needed, len(global_terms)),
-                        replace=False
+                        min(needed, len(global_terms))
                     ))
                     cluster_terms.extend(extra_terms)
 
@@ -295,7 +294,7 @@ def adaptive_syntax_generation(
 
 
             # Randomly pick terms for this cluster’s regeneration quota
-            selected_terms = random.sample(clean_cluster_terms, size=num_new, replace=False)
+            selected_terms = random.sample(clean_cluster_terms, num_new)
             regen_terms.extend(selected_terms)
             terms_per_cluster.append(num_new)
 

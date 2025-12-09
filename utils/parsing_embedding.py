@@ -7,7 +7,7 @@ import networkx as nx
 from karateclub import Graph2Vec
 from karateclub import GL2Vec
 import json
-#import kmeans_params as k
+import utils.kmeans_params as kmeans
 from tqdm import tqdm
 
 def build_dependency_graphs(data):
@@ -104,8 +104,8 @@ if __name__ == '__main__':
             # "embedding": [emb.tolist() for emb in embeddings_gl_data],
         }
 
-        '''for k in tqdm(range(5, 25)):
-            kmeans_result = k.evaluate_k(embeddings_gl_data, k)
+        for k in tqdm(range(5, 25)):
+            kmeans_result = kmeans.evaluate_k(embeddings_gl_data, k)
             entry[str(k)] = {
                 'inertia': str(kmeans_result['inertia']),
                 'silhouette': str(kmeans_result['silhouette']),
@@ -113,4 +113,4 @@ if __name__ == '__main__':
                 # 'labels': kmeans_result['labels'].tolist() 
             }
         with open(output_path_kmeans, "a") as f:
-            f.write(json.dumps(entry) + "\n")'''
+            f.write(json.dumps(entry) + "\n")
