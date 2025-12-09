@@ -256,7 +256,10 @@ def adaptive_syntax_generation(
             # Determine how many new samples to generate for this cluster
             # TODO jel nam ovo ok?
             # You can tune scaling constant (args.min_samples_per_cluster acts as base target)
-            num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
+            if args.test:
+                num_new = 3
+            else:
+                num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
 
             # Collect synthetic terms already assigned to this cluster
             cluster_mask = synth_labels == cluster_id
@@ -280,13 +283,19 @@ def adaptive_syntax_generation(
                     ))
                     cluster_terms.extend(extra_terms)
 
-            #Some sentences have multiple terms (entities)
             clean_cluster_terms = []
-            for t in cluster_terms:
-                if isinstance(t, list):
-                    clean_cluster_terms.extend(t)
-                elif isinstance(t, str):
-                    clean_cluster_terms.append(t)
+            for entities, ids in cluster_terms:
+                if isinstance(entities, list):
+                    for idx, ent in enumerate(entities):
+                        if isinstance(ids, list) and idx < len(ids):
+                            clean_cluster_terms.append((ent, ids[idx]))
+                        else:
+                            clean_cluster_terms.append((ent, "NaN"))
+                elif isinstance(entities, str):
+                    if isinstance(ids, list):
+                        clean_cluster_terms.append((entities, ids[0] if ids else "NaN"))
+                    else:
+                        clean_cluster_terms.append((entities, ids))
 
 
             # Randomly pick terms for this cluster’s regeneration quota
