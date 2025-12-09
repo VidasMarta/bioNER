@@ -156,7 +156,7 @@ def visualize_embeddings_clusterwise(
     plt.savefig(full_path, dpi=200)
     print(f"[INFO] Saved UMAP visualization to {full_path}")
 
-def extract_terms(item):
+def extract_terms(item, idx):
     terms = []
     entity = item.get("entities")
     term_id = item.get("term_id", [None])
@@ -166,9 +166,9 @@ def extract_terms(item):
         elif len(term_id) < len(entity):
             term_id = term_id + [None]*(len(entity) - len(term_id))
         for e, tid in zip(entity, term_id):
-            terms.append((e, tid))
+            terms.append((idx, e, tid))
     else:
-        terms.append((entity, term_id))
+        terms.append((idx, entity, term_id))
 
     return terms, len(entity)
 
@@ -286,12 +286,12 @@ def adaptive_syntax_generation(
                 if cluster_mask[i] and "entities" in synth_data[i]
             ]
 
-            idx_cterm = {} #key:index, value:tuple(entity list, term_id list)
+            idx_cterm = []
             num_of_cterm = 0
             for i in indices_in_cluster:
                 terms, num = extract_terms(synth_data[i])
                 if num > 0:
-                    idx_cterm[i] = terms
+                    idx_cterm.append(terms)
                     num_of_cterm += num
 
             print(f"[DEBUG] # cluster terms = {num_of_cterm}")
@@ -303,28 +303,30 @@ def adaptive_syntax_generation(
             if num_of_cterm < num_new:
                 print(f"[INFO] found {num_of_cterm} for cluster {cluster_id}, will get more globally.")
 
-                global_terms = {}
+                global_terms = []
                 num_of_gterm = 0
                 for i, sent in enumerate(synth_data):
                     terms, num = extract_terms(sent)
                     if num > 0:
-                        global_terms[i] = terms
+                        global_terms.append(terms)
                         num_of_gterm += num
 
                 if num_of_gterm == 0:
                     print("[WARN] No global terms available for regeneration at all.")
                 else:
                     needed = num_new - num_of_cterm
-                    extra_keys = random.sample(list(global_terms.keys()), min(needed, len(global_terms)))
-                    for k in extra_keys:
-                        idx_cterm[k] = global_terms[k]
-                        num_of_cterm += len(global_terms[k])
+                    global_sample = random.sample(global_terms, min(needed, len(global_terms)))
+                    for k in global_sample:
+                        idx_cterm.append(k)
+                        num_of_cterm += 1
+
 
             print(f"[DEBUG] # cluster terms = {num_of_cterm}")
             sample_size = min(num_new, num_of_cterm)
             # Random selection
             print(f"[DEBUG] sample_size = {sample_size}")
-            selected_indices = random.sample(list(idx_cterm.keys()), sample_size)
+            idxs = set([idx for idx, _, _ in idx_cterm])
+            selected_indices = random.sample(idxs, sample_size)
             selected_terms = [idx_cterm[i] for i in selected_indices]
 
             print(f"[DEBUG] # selected terms = {len(selected_terms)}")
