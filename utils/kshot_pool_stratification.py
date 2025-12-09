@@ -3,14 +3,21 @@ import json
 import os
 import random
 import numpy as np
+from torch import cosine_similarity
+import parsing_embedding as pe
 
 def compute_coverage(data, selected_abstract_ids, total_size):
         return sum(1 for item in data if item["abstract_id"] in selected_abstract_ids) / total_size
 
-def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, seed=42):
+
+def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, cluster_dir, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    cluster_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
+    for sample, label in zip(data, cluster_labels):
+        sample['cluster_id'] = label
 
     np.random.seed(seed)
     total_size = len(data)
@@ -56,9 +63,10 @@ def parse_args():
     parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)', default=0.10)  
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
+    parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="/home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters'")
     return parser.parse_args()
 
-'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --filtered_parsed_mesh_file data/ncbi/trf/ncbi_ner_train.json --output_path_features data/ncbi/trf/syntax_features_sent_tree_head.json'''
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --filtered_parsed_mesh_file /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json --output_path_features /home/mvidas/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json --cluster_dir /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters'''
 
 if __name__ == "__main__":
     args = parse_args()
@@ -71,6 +79,6 @@ if __name__ == "__main__":
 
     for pct in subset_pcts:
         samples_pct = pct / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
-        filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.filtered_parsed_mesh_file, samples_pct)
+        filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.filtered_parsed_mesh_file, args.cluster_dir, samples_pct)
         available_abstracts = filtered_abstracts
         previous_pct = pct

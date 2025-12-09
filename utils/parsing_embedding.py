@@ -44,8 +44,8 @@ def build_dependency_graphs(data):
     return graphs, sent_ids_list
  
 def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iterations=1, 
-                        dimensions=32, workers=32, learning_rate=0.1,
-                        min_count=2, epochs=20):
+                        dimensions=16, workers=24, learning_rate=0.05,
+                        min_count=1, epochs=20):
 
     if model is None:
         if embedding_type == "gl2vec" :
