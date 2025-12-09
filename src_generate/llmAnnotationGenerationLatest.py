@@ -101,13 +101,12 @@ def sample_kshot(args, no_entity_examples, entity_examples, kshot):
                 pool = no_entity_examples
                 user_template = 'kshot_genre_no_entity'
 
-    # FINAL fallback if both empty (should not happen)
-    if len(pool) == 0:
-        kshot_text_block = ""
-        used_ids = []
-    else:
-        print("[DEBUG] Uzimam kshot!!")
-        kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
+        # FINAL fallback if both empty (should not happen)
+        if len(pool) == 0:
+            kshot_text_block = ""
+            used_ids = []
+        else:
+            kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
 
     return kshot_text_block, user_template, used_ids
 

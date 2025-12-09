@@ -204,6 +204,7 @@ def adaptive_syntax_generation(
 
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+        print(f"[DEBUG] synth data at the begining: {len(synth_data)}")
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
         os.makedirs(iter_output, exist_ok=True)
         # KARATE ENV
@@ -357,6 +358,7 @@ def adaptive_syntax_generation(
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
 
+        deleted = 0
         if clean_cluster_terms:  # remove sentences from this cluster whose terms were selected for regeneration
             terms_to_replace = set(clean_cluster_terms)
             indices_to_replace = [
@@ -367,12 +369,14 @@ def adaptive_syntax_generation(
     
             # Remove in reverse order to preserve indexing
             for idx in sorted(indices_to_replace, reverse=True):
+                deleted += 1
                 del synth_data[idx]
 
 
         # Add new regenerated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
+        print(f"[INFO] Deleted {deleted} sentences from synthetic corpus.")
 
         if args.ner_model_eval:
             train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
