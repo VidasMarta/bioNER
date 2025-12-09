@@ -69,12 +69,10 @@ def parse_args():
     parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="")
     return parser.parse_args()
 
-'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --input_file /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
---output_path /home/mvidas/syn-bioner/data/ncbi/trf/
--cluster_dir /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/'''
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --input_file /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json --output_path /home/mvidas/syn-bioner/data/ncbi/trf/ --cluster_dir /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/'''
 if __name__ == "__main__":
     args = parse_args()
-    for path in [args.filtered_parsed_mesh_file, args.output_path]:
+    for path in [args.input_file, args.output_path]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
