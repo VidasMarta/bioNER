@@ -106,6 +106,7 @@ def sample_kshot(args, no_entity_examples, entity_examples, kshot):
         kshot_text_block = ""
         used_ids = []
     else:
+        print("[DEBUG] Uzimam kshot!!")
         kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
 
     return kshot_text_block, user_template, used_ids

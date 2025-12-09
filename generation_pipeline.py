@@ -227,6 +227,10 @@ def adaptive_syntax_generation(
             args.min_samples_per_cluster
         )
 
+        print(f"[DEBUG] synth data: {len(synth_data)}, synth labels: {len(synth_labels)}")
+        assert len(synth_data) == len(synth_labels), "Data/labels mismatch!"
+
+
         print(f"[INFO] Per-cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
         print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
         print(f"[INFO] Uncovered clusters: {uncovered_clusters}")
