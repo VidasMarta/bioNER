@@ -266,7 +266,7 @@ def adaptive_syntax_generation(
 
             # cluster_terms = list of tuples: (entities, term_ids)
             cluster_terms = [
-                (synth_data[i].get("entities"), synth_data[i].get("term_id", []))
+                (synth_data[i].get("entities"), synth_data[i].get("term_id", [None]))
                 for i in indices_in_cluster
             ]
 
@@ -279,7 +279,7 @@ def adaptive_syntax_generation(
                 print(f"[INFO] found {len(cluster_terms)} for cluster {cluster_id}, will get more globally.")
 
                 global_terms = [
-                    (d.get("entities"), d.get("term_id", []))
+                    (d.get("entities"), d.get("term_id", [None]))
                     for d in synth_data if "entities" in d
                 ]
 
@@ -309,7 +309,7 @@ def adaptive_syntax_generation(
 
             regen_terms.extend(selected_terms)
             terms_per_cluster.append(sample_size)
-
+        return
 
         print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
 
@@ -357,9 +357,9 @@ def adaptive_syntax_generation(
                 and synth_labels[i] == cluster_id
             ]
     
-        # Remove in reverse order to preserve indexing
-        for idx in sorted(indices_to_replace, reverse=True):
-            del synth_data[idx]
+            # Remove in reverse order to preserve indexing
+            for idx in sorted(indices_to_replace, reverse=True):
+                del synth_data[idx]
 
 
         # Add new regenerated ones
