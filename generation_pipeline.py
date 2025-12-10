@@ -353,6 +353,7 @@ def adaptive_syntax_generation(
         new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
 
         print(f"[INFO] Generation finished...")
+        print(f"[DEBUG] regen term example: {regen_terms[0]}")
 
         starting_id = synth_data[-1].get("id")
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
