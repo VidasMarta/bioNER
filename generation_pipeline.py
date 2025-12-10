@@ -161,12 +161,12 @@ def visualize_embeddings_clusterwise(
 def extract_terms(item, idx):
     terms = []
     entity = item.get("entities")
-    term_id = item.get("term_id", [None])
+    term_id = item.get("term_id", ['NaN'])
     if isinstance(entity, list):
         if not term_id:
-            term_id = [None]*len(entity)
+            term_id = ['NaN']*len(entity)
         elif len(term_id) < len(entity):
-            term_id = term_id + [None]*(len(entity) - len(term_id))
+            term_id = term_id + ['NaN']*(len(entity) - len(term_id))
         for e, tid in zip(entity, term_id):
             terms.append((idx, e, tid))
     else:

@@ -43,24 +43,39 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     return [sent.text for sent in doc.sents if sent.text.strip()]
 
 
-def create_rule_json(doc, nlp, term)-> Tuple[list,list]: 
-    entities = []     
-    tokens = [token.text for token in doc]
-    tokens_lower = [token.lower() for token in tokens]
-    tokens_lower = utils.check_last_token(tokens_lower)
+def create_rule_json(doc, nlp, term_tuple)-> Tuple[list,list]: 
+    term = term_tuple[0].lower()       # FIX 1
+    entities = []   
+
+    tokens = [t.text for t in doc]
+    tokens_clean = utils.check_last_token(tokens)  
+    tokens_lower = [t.lower() for t in tokens_clean]
+
     tags = [2] * len(tokens)  # default all "O" = 2
     # tokenize the term with spaCy as well (so alignment is consistent)
-    term_tokens = [t.text.lower() for t in nlp(term[0].lower())]
+    term_tokens = [t.text.lower() for t in nlp(term)]
     term_len = len(term_tokens)
     #TODO: is the lemmatization inside utils.check_last_token needed here?
     # search for the term sequence in tokens
     for i in range(len(tokens) - term_len + 1):
         if tokens_lower[i:i+term_len] == term_tokens:
-            entities.append(term[0])
+            entities.append(term)
             tags[i] = 0  # B-DISEASE
             for j in range(1, term_len):
                 tags[i+j] = 1  # I-DISEASE
             # break  # stop after first match
+
+    # Fallback fuzzy match for multi-word terms
+    if term_len > 1:
+        joined = " ".join(tokens_lower)
+        if term in joined:
+            idx = joined.index(term)
+            start = joined[:idx].count(" ")
+            entities.append(term)
+            tags[start] = 0
+            for j in range(1, term_len):
+                tags[start+j] = 1
+
     return tags, tokens, entities
 
 def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str:
@@ -82,27 +97,35 @@ def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str
 
 
 def create_json(args: argparse.Namespace, text: str, 
-                term:tuple) -> List[dict]:
+                term) -> List[dict]:
     # TODO: add proposed entities from parsing step Where and why?
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
-    entities_all = []
+
+
     tags, tokens, entities = create_rule_json(doc, nlp, term)
-    entities_all.append(entities)
+    entities_all = [entities]
+
     terms = [term[0].lower()]
     term_ids = [term[1]]
+
     if 0 in tags:
         merged_tags = tags  # default all "O" = 2
-        terms_llm = check_additional_disease_tags(args, tokens, term.lower())
+        terms_llm = check_additional_disease_tags(args, tokens, term[0].lower())
+        
         # TODO provjeriti da nema više istih entiteta a nema ih u tekstu
         for term_llm in terms_llm:
-            if term_llm[0].lower() != term[0].lower():
-                terms.append(term_llm[0].lower())
+            t_llm_lower = term_llm.lower()
+            if t_llm_lower != term[0].lower():
+                terms.append(t_llm_lower)
                 term_ids.append('NaN')
-                args.logger.info('Additional disease term found in generated text: {term_llm[0]} for original term {term[0]}.')
+
+                args.logger.info('Additional disease term found in generated text: {term_llm} for original term {term[0]}.')
                 args.logger.info('Generated sentence: {text}')
-                tags_llm, _, entities= create_rule_json(doc, nlp, term_llm)
-                entities_all.append(entities)
+
+                tags_llm, _, ents = create_rule_json(doc, nlp, (term_llm, 'NaN'))
+                entities_all.append(ents)
+
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE
                         merged_tags[i] = 0
@@ -113,12 +136,12 @@ def create_json(args: argparse.Namespace, text: str,
     pos_tags = [token.pos_ for token in doc]
     dep_rels = [token.dep_ for token in doc]
     parents = [token.head.i for token in doc] #index of parent token
-    corpus = "generated_train"
+    
     json_data = {
         "abstract_id": None,
         "sentence": text,
         "entities": entities_all,
-        "corpus": corpus,
+        "corpus": "generated_train",
         "pos": pos_tags, 
         "dep": dep_rels, 
         "parents": parents,
