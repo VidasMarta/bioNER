@@ -43,7 +43,8 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     return [sent.text for sent in doc.sents if sent.text.strip()]
 
 
-def create_rule_json(doc, nlp, term, entities)-> Tuple[list,list]:      
+def create_rule_json(doc, nlp, term)-> Tuple[list,list]: 
+    entities = []     
     tokens = [token.text for token in doc]
     tokens_lower = [token.lower() for token in tokens]
     tokens_lower = utils.check_last_token(tokens_lower)
@@ -60,7 +61,7 @@ def create_rule_json(doc, nlp, term, entities)-> Tuple[list,list]:
             for j in range(1, term_len):
                 tags[i+j] = 1  # I-DISEASE
             # break  # stop after first match
-    return tags, tokens
+    return tags, tokens, entities
 
 def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str:
     text = " ".join(tokens)
@@ -84,8 +85,9 @@ def create_json(args: argparse.Namespace, text: str,
     # TODO: add proposed entities from parsing step Where and why?
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
-    entities = []
-    tags, tokens = create_rule_json(doc, nlp, term, entities)
+    entities_all = []
+    tags, tokens, entities = create_rule_json(doc, nlp, term)
+    entities_all.append(entities)
     terms = [term[0].lower()]
     term_ids = [term[1]]
     if 0 in tags:
@@ -98,7 +100,8 @@ def create_json(args: argparse.Namespace, text: str,
                 term_ids.append('NaN')
                 args.logger.info('Additional disease term found in generated text: {term_llm[0]} for original term {term[0]}.')
                 args.logger.info('Generated sentence: {text}')
-                tags_llm, _ = create_rule_json(doc, nlp, term_llm, entities)
+                tags_llm, _, entities= create_rule_json(doc, nlp, term_llm)
+                entities_all.append(entities)
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE
                         merged_tags[i] = 0
@@ -113,7 +116,7 @@ def create_json(args: argparse.Namespace, text: str,
     json_data = {
         "abstract_id": None,
         "sentence": text,
-        "entities": entities,
+        "entities": entities_all,
         "corpus": corpus,
         "pos": pos_tags, 
         "dep": dep_rels, 

@@ -370,8 +370,9 @@ def adaptive_syntax_generation(
             newly_parsed_sentences = [json.loads(line) for line in f]
 
         deleted = 0
-        for idx in regen_idxs:
-            synth_data.pop(idx)
+        to_delete = sorted(regen_idxs, reverse=True)
+        for i in to_delete:
+            del synth_data[i]
             deleted += 1
 
         # Add new regenerated ones
