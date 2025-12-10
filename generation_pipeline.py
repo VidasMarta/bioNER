@@ -218,6 +218,7 @@ def adaptive_syntax_generation(
     if args.test:
         args.max_iterations = 2
 
+    synth_data = synth_data[:10000]
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         print(f"[DEBUG] synth data at the begining: {len(synth_data)}")
@@ -366,16 +367,15 @@ def adaptive_syntax_generation(
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
 
-        replaced = 0
-        assert len(regen_idxs) == len(newly_parsed_sentences), f"Gen sent mismatch {len(regen_idxs)}; {len(newly_parsed_sentences)}!"
-        for idx, new_sentence in zip(regen_idxs, newly_parsed_sentences):
-            synth_data[idx] = new_sentence
-            replaced += 1
+        deleted = 0
+        for idx in regen_idxs:
+            synth_data.pop(idx)
+            deleted += 1
 
         # Add new regenerated ones
-        #synth_data.extend(newly_parsed_sentences)
+        synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
-        print(f"[INFO] Deleted {replaced} sentences from synthetic corpus.")
+        print(f"[INFO] Deleted {deleted} sentences from synthetic corpus.")
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
 
         if args.ner_model_eval:
