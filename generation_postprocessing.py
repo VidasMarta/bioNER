@@ -65,17 +65,6 @@ def create_rule_json(doc, nlp, term_tuple)-> Tuple[list,list]:
                 tags[i+j] = 1  # I-DISEASE
             # break  # stop after first match
 
-    # Fallback fuzzy match for multi-word terms
-    if term_len > 1:
-        joined = " ".join(tokens_lower)
-        if term in joined:
-            idx = joined.index(term)
-            start = joined[:idx].count(" ")
-            entities.append(term)
-            tags[start] = 0
-            for j in range(1, term_len):
-                tags[start+j] = 1
-
     return tags, tokens, entities
 
 def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str:
@@ -104,7 +93,7 @@ def create_json(args: argparse.Namespace, text: str,
 
 
     tags, tokens, entities = create_rule_json(doc, nlp, term)
-    entities_all = [entities]
+    entities_all = entities
 
     terms = [term[0].lower()]
     term_ids = [term[1]]
