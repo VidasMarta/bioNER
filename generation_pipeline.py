@@ -41,9 +41,11 @@ def compute_cluster_coverage(
         min_samples_per_cluster (int): Minimum number of synthetic samples per cluster.
     """
     n_clusters = len(np.unique(real_labels))
+    print(f"[DEBUG] emb length {len(synth_emb)}")
     # Assign synthetic embeddings to nearest real cluster center
     similarities = cosine_similarity(synth_emb, centroids_real)
     synth_labels = np.argmax(similarities, axis=1)
+    print(f"[DEBUG] labels length {len(synth_labels)}")
 
 
     cluster_overlaps = []
