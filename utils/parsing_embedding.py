@@ -23,6 +23,7 @@ def build_dependency_graphs(data):
     """
     graphs = {}
     sent_ids_list = []
+    print(f"[DEBUG] in pe data length: {len(data)}")
     for entry in data:
         sent_ids_list.append(entry["id"])
         sent_id = entry["id"]
@@ -41,6 +42,7 @@ def build_dependency_graphs(data):
             G.add_edge(parent_idx, child_idx, feature=f'{dep_labels[child_idx]}')
         
         graphs[sent_id] = G
+    print(f"[DEBUG] in pe graphs length: {len(graphs)}")
     return graphs, sent_ids_list
  
 def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iterations=1, 
