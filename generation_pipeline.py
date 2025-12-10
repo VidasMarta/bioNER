@@ -354,12 +354,13 @@ def adaptive_syntax_generation(
 
         print(f"[INFO] Generation finished...")
 
+        starting_id = synth_data[-1].get("id")
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
-            "--starting_id", str(len(synth_data) + 1),
+            "--starting_id", starting_id,
             "--config_file", args.config_file
         ], capture_output=True, text=True)
         if args.verbose:
@@ -369,8 +370,8 @@ def adaptive_syntax_generation(
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
 
-        '''deleted = 0
-        to_delete = sorted(regen_idxs, reverse=True)
+        deleted = 0
+        '''to_delete = sorted(regen_idxs, reverse=True)
         for i in to_delete:
             del synth_data[i]
             deleted += 1'''

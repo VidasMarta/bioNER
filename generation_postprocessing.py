@@ -65,6 +65,7 @@ def create_rule_json(doc, nlp, term)-> Tuple[list,list]:
 
 def check_additional_disease_tags(args: argparse.Namespace, tokens, term) -> str:
     text = " ".join(tokens)
+    args.logger.info("ANNOTATION")
     response = promptGeneration.message_request(args, term,
                 system_template='annotation', 
                 user_template='disease_annotation',
