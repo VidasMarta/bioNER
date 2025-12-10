@@ -360,7 +360,7 @@ def adaptive_syntax_generation(
             "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/generation_postprocessing.py",
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
-            "--starting_id", starting_id,
+            "--starting_id", str(starting_id),
             "--config_file", args.config_file
         ], capture_output=True, text=True)
         if args.verbose:
