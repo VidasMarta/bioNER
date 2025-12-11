@@ -109,7 +109,7 @@ def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters):
     filtered = [ex for ex in data if ex.get("cluster_id") in uncovered_clusters]
     
     if not filtered:
-        print("[WARN] No NCBI examples found for uncovered clusters, using random fallback.")
+        print("[WARN] No NCBI examples found for uncovered clusters, using random fallback.") #TODO dodati da se "sakriju" entiteti
         filtered = data
     
     return filtered
@@ -158,23 +158,6 @@ def visualize_embeddings_clusterwise(
     plt.savefig(full_path, dpi=200)
     print(f"[INFO] Saved UMAP visualization to {full_path}")
 
-def extract_terms(item, idx):
-    terms = []
-    entity = item.get("entities")
-    term_id = item.get("term_id", ['NaN'])
-    if isinstance(entity, list):
-        if not term_id:
-            term_id = ['NaN']*len(entity)
-        elif len(term_id) < len(entity):
-            term_id = term_id + ['NaN']*(len(entity) - len(term_id))
-        for e, tid in zip(entity, term_id):
-            terms.append((idx, e, tid))
-    else:
-        terms.append((idx, entity, term_id))
-
-    return terms, len(entity)
-
-
 def adaptive_syntax_generation(
     args,
     real_data: List[Dict[str, Any]],
@@ -217,10 +200,13 @@ def adaptive_syntax_generation(
                 f.write(json.dumps(sample) + "\n")
         print(f"[INFO] Saved NCBI examples with cluster IDs → {ncbi_clustered_path}")
 
+    term_list = generate_term_list(args) #TODO potencijalno dodati nešto da se iskoriste svi termovi
+
     if args.test:
         args.max_iterations = 2
+        synth_data = synth_data[:10000]
+        term_list = term_list[:1000]
 
-    synth_data = synth_data[:10000]
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         print(f"[DEBUG] synth data at the begining: {len(synth_data)}")
@@ -270,11 +256,11 @@ def adaptive_syntax_generation(
             break
 
         # Adaptive regeneration: guided by uncovered clusters
-        regen_terms = []
+        terms_for_gen = []
         terms_per_cluster = []
-        regen_idxs = []
+        ids_to_delete = []
         
-
+        start = 0
         for cluster_id in uncovered_clusters:
             regen_weight = 1.0 - cluster_overlaps[cluster_id]
 
@@ -283,57 +269,25 @@ def adaptive_syntax_generation(
             else:
                 num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
 
-            # Collect synthetic terms already assigned to this cluster
-            cluster_mask = synth_labels == cluster_id
-            indices_in_cluster = [
-                i for i in range(len(synth_data))
-                if cluster_mask[i] and "entities" in synth_data[i]
-            ]
+            terms_for_gen.append(term_list[start:num_new]) 
+            terms_per_cluster.append(num_new)
+            start += num_new
+            if start >= len(term_list): #fallback ako baš iskoristimo sve termove
+                start = 0
 
-            idx_cterm = []
-            num_of_cterm = 0
-            for i in indices_in_cluster:
-                terms, num = extract_terms(synth_data[i], i)
-                if num > 0:
-                    idx_cterm.extend(terms)
-                    num_of_cterm += num
+            cluster_syntax = synth_data[synth_labels == cluster_id]
+            cluster_real = synth_data[synth_labels == cluster_id]
 
-            print(f"[DEBUG] # cluster terms = {num_of_cterm}")
+            if args.max_synthetic_ratio > len(cluster_syntax)/len(cluster_real): #delete random syntax sentences until ratio as wanted
+                to_delete = (args.max_synthetic_ratio - len(cluster_syntax))*len(cluster_real)
+                selected = random.sample(cluster_syntax, to_delete)
+                ids_to_delete.extend([item.get("id") for item in selected])
 
-            # -- If too few locally, pull from global pool --
-            if num_of_cterm < num_new:
-                print(f"[INFO] found {num_of_cterm} for cluster {cluster_id}, will get more globally.")
-
-                global_terms = []
-                num_of_gterm = 0
-                for i, sent in enumerate(synth_data):
-                    terms, num = extract_terms(sent, i)
-                    if num > 0:
-                        global_terms.extend(terms)
-                        num_of_gterm += num
-
-                if num_of_gterm == 0:
-                    print("[WARN] No global terms available for regeneration at all.")
-                else:
-                    needed = num_new - num_of_cterm
-                    global_sample = random.sample(global_terms, min(needed, len(global_terms)))
-                    for k in global_sample:
-                        idx_cterm.append(k)
-                        num_of_cterm += 1
-
-
-            print(f"[DEBUG] # cluster terms = {num_of_cterm}")
-            sample_size = min(num_new, len(idx_cterm))
-            selected = random.sample(idx_cterm, sample_size)
-            selected_indices = [idx for idx, _, _ in selected]
-            selected_terms = [(e, tid) for _, e, tid in selected]
-
-            print(f"[DEBUG] # selected terms = {len(selected_terms)}")
-            regen_terms.extend(selected_terms)
-            regen_idxs.extend(selected_indices)
-            terms_per_cluster.append(sample_size)
-
-        print(f"[INFO] Total new terms to regenerate across clusters: {len(regen_terms)}")
+        if ids_to_delete:
+            print(f"[DEBUG] I need to delete {len(ids_to_delete)} sentences")
+            print(f"[DEBUG] Len synth_data before {len(synth_data)}")
+            synth_data = [item for item in synth_data if item.get("id") not in ids_to_delete]
+            print(f"[DEBUG] Len synth_data after {len(synth_data)}")
 
         # Select cluster-specific k-shot examples for uncovered clusters
         kshot_examples = get_cluster_specific_kshot(
@@ -350,10 +304,10 @@ def adaptive_syntax_generation(
         # Generate new samples from uncovered clusters using LLM
         # SPACY ENV
         #new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
-        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, regen_terms, uncovered_clusters, terms_per_cluster)
+        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen, uncovered_clusters, terms_per_cluster)
 
         print(f"[INFO] Generation finished...")
-        print(f"[DEBUG] regen term example: {regen_terms[0]}")
+        print(f"[DEBUG] regen term example: {terms_for_gen[0]}")
 
         starting_id = synth_data[-1].get("id")
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
@@ -371,24 +325,9 @@ def adaptive_syntax_generation(
         with open(postprocessed, "r") as f:
             newly_parsed_sentences = [json.loads(line) for line in f]
 
-        deleted = 0
-        '''to_delete = sorted(regen_idxs, reverse=True)
-        for i in to_delete:
-            del synth_data[i]
-            deleted += 1'''
-        
-        mask = [True] * len(synth_data)
-        for idx in regen_idxs:
-            mask[idx] = False
-            deleted += 1
-
-        synth_data = [item for (keep, item) in zip(mask, synth_data) if keep]
-
-
-        # Add new regenerated ones
+        # Add newly generated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
-        print(f"[INFO] Deleted {deleted} sentences from synthetic corpus.")
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
 
         if args.ner_model_eval:

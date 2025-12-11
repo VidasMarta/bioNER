@@ -14,9 +14,9 @@ from src_generate import utils
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator.")
-    parser.add_argument('--input_file', type=str, required=True, 
+    parser.add_argument('--disease_file', type=str, required=True, 
                         help='Path to the input text file to use as example of diseases.')
-    parser.add_argument('--input_file_type', type=str, required=True, 
+    parser.add_argument('--disease_file_type', type=str, required=True, 
                         help='Path to the input text file to use as example of diseases.')
     parser.add_argument('--input_directory', type=str, default='',
                         help='Path to the input directory containing ontology terms as example of diseases.')
@@ -249,8 +249,8 @@ def get_diseases(args: argparse.Namespace):
 def generate_term_list(args: argparse.Namespace):
     entities = []
     # Read the file (one dict per line)
-    if args.input_file_type.lower() == 'json':
-        with open(args.input_file, "r") as f:
+    if args.disease_file_type.lower() == 'json':
+        with open(args.disease_file, "r") as f:
             data = [json.loads(line.strip().replace("'", '"')) for line in f if line.strip()]
         grouped = defaultdict(list)
         for item in data:
@@ -280,16 +280,16 @@ def generate_term_list(args: argparse.Namespace):
                 entities.append({"idx": idx, "entity": " ".join(tokens)})
         term_list = [(term['entity'],'NaN') for term in entities]
 
-    elif args.input_file.endswith('.txt'):
-        with open(args.input_file, "r") as f:
+    elif args.disease_file.endswith('.txt'):
+        with open(args.disease_file, "r") as f:
             ents = f.readlines()
             ents = [str(ent).strip() for ent in ents]
         for ent in ents:
             entities.append({"idx": 0, "entity": ent})
         term_list = [(term['entity'],'NaN') for term in entities]
         
-    elif args.input_file.endswith('.csv'):
-        df = pd.read_csv(args.input_file)
+    elif args.disease_file.endswith('.csv'):
+        df = pd.read_csv(args.disease_file)
         term_list = [(str(row.iloc[0]).strip(), str(row.iloc[1]).strip()) for _, row in df.iterrows()]
         
     term_list = list(set(term_list))    
@@ -316,8 +316,8 @@ def main(args: argparse.Namespace):
 """
 With included pos and dep
 python3 llmAnnotationGeneration.py \
-  --input_file data/NCBI-Disease/test.txt \
-  --input_file_type list \
+  --disease_file data/NCBI-Disease/test.txt \
+  --disease_file_type list \
   --output_directory data/synthetic_aug \
   --server_url http://0.0.0.0:8484 \
   --kshot_path data/ncbi_ner_train_10pct.json \
@@ -330,8 +330,8 @@ python3 llmAnnotationGeneration.py \
 
 
 python3 bioNER/src-generate/llmAnnotationGeneration.py \
-  --input_file data/SNOMEDCT/concepts_filtered.csv \
-  --input_file_type list \
+  --disease_file data/SNOMEDCT/concepts_filtered.csv \
+  --disease_file_type list \
   --output_directory  data/synthetic-snomed-kshot \
   --server_url http://med-llm-webapp-backend-1:8080  \
   --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
@@ -346,7 +346,7 @@ python3 bioNER/src-generate/llmAnnotationGeneration.py \
   
   Excluded pos and dep
   python3 llmAnnotationGeneration.py \
-  --input_file data/NCBI-Disease/test.txt \
+  --disease_file data/NCBI-Disease/test.txt \
   --output_directory data/synthetic_no_tags \
   --kshot_path data/ncbi_ner_train_10pct.json \
   --kshot_size 5 \

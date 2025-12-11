@@ -113,7 +113,7 @@ def create_json(args: argparse.Namespace, text: str,
                 args.logger.info('Generated sentence: {text}')
 
                 tags_llm, _, ents = create_rule_json(doc, nlp, (term_llm, 'NaN'))
-                entities_all.append(ents)
+                entities_all.extend(ents)
 
                 for i in range(len(tags_llm)):
                     if tags_llm[i] == 0:  # B-DISEASE

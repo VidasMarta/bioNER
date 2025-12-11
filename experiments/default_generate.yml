@@ -25,6 +25,11 @@ include_pos: true
 include_dep: true
 no_entity_ratio: 0.25
 
+#terms
+disease_file: /home/mvidas/syn-bioner/data/SNOMEDCT/concepts_filtered.csv
+disease_file_type: list
+obo_file_path: '' #TODO za što je ovo, koristi li se uopće
+
 
 #generate:
 kshot_size: 3
@@ -49,6 +54,7 @@ min_samples_per_cluster: 10 # Minimum number of synthetic samples required per c
 weighted_threshold: 0.75 # Weighted coverage threshold to stop iterations (global overlap).
 max_iterations: 5 
 overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
+max_synthetic_ratio: 3 # 3:1 (synth:NCBI) per cluster
 
 #bioNER
 ner_model_eval: false
