@@ -13,6 +13,7 @@ import utils.kmeans_params as kmeans_params
 import umap
 import subprocess
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import normalize
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
@@ -70,9 +71,11 @@ def compute_cluster_coverage(
         
         #compute how similar the average syntactic embedding of generated sentences is to the real NCBI sentences within that cluster
         else:
+            real_centroid = normalize(real_cluster_emb).mean(axis=0, keepdims=True)  #compute average embedding for real and synthetic cluster (centroids)
+            syntax_centroid = normalize(synth_cluster_emb).mean(axis=0, keepdims=True)
             overlap_i = cosine_similarity(
-                real_cluster_emb.mean(axis=0, keepdims=True), #compute average embedding for real and synthetic cluster (centroids)
-                synth_cluster_emb.mean(axis=0, keepdims=True),
+                real_centroid,
+                syntax_centroid,
             )[0, 0]
             cluster_overlaps.append(overlap_i) #add 
 
@@ -158,6 +161,23 @@ def visualize_embeddings_clusterwise(
     plt.savefig(full_path, dpi=200)
     print(f"[INFO] Saved UMAP visualization to {full_path}")
 
+def delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, max_synthetic_ratio):
+    ids_to_delete = []
+    for cluster_id in clusters:
+        cluster_syntax = synth_data[synth_labels == cluster_id]
+        cluster_real = real_data[real_labels == cluster_id]
+
+        if max_synthetic_ratio < len(cluster_syntax)/len(cluster_real): #delete random syntax sentences until ratio as wanted
+            to_delete = abs(args.max_synthetic_ratio - len(cluster_syntax))*len(cluster_real)
+            selected = random.sample(cluster_syntax, to_delete)
+            ids_to_delete.extend([item.get("id") for item in selected])
+
+    if ids_to_delete:
+        print(f"[DEBUG] I need to delete {len(ids_to_delete)} sentences")
+        print(f"[DEBUG] Len synth_data before {len(synth_data)}")
+        synth_data = [item for item in synth_data if item.get("id") not in ids_to_delete]
+        print(f"[DEBUG] Len synth_data after {len(synth_data)}")
+
 def adaptive_syntax_generation(
     args,
     real_data: List[Dict[str, Any]],
@@ -185,6 +205,7 @@ def adaptive_syntax_generation(
     
     real_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(args.cluster_dir, "cluster_centroids.npy"))
+    clusters = [range(0, max(real_labels)+1)]
 
     # Save NCBI examples with cluster labels for later k-shot selection
     # KARATE ENV
@@ -247,47 +268,52 @@ def adaptive_syntax_generation(
                 f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
                 f"(all clusters sufficiently represented)."
             )
+            delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
             visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
             break
 
         elif iteration == args.max_iterations:
             print("[STOP] Max iteration reached target reached.")
+            delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
             visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
             break
 
         # Adaptive regeneration: guided by uncovered clusters
         terms_for_gen = []
         terms_per_cluster = []
-        ids_to_delete = []
         
         start = 0
         for cluster_id in uncovered_clusters:
-            regen_weight = 1.0 - cluster_overlaps[cluster_id]
+            '''da uzmemo omjer sintetskih  i NCBI za pojedini (neprekriveni) klaster (a da imamo zadan neki željeni omjer, tipa 3:1) 
+            i onda ako je u klasteru manje sintetskih, generiramo toliko koliko  fali do tog omjera (cca jer možda koja rečenica više se izgenerira),
+              u nadi da će se generirane poslije naći  u tom klasteru, i ništa ne mičemo, a ako je sintetskih previše, onda da samo maknemo na random 
+              x rečenica kojih je viška do željenog omjera i ništa novo za taj klaster ne generiramo?'''
+            '''regen_weight = 1.0 - cluster_overlaps[cluster_id]
 
             if args.test:
                 num_new = 3
             else:
-                num_new = max(1, int(regen_weight * args.min_samples_per_cluster))
+                num_new = max(1, int(regen_weight * args.min_samples_per_cluster))'''
+            
+            cluster_syntax = synth_data[synth_labels == cluster_id]
+            cluster_real = real_data[real_labels == cluster_id]
 
-            terms_for_gen.append(term_list[start:num_new]) 
+            if args.test:
+                num_new = 3
+            else:
+                if args.max_synthetic_ratio > len(cluster_syntax)/len(cluster_real): 
+                    num_new = abs(args.max_synthetic_ratio - len(cluster_syntax))*len(cluster_real)
+                else:
+                    print(f"[DEBUG] No need for generation in this cluster {cluster_id}!")
+                    num_new = 0 #TODO onda ne generiramo, ali ako je cluster neprekriven do ovog ne bi trebalo doći?
+
+            end = start + num_new
+            terms_for_gen.append(term_list[start:end]) 
             terms_per_cluster.append(num_new)
-            start += num_new
+            start = end
             if start >= len(term_list): #fallback ako baš iskoristimo sve termove
                 start = 0
 
-            cluster_syntax = synth_data[synth_labels == cluster_id]
-            cluster_real = synth_data[synth_labels == cluster_id]
-
-            if args.max_synthetic_ratio > len(cluster_syntax)/len(cluster_real): #delete random syntax sentences until ratio as wanted
-                to_delete = (args.max_synthetic_ratio - len(cluster_syntax))*len(cluster_real)
-                selected = random.sample(cluster_syntax, to_delete)
-                ids_to_delete.extend([item.get("id") for item in selected])
-
-        if ids_to_delete:
-            print(f"[DEBUG] I need to delete {len(ids_to_delete)} sentences")
-            print(f"[DEBUG] Len synth_data before {len(synth_data)}")
-            synth_data = [item for item in synth_data if item.get("id") not in ids_to_delete]
-            print(f"[DEBUG] Len synth_data after {len(synth_data)}")
 
         # Select cluster-specific k-shot examples for uncovered clusters
         kshot_examples = get_cluster_specific_kshot(
