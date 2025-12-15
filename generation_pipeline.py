@@ -437,7 +437,8 @@ def main(args: argparse.Namespace):
 
 
 '''
-singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/generation_pipeline.py
+singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 \
+    /home/mvidas/syn-bioner/bioNER/generation_pipeline.py
 '''
 
 
@@ -446,7 +447,7 @@ if __name__ == "__main__":
     with open(init_args.config_file, 'r') as file:
         yaml_args = yaml.safe_load(file)
     args = argparse.Namespace(**yaml_args)
-    logger = setup_logger(args)
+    logger = setup_logger(args.output_directory, args.verbose)
     args.logger = logger
     args.config_file = init_args.config_file
     logger.info(f"Output directory: {args.output_directory}")

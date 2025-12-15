@@ -9,7 +9,9 @@ from typing import List, Dict, Any, Optional, Tuple
 import argparse
 import pandas as pd
 import subprocess
+from collections import defaultdict  
 import sys
+import obonet
 
 
 SPACY_NLP = None
@@ -104,15 +106,15 @@ def get_spacy_model(model: str):
     else:
         return SPACY_NLP
     
-def setup_logger(args):
-    log_dir = args.output_directory
+def setup_logger(output_directory, verbose):
+    log_dir = output_directory
     os.makedirs(log_dir, exist_ok=True)
     date_str = datetime.now().strftime("%Y%m%d")
     log_path = os.path.join(log_dir, f"{date_str}_tags_generation.log")
     logger = logging.getLogger("tags_generation")
-    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
     fh = logging.FileHandler(log_path, encoding="utf-8")
-    fh.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    fh.setLevel(logging.DEBUG if verbose else logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
     fh.setFormatter(formatter)
     if not logger.hasHandlers():
@@ -121,6 +123,73 @@ def setup_logger(args):
     return logger
         
 """python3 utils.py"""
+
+
+# TODO: move to utils and edit for DO, SNOMED CT and DO pairs and triplets.
+# Structure so multiple languages can be read.
+def generate_term_list(disease_file_type: str, 
+                       disease_file: str, 
+                       ) -> List[Tuple[str]]:
+    entities = []
+    data = []
+    # Read the file (one dict per line)
+    if disease_file_type.lower() == 'json' or disease_file_type.lower() == 'jsonl':
+        with open(disease_file, "r") as f:
+            for line in f:
+                data.append(json.loads(line))
+        entities = [(d['disease_names'], d['doid']) for d in data]
+        # grouped = defaultdict(list)
+        # for item in data:
+        #     grouped[item['idx']].append(item)
+
+        # # Process each idx
+        # for idx, items in grouped.items():
+        #     tokens = []
+        #     capture = False
+        #     for item in items:
+        #         gold = item['gold']
+        #         if gold.startswith("B-"):
+        #             if tokens:  # flush previous entity
+        #                 entities.append({"idx": idx, "entity": " ".join(tokens)})
+        #                 tokens = []
+        #             tokens.append(item['token'])
+        #             capture = True
+        #         elif gold.startswith("I-") and capture:
+        #             tokens.append(item['token'])
+        #         else:
+        #             if tokens:  # flush if ended
+        #                 entities.append({"idx": idx, "entity": " ".join(tokens)})
+        #                 tokens = []
+        #             capture = False
+
+        #     if tokens:  # flush last
+        #         entities.append({"idx": idx, "entity": " ".join(tokens)})
+        # term_list = [(term['entity'],'NaN') for term in entities]
+
+    elif disease_file.endswith('.txt'):
+        with open(disease_file, "r") as f:
+            ents = f.readlines()
+            ents = [str(ent).strip() for ent in ents]
+        for ent in ents:
+            entities.append({"idx": 0, "entity": ent})
+        term_list = [(term['entity'],'NaN') for term in entities]
+        
+    elif disease_file.endswith('.csv'):
+        df = pd.read_csv(disease_file)
+        term_list = [(str(row.iloc[0]).strip(), str(row.iloc[1]).strip()) for _, row in df.iterrows()]
+        
+    term_list = list(set(term_list))    
+    return term_list  
+
+
+def get_diseases(obo_file_path: str, verbose: bool)-> list[tuple[Any, Any]]:
+    graph = obonet.read_obo(obo_file_path)
+    do_terms = [(data["name"], node) for node, data in graph.nodes(data=True) if "name" in data]
+    if verbose:
+        print(f"Number of nodes (terms): {graph.number_of_nodes()}")
+        print(f"Number of edges (relations): {graph.number_of_edges()}")
+        print('First 20 terms: ', do_terms[:20])  # Show first 20 terms
+    return do_terms  
 
 
 if __name__ == "__main__":

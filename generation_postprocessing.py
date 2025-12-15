@@ -179,7 +179,7 @@ if __name__ == "__main__":
     args.generated = init_args.generated
     args.starting_id = init_args.starting_id
     args.generated_postprocessed = init_args.generated_postprocessed
-    logger = utils.setup_logger(args)
+    logger = utils.setup_logger(args.output_directory, args.verbose)
     args.logger = logger
     SPACY_NLP = spacy_load_model(args.spacy_model)
     load_data(args)
