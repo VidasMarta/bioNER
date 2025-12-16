@@ -56,7 +56,9 @@ def argparse_args():
                         help='Ratio of sentences without entities.')
     parser.add_argument('--pairs_file_path', type=str, default='', 
                         help='Path to the input text file to use as example of diseases.')
-    parser.add_argument('--iter_output')
+    parser.add_argument('--iter_output', default='')
+    parser.add_argument('--generate_k', type=int, default=5000, 
+                        help='How many samples to generate.')
 
 
     return parser.parse_args()
@@ -255,6 +257,13 @@ def main(args: argparse.Namespace) -> None:
     if args.test:
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
+    random.seed(args.random_seed)
+    sample = random.sample(term_list, args.generate_k)
+
+    generate_sentence_samples(args, sample, 
+                              system_template='role_sent_type_prompt',
+                              user_template='genre_new_prompt',
+                              nlp = nlp)
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
     generate_sentence_samples(args, term_list, 
                               system_template='role_sent_type_prompt',
