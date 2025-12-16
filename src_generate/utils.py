@@ -137,33 +137,6 @@ def generate_term_list(disease_file: str,
             for line in f:
                 data.append(json.loads(line))
         term_list = [(d['disease_names'], d['doid']) for d in data]
-        # grouped = defaultdict(list)
-        # for item in data:
-        #     grouped[item['idx']].append(item)
-
-        # # Process each idx
-        # for idx, items in grouped.items():
-        #     tokens = []
-        #     capture = False
-        #     for item in items:
-        #         gold = item['gold']
-        #         if gold.startswith("B-"):
-        #             if tokens:  # flush previous entity
-        #                 entities.append({"idx": idx, "entity": " ".join(tokens)})
-        #                 tokens = []
-        #             tokens.append(item['token'])
-        #             capture = True
-        #         elif gold.startswith("I-") and capture:
-        #             tokens.append(item['token'])
-        #         else:
-        #             if tokens:  # flush if ended
-        #                 entities.append({"idx": idx, "entity": " ".join(tokens)})
-        #                 tokens = []
-        #             capture = False
-
-        #     if tokens:  # flush last
-        #         entities.append({"idx": idx, "entity": " ".join(tokens)})
-        # term_list = [(term['entity'],'NaN') for term in entities]
 
     elif disease_file.endswith('.txt'):
         with open(disease_file, "r") as f:
@@ -182,7 +155,7 @@ def generate_term_list(disease_file: str,
               
     if verbose:
         print('Term_sample: ', term_list[:10]) 
-    return term_list  
+    return term_list
 
 
 def get_diseases(obo_file_path: str, verbose: bool) -> List[Tuple[Any, Any]]:

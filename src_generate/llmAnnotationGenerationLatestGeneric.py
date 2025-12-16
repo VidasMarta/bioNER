@@ -4,6 +4,7 @@ import pandas as pd
 from typing import List, Dict, Any, Optional, Tuple
 import tqdm
 import os
+import random
 import numpy as np
 from datetime import datetime
 from collections import defaultdict  
@@ -258,12 +259,8 @@ def main(args: argparse.Namespace) -> None:
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
-    sample = random.sample(term_list, args.generate_k)
+    term_list = random.sample(term_list, args.generate_k)
 
-    generate_sentence_samples(args, sample, 
-                              system_template='role_sent_type_prompt',
-                              user_template='genre_new_prompt',
-                              nlp = nlp)
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
     generate_sentence_samples(args, term_list, 
                               system_template='role_sent_type_prompt',
@@ -287,10 +284,10 @@ python3 llmAnnotationGeneration.py \
   --verbose
 
 
-python3 -m bioNER.src_generate.llmAnnotationGenerationLatest \
+python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
   --disease_file data/SNOMEDCT/concepts_filtered.csv \
   --disease_file_type list \
-  --pairs_file_path data/hetionet/pairs.jsonl \
+  --pairs_file_path data/hetionet/all.jsonl \
   --output_directory  data/synthetic_snomed_sent_type \
   --server_url http://172.19.0.2:8484  \
   --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
@@ -299,7 +296,8 @@ python3 -m bioNER.src_generate.llmAnnotationGenerationLatest \
   --include_pos \
   --include_dep \
   --random_seed 42 \
-  --test --temperature 0 --max_tokens 500 --verbose
+  --test \
+  --generate_k 4 --temperature 0 --max_tokens 500 --verbose
   
   
   Excluded pos and dep

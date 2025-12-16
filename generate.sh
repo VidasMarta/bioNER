@@ -37,17 +37,17 @@ echo "Bigger models will need even more waiting time currently $WAIT seconds"
 #         --server_url http://0.0.0.0:8484 --column_to_translate full_note\
 #             --output_dir data/agbonnet
 
-singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.llmAnnotationGenerationLatest \
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
   --disease_file data/SNOMEDCT/concepts_filtered.csv \
   --disease_file_type list \
   --pairs_file_path data/hetionet/all.jsonl \
   --output_directory  data/synthetic_snomed_sent_type \
-  --server_url http://172.19.0.2:8484  \
+  --server_url http://0.0.0.0:8484  \
   --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
   --kshot_size 0 \
   --num_sentences 2 \
   --include_pos \
   --include_dep \
   --random_seed 42 \
-  --generate_k 40000 --temperature 0 --max_tokens 500 --verbose 
+  --generate_k 40000 --temperature 0 --max_tokens 400 --verbose
   echo "Current time: $(date +"%H:%M:%S")"
