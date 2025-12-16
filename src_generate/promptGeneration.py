@@ -160,19 +160,16 @@ PROMPT = {
          """,
          
     'disease_annotation_reduced': """Find and extract diagnoses and diseases mentioned in the following text.
-        Output a Python-evaluable list of entity strings:
-        Format: [<entity_text>, <entity_text>, ...].
-        Guidelines:
         Annotate only diagnoses and diseases — not symptoms, signs, tests, or treatments.
         A diagnosis identifies a specific disease or condition based on medical evaluation.
         A disease is a harmful deviation from normal function, caused by factors such as pathogens, genetics, or environment.
         Exclude general or vague terms (“disease”, “syndrome”, “tumor”) unless they are part of a specific phrase (e.g., “breast cancer”).
-        Do not annotate biological processes (“carcinogenesis”) or organisms (“bacterial”) unless they directly refer to a disease (e.g., “Epstein-Barr virus”).
-        Use exact spans from the sentence, preserving their form and order.
-        If no valid entities are found, output an empty list: [].
-        Context: The sentence may mention a form of {condition}.
-        Text to annotate:
-        {text}"""
+        Do not annotate biological processes (“carcinogenesis”) or organisms (“bacterial”) unless they directly refer to a disease 
+        (e.g., “Epstein-Barr virus”). Use exact spans from the sentence, preserving their form and order. 
+        Output a list: [<entity_text>, <entity_text>, ...]. If no valid entities are found, output an empty list: []. 
+        The sentence may mention a form of {condition} use semantic memory retrieval, and contextual inference, 
+        and analytical reasoning, and information processing and scientific reasoning to find entities in following text:
+        {text}\n\n"""
         }
 
 
@@ -382,8 +379,8 @@ def message_request(args: argparse.Namespace,
         user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         number_of_sentences=getattr(args, 'num_sentences', 1), 
     )
-    args.logger.info(f'Generated system prompt: {messages[0]["content"]}')
-    args.logger.info(f'Generated user prompt: {messages[1]["content"]}')
+    args.logger.info(f'Generated SYSTEM prompt: {messages[0]["content"]}')
+    args.logger.info(f'Generated USER prompt: {messages[1]["content"]}')
     prompt = format_chat(messages)
     
     # Send to llama.cpp HTTP server

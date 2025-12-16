@@ -127,17 +127,16 @@ def setup_logger(output_directory, verbose):
 
 # TODO: move to utils and edit for DO, SNOMED CT and DO pairs and triplets.
 # Structure so multiple languages can be read.
-def generate_term_list(disease_file_type: str, 
-                       disease_file: str, 
-                       ) -> List[Tuple[str]]:
+def generate_term_list(disease_file: str, 
+                       verbose: bool = True) -> List[Tuple[str]]:
     entities = []
     data = []
     # Read the file (one dict per line)
-    if disease_file_type.lower() == 'json' or disease_file_type.lower() == 'jsonl':
+    if disease_file.endswith('.json') or disease_file.endswith('.jsonl'):
         with open(disease_file, "r") as f:
             for line in f:
                 data.append(json.loads(line))
-        entities = [(d['disease_names'], d['doid']) for d in data]
+        term_list = [(d['disease_names'], d['doid']) for d in data]
         # grouped = defaultdict(list)
         # for item in data:
         #     grouped[item['idx']].append(item)
@@ -172,19 +171,23 @@ def generate_term_list(disease_file_type: str,
             ents = [str(ent).strip() for ent in ents]
         for ent in ents:
             entities.append({"idx": 0, "entity": ent})
-        term_list = [(term['entity'],'NaN') for term in entities]
-        
+        term_list = [(term['entity'],'') for term in entities]
+        term_list = list(set(term_list))    
+        term_list = [([t[0]],[t[1]]) for t in term_list]
     elif disease_file.endswith('.csv'):
         df = pd.read_csv(disease_file)
         term_list = [(str(row.iloc[0]).strip(), str(row.iloc[1]).strip()) for _, row in df.iterrows()]
-        
-    term_list = list(set(term_list))    
+        term_list = list(set(term_list))    
+        term_list = [([t[0]],[t[1]]) for t in term_list]
+              
+    if verbose:
+        print('Term_sample: ', term_list[:10]) 
     return term_list  
 
 
-def get_diseases(obo_file_path: str, verbose: bool)-> list[tuple[Any, Any]]:
+def get_diseases(obo_file_path: str, verbose: bool) -> List[Tuple[Any, Any]]:
     graph = obonet.read_obo(obo_file_path)
-    do_terms = [(data["name"], node) for node, data in graph.nodes(data=True) if "name" in data]
+    do_terms = [([data["name"]], [node]) for node, data in graph.nodes(data=True) if "name" in data]
     if verbose:
         print(f"Number of nodes (terms): {graph.number_of_nodes()}")
         print(f"Number of edges (relations): {graph.number_of_edges()}")
