@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Any
 
 import yaml
 
-from bioNER.src_generate import promptGeneration, utils
+from src_generate import promptGeneration, utils
 
 SPACY_NLP = None
 
