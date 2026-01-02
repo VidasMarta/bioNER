@@ -14,7 +14,7 @@ def compute_coverage(data, selected_abstract_ids, total_size):
 
 def cluster_data(args):
     with open(args.parsed_features, "r", encoding="utf-8") as f:
-        data =json.load(f)
+        data = [json.loads(line) for line in f if line.strip()]
 
     print(data[0])
     graphs, _ = pe.build_dependency_graphs(data)
@@ -26,18 +26,15 @@ def cluster_data(args):
     
     similarities = cosine_similarity(emb, centroids_real)
     labels = np.argmax(similarities, axis=1)
-    clustered_data = []
-    for sample, label in zip(data, labels):
-        sample["cluster_id"] = int(label)
-        clustered_data.append(sample)
-
     with open(args.clustered_file, "w", encoding="utf-8") as f:
-        json.dump(clustered_data, f, ensure_ascii=False, indent=2)
+        for sample, label in zip(data, labels):
+            sample["cluster_id"] = int(label)
+            f.write(json.dumps(sample, ensure_ascii=False) + "\n")
 
 def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
-        data =json.load(f) #[json.loads(line) for line in f if line.strip()]
+        data =[json.loads(line) for line in f if line.strip()]
 
     np.random.seed(seed)
     total_size = len(data)
