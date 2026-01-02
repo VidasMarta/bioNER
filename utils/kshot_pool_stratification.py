@@ -34,7 +34,7 @@ def cluster_data(args):
 def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
-        data =[json.loads(line) for line in f if line.strip()]
+        data = json.load(f)  #[json.loads(line) for line in f if line.strip()]
 
     np.random.seed(seed)
     total_size = len(data)
