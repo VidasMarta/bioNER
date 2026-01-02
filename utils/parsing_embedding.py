@@ -43,6 +43,7 @@ def build_dependency_graphs(data):
         
         graphs[sent_id] = G
     print(f"[DEBUG] in pe graphs length: {len(graphs)}")
+    print(f"[DEBUG] in pe graphs len sent ids: {len(sent_ids_list)}")
     return graphs, sent_ids_list
  
 def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iterations=1, 
