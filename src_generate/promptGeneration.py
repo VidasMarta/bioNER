@@ -17,6 +17,10 @@ SYSTEM_PROMPTS = {
         and medical experties when dealing with tasks you solve. You think about
         the task and how to output and produce real example of text simple sentence without decoration. 
         """,
+    'role_sent_type':"""
+        You are a careful {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence. 
+        Output raw plain text only. No formatting, emojis, or commentary.
+        """,
     'annotation':"""You are a carefull medical expert in finding
         medical entities in text. You take context in to account when 
         searching for entities and output the desired structure a 
@@ -85,6 +89,14 @@ PROMPT = {
         The patient diagnosed with {condition}. 
         Based on your medical expertise. 
         Your task is to generate next sentence containing following disease or diagnosis <{condition}>. \n\n""",
+        
+    'genre_syn_generation_new' : """
+        You are a medical expert generating realistic clinical language. For the given {condition}, 
+        infer a plausible clinical context within a {genre}. Use semantic memory retrieval, contextual inference, 
+        and perspective-taking to avoid generic or templated phrasing. Generate exactly one medically appropriate sentence 
+        using {condition} as it would appear in a real medical document. Avoid diagnostic boilerplate (e.g., “diagnosed with”). 
+        Do not use the words patient, individual, or subject. Output plain text only. \n\n""",
+        
         # genre = anamnesis, abstract, case-study
         # We want to check if there are additional diagnoses in produced sentence 
         # ('this is the part where there could be noise)
@@ -148,20 +160,18 @@ PROMPT = {
          """,
          
     'disease_annotation_reduced': """Find and extract diagnoses and diseases mentioned in the following text.
-        Output a Python-evaluable list of entity strings:
-        Format: [<entity_text>, <entity_text>, ...].
-        Guidelines:
         Annotate only diagnoses and diseases — not symptoms, signs, tests, or treatments.
         A diagnosis identifies a specific disease or condition based on medical evaluation.
         A disease is a harmful deviation from normal function, caused by factors such as pathogens, genetics, or environment.
         Exclude general or vague terms (“disease”, “syndrome”, “tumor”) unless they are part of a specific phrase (e.g., “breast cancer”).
-        Do not annotate biological processes (“carcinogenesis”) or organisms (“bacterial”) unless they directly refer to a disease (e.g., “Epstein-Barr virus”).
-        Use exact spans from the sentence, preserving their form and order.
-        If no valid entities are found, output an empty list: [].
-        Context: The sentence may mention a form of {condition}.
-        Text to annotate:
-        {text}"""
+        Do not annotate biological processes (“carcinogenesis”) or organisms (“bacterial”) unless they directly refer to a disease 
+        (e.g., “Epstein-Barr virus”). Use exact spans from the sentence, preserving their form and order. 
+        Output a list: [<entity_text>, <entity_text>, ...]. If no valid entities are found, output an empty list: []. 
+        The sentence may mention a form of {condition} use semantic memory retrieval, and contextual inference, 
+        and analytical reasoning, and information processing and scientific reasoning to find entities in following text:
+        {text}\n\n"""
         }
+
 
 class Role(Enum):
     NURSE = "nurse"
@@ -176,6 +186,13 @@ class Role(Enum):
     MEDICAL_EXPERT = "medical expert"
     MD_SHORT = "MD"
 
+
+class SentType(Enum):
+    SIMPLE = "simple"
+    COMPLEX = "complex"
+    COMPOUND = "compound"
+    COMPOUND_COMPLEX = "compound complex"
+    
 
 class Genre(Enum):
     ABSTRACT = "medical paper abstract"
@@ -198,12 +215,15 @@ class PromptTemplate:
     """Template for system prompts with randomizable elements"""
     base_template: str
     role_variations: List[str] = field(default_factory=list)
+    sent_type_variations: List[str] = field(default_factory=list)
     
-    def format(self, role: str = None, **kwargs) -> str:
+    def format(self, role: str = None, sent_type: str = None, **kwargs) -> str:
         """Format the template with given or random values"""
         if role is None and self.role_variations:
             role = random.choice(self.role_variations)
-        return self.base_template.format(role=role, **kwargs)
+        if sent_type is None and self.sent_type_variations:
+            sent_type = random.choice(self.sent_type_variations)
+        return self.base_template.format(role=role, sent_type=sent_type, **kwargs)
 
 class PromptBuilder:
     """Advanced prompt builder with randomization and templating capabilities"""
@@ -216,6 +236,11 @@ class PromptBuilder:
             'role_prompt': PromptTemplate(
                 base_template=SYSTEM_PROMPTS['role'],
                 role_variations=[role.value for role in Role],
+            ),
+            'role_sent_type_prompt': PromptTemplate(
+                base_template=SYSTEM_PROMPTS['role_sent_type'],
+                role_variations=[role.value for role in Role],
+                sent_type_variations=[sent_type.value for sent_type in SentType],
             ),
             'annotation': PromptTemplate(
                 base_template=SYSTEM_PROMPTS['annotation']
@@ -230,12 +255,12 @@ class PromptBuilder:
             'kshot_num_sent_genre_entity':PROMPT['kshot_num_sent_genre_entity'],
             'kshot_genre_no_entity':PROMPT['kshot_genre_no_entity'],
             'kshot_genre_generation_with_entity':PROMPT['kshot_genre_generation_with_entity'],
-            
-            
+            'genre_new_prompt':PROMPT['genre_syn_generation_new'],
         }
         
         self.randomization_options = {
             'genre': [genre.value for genre in Genre],
+            'sent_type':[sent_type.value for sent_type in SentType],
             'first_sentence': [
                 "The patient was diagnosed with",
                 "Clinical evaluation revealed",
@@ -247,12 +272,12 @@ class PromptBuilder:
                 "Diagnostic tests confirmed",
                 "The clinical picture is consistent with",
                 "The patient exhibits symptoms of",
-                "{}-year-old patient diagnosed with".format(random.randint(1, 100)),
-                "{}-year-old patient diagnosed with".format(random.randint(10, 100)),
-                "{}-year-old patient diagnosed with".format(random.randint(25, 100)),]
+                # "{}-year-old patient diagnosed with".format(random.randint(1, 100)),
+                "{}-year-old patient diagnosed with".format(random.randint(35, 80)),
+                "{}-year-old patient diagnosed with".format(random.randint(25, 90)),]
         }
     
-    def get_system_prompt(self, template_key: str, role: str = None, 
+    def get_system_prompt(self, template_key: str, role: str = None, sent_type: str = None,
                          randomize: bool = False, **kwargs) -> str:
         """Generate system prompt with optional randomization"""
         if template_key not in self.system_templates:
@@ -262,7 +287,8 @@ class PromptBuilder:
         if not randomize:
             # Use provided values or defaults
             role = role or (template.role_variations[0] if template.role_variations else "medical professional")
-        return template.format(role=role, **kwargs)
+            sent_type = sent_type or (template.sent_type_variations[0] if template.sent_type_variations else "simple")
+        return template.format(role=role, sent_type=sent_type, **kwargs)
     
     def get_user_prompt(self, template_key: str, condition: str, 
                         text: Optional[str] = None, randomize: bool = True, 
@@ -272,25 +298,25 @@ class PromptBuilder:
             raise ValueError(f"Template '{template_key}' not found. Available: {list(self.user_templates.keys())}")
         
         template = self.user_templates[template_key]
-        
         # Add random elements if requested
         if randomize:
             if 'genre' in template and 'genre' not in kwargs:
                 kwargs['genre'] = random.choice(self.randomization_options['genre'])
-
+                kwargs['sent_type'] = random.choice(self.randomization_options['sent_type'])
+                kwargs['first_sentence'] = random.choice(self.randomization_options['first_sentence'])
         return template.format(condition=condition, text=text, number_of_sentences=number_of_sentences, **kwargs)
 
     def build_messages(self, system_template: str, 
                        user_template: str, 
                        condition: str, 
-                       text: Optional[str] = None,
-                      system_randomize: bool = True, user_randomize: bool = True,
-                      system_kwargs: Dict = None, user_kwargs: Dict = None,
+                       text: Optional[str] = "",
+                      system_randomize: bool = True, 
+                      user_randomize: bool = True,
+                      system_kwargs: Dict = {}, 
+                      user_kwargs: Dict = {},
                       number_of_sentences: int = 1,
                       ) -> List[Dict[str, Any]]:
         """Build complete message array for API request"""
-        system_kwargs = system_kwargs or {}
-        user_kwargs = user_kwargs or {}
         
         system_content = self.get_system_prompt(
             system_template, randomize=system_randomize, **system_kwargs
@@ -333,7 +359,7 @@ def message_request(args: argparse.Namespace,
                    prompt_builder: PromptBuilder = PromptBuilder(), 
                    system_template: str = 'initial_prompt',
                    user_template: str = 'initial_prompt', 
-                   text: Optional[str] = None) -> requests.Response:
+                   text: Optional[str] = "") -> requests.Response:
     """
     Improved message request function using PromptBuilder
     Args:
@@ -353,8 +379,8 @@ def message_request(args: argparse.Namespace,
         user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         number_of_sentences=getattr(args, 'num_sentences', 1), 
     )
-    args.logger.info(f'Generated system prompt: {messages[0]["content"]}')
-    args.logger.info(f'Generated user prompt: {messages[1]["content"]}')
+    args.logger.info(f'Generated SYSTEM prompt: {messages[0]["content"]}')
+    args.logger.info(f'Generated USER prompt: {messages[1]["content"]}')
     prompt = format_chat(messages)
     
     # Send to llama.cpp HTTP server
@@ -411,7 +437,7 @@ if __name__ == "__main__":
     condition = "diabetes mellitus type 2"
     messages = builder.build_messages(
         system_template='role_prompt',
-        user_template='kshot_genre_generation',
+        user_template='kshot_genre_generation_with_entity',
         condition=condition,
     )
     print("Complete message structure:")
@@ -443,6 +469,20 @@ if __name__ == "__main__":
     messages = builder.build_messages(
         system_template='annotation',
         user_template='disease_annotation',
+        condition=condition,
+        text="The patient was diagnosed with diabetes mellitus type 2 and hypertension."
+    )
+    
+    print("Complete message structure:")
+    for msg in messages:
+        print(f"{msg['role'].upper()}:")
+        print(msg['content'])
+        print()
+    
+    print('+'*120)
+    messages = builder.build_messages(
+        system_template='role_sent_type_prompt',
+        user_template='genre_new_prompt',
         condition=condition,
         text="The patient was diagnosed with diabetes mellitus type 2 and hypertension."
     )

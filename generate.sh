@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=singularity-gpu-2containers
-#SBATCH --output=output/output-%j.out
-#SBATCH --error=output/error-%j.err
+#SBATCH --output=output/output-%j
+#SBATCH --error=output/error-%j
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
@@ -37,17 +37,17 @@ echo "Bigger models will need even more waiting time currently $WAIT seconds"
 #         --server_url http://0.0.0.0:8484 --column_to_translate full_note\
 #             --output_dir data/agbonnet
 
-singularity exec --nv --cleanenv $CLIENT_IMAGE python3 src-generate/llmAnnotationGeneration.py \
-  --input_file data/SNOMEDCT/concepts_filtered.csv \
-  --input_file_type list \
-  --output_directory data/synthetic_aug \
-  --server_url http://0.0.0.0:8484 \
-  --kshot_path data/ncbi/trf/ncbi_train_10pct.json \
-  --obo_file_path /home/mkeber/syn-bioner/HumanDiseaseOntology/src/ontology/HumanDO.obo \
-  --kshot_size 5 \
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
+  --disease_file data/SNOMEDCT/concepts_filtered.csv \
+  --disease_file_type list \
+  --pairs_file_path data/hetionet/all.jsonl \
+  --output_directory  data/synthetic_snomed_sent_type \
+  --server_url http://0.0.0.0:8484  \
+  --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
+  --kshot_size 0 \
   --num_sentences 2 \
   --include_pos \
   --include_dep \
   --random_seed 42 \
-  --verbose --test --spacy_model en_core_web_trf
-echo "Current time: $(date +"%H:%M:%S")"
+  --generate_k 40000 --temperature 0 --max_tokens 400 --verbose
+  echo "Current time: $(date +"%H:%M:%S")"
