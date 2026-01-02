@@ -95,8 +95,10 @@ if __name__ == "__main__":
     available_abstracts = args.clustered_file
     previous_pct = 1
 
+    print(subset_pcts)
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
+        print(samples_pct)
         filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.output_path, samples_pct)
         available_abstracts = filtered_abstracts
         previous_pct = pct
