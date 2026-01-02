@@ -16,7 +16,6 @@ def cluster_data(args):
     with open(args.parsed_features, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f if line.strip()]
 
-    print(data[0])
     graphs, _ = pe.build_dependency_graphs(data)
     emb, _ = pe.get_graph_embedding(graphs)
     if not os.path.exists(args.cluster_dir):
@@ -90,12 +89,13 @@ if __name__ == "__main__":
     args = argparse.Namespace(**yaml_args)
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
-    cluster_data(args)
+    if not os.path.exists(args.clustered_file):
+        cluster_data(args)
     available_abstracts = args.clustered_file
     previous_pct = 1
 
     for pct in subset_pcts:
-        samples_pct = pct / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
+        samples_pct = float(pct) / previous_pct # so that it contains given % from train dataset and not subset it is being extracted from
         filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.output_path, args.cluster_dir, samples_pct)
         available_abstracts = filtered_abstracts
         previous_pct = pct
