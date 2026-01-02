@@ -31,6 +31,14 @@ def cluster_data(args):
             sample["cluster_id"] = int(label)
             f.write(json.dumps(sample, ensure_ascii=False) + "\n")
 
+    return len(data)
+
+def extract_data_size(folder):
+    with open(folder, "r", encoding="utf-8") as f:
+        data = [json.loads(line) for line in f if line.strip()]
+    return len(data)
+
+
 def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, ncbi_size, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
@@ -91,14 +99,14 @@ if __name__ == "__main__":
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
     if not os.path.exists(args.clustered_file):
-        cluster_data(args)
+        ncbi_size = cluster_data(args)
+    else:
+        ncbi_size = extract_data_size(args.clustered_file)
     available_abstracts = args.clustered_file
     previous_pct = 1
-    ncbi_size = len(available_abstracts)
 
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
-        print(samples_pct)
         filtered_abstracts = extract_abstracts_from_clusters(available_abstracts, args.output_path, samples_pct, ncbi_size)
         available_abstracts = filtered_abstracts
         previous_pct = pct
