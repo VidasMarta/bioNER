@@ -12,7 +12,7 @@ def compute_coverage(data, selected_abstract_ids, total_size):
 def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
-        data = [json.loads(line) for line in f if line.strip()]
+        data =json.load(f) #[json.loads(line) for line in f if line.strip()]
 
     cluster_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
     clustered_data = []
@@ -63,7 +63,7 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
     parser.add_argument('--pcts', type=float, nargs="+", required=True, help='Percentages...')  
-    parser.add_argument('--input_file', type=str, required=False, help='Directory to where to save filtered parsed mesh NCBI train json', default="")
+    parser.add_argument('--input_file', type=str, required=False, help='Directory to where is filtered parsed mesh NCBI train json saved', default="")
     parser.add_argument('--output_path', type=str, required=False, help='Path where to save output ', default="")
     parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="")
     return parser.parse_args()
