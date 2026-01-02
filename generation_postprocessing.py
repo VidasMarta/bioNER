@@ -29,7 +29,7 @@ def get_spacy(model_name: str):
 def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
     nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
-    # if LLM generated more than one sentence return empty dict
+    # if LLM generated more than num_sentences sentences return first num_sentences
     if len(list(doc.sents)) > args.num_sentences: 
         print('Multiple sentences loop of LLM generation error.')
         args.logger.info(f'Multiple sentences loop of LLM generation error: \n Sentences: {text}')
@@ -37,7 +37,7 @@ def check_generated_size(args: argparse.Namespace, text: str) -> List[str]:
         doc = list(doc.sents)[:args.num_sentences]
         doc = nlp(" ".join([str(s) for s in doc]))
     if len(list(doc.sents)) > 1: 
-        if list(doc.sents)[-2] == list(doc.sents)[-1]: 
+        if list(doc.sents)[-2] == list(doc.sents)[-1]: # if there is a loop of the same sentnces, take only one
             doc = list(doc.sents)[0]
             doc = nlp(str(doc))
     return [sent.text for sent in doc.sents if sent.text.strip()]
@@ -118,9 +118,7 @@ def create_json(args: argparse.Namespace,
                 system_template: str = 'annotation',
                 user_template: str = 'disease_annotation_reduced'):
     # TODO: add proposed entities from parsing step Where and why?
-    if nlp:
-        nlp = nlp
-    else: 
+    if nlp is None:
         nlp = spacy_load_model(args.spacy_model)
     doc = nlp(text)
     #TODO: Unpack the terms if they are len >1

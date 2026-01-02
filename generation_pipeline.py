@@ -230,7 +230,6 @@ def adaptive_syntax_generation(
 
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
-        print(f"[DEBUG] synth data at the begining: {len(synth_data)}")
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
         os.makedirs(iter_output, exist_ok=True)
         # KARATE ENV
@@ -253,10 +252,6 @@ def adaptive_syntax_generation(
             args.output_directory,
             args.min_samples_per_cluster
         )
-
-        print(f"[DEBUG] synth data: {len(synth_data)}, synth labels: {len(synth_labels)}")
-        assert len(synth_data) == len(synth_labels), "Data/labels mismatch!"
-
 
         print(f"[INFO] Per-cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
         print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
@@ -338,7 +333,7 @@ def adaptive_syntax_generation(
         print(f"[INFO] Generation finished...")
         print(f"[DEBUG] regen term example: {terms_for_gen[0]}")
 
-        starting_id = synth_data[-1].get("id")
+        starting_id = synth_data[-1].get("id")+1
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/generation_postprocessing.py",
