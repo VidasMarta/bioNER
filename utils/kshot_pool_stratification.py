@@ -15,6 +15,8 @@ def compute_coverage(data, selected_abstract_ids, total_size):
 def cluster_data(args):
     with open(args.parsed_features, "r", encoding="utf-8") as f:
         data =json.load(f)
+
+    print(data[0])
     graphs, _ = pe.build_dependency_graphs(data)
     emb, _ = pe.get_graph_embedding(graphs)
     if not os.path.exists(args.cluster_dir):
