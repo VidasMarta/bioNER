@@ -3,23 +3,39 @@ import json
 import os
 import random
 import numpy as np
+import yaml
 import parsing_embedding as pe
+from sklearn.metrics.pairwise import cosine_similarity
+
+import kmeans_params
 
 def compute_coverage(data, selected_abstract_ids, total_size):
         return sum(1 for item in data if item["abstract_id"] in selected_abstract_ids) / total_size
 
+def cluster_data(args):
+    with open(args.parsed_features, "r", encoding="utf-8") as f:
+        data =json.load(f)
+    graphs, _ = pe.build_dependency_graphs(data)
+    emb, _ = pe.get_graph_embedding(graphs)
+    if not os.path.exists(args.cluster_dir):
+        kmeans_params.main(args, emb)  # Call the kmeans_params script to compute clusters
+    
+    centroids_real = np.load(os.path.join(args.cluster_dir, "cluster_centroids.npy"))
+    
+    similarities = cosine_similarity(emb, centroids_real)
+    labels = np.argmax(similarities, axis=1)
+    clustered_data = []
+    for sample, label in zip(data, labels):
+        sample["cluster_id"] = int(label)
+        clustered_data.append(sample)
+
+    with open(args.clustered_file, "w", encoding="utf-8") as f:
+        json.dump(clustered_data, f, ensure_ascii=False, indent=2)
 
 def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample_ratio, seed=42):
     # Load the full NCBI dataset (that contains cluster classes)
     with open(input_file, "r", encoding="utf-8") as f:
         data =json.load(f) #[json.loads(line) for line in f if line.strip()]
-
-    cluster_labels = np.load(os.path.join(cluster_dir, "cluster_labels.npy"))
-    clustered_data = []
-    for sample, label in zip(data, cluster_labels):
-        sample['cluster_id'] = str(label)
-        clustered_data.append(sample)
-    data = clustered_data
 
     np.random.seed(seed)
     total_size = len(data)
@@ -60,22 +76,23 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
 
     return filtered_abstracts
     
-def parse_args():
-    parser = argparse.ArgumentParser(description="Parsing")
-    parser.add_argument('--pcts', type=float, nargs="+", required=True, help='Percentages...')  
-    parser.add_argument('--input_file', type=str, required=False, help='Directory to where is filtered parsed mesh NCBI train json saved', default="")
-    parser.add_argument('--output_path', type=str, required=False, help='Path where to save output ', default="")
-    parser.add_argument('--cluster_dir', type=str, required=False, help='Path where kmeans centroids are saved', default="")
+
+def argparse_args():
+    parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
+    parser.add_argument('--config_file', type=str, default='/home/mvidas/syn-bioner/bioNER/experiments/pool_stratification.yml', help='Path to config file with all arguments.')
+
     return parser.parse_args()
 
-'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py --pcts 0.5 0.2 0.1 --input_file /home/mvidas/syn-bioner/data/ncbi/trf/ncbi_ner_train.json --output_path /home/mvidas/syn-bioner/data/ncbi/trf/ --cluster_dir /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/'''
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py'''
 if __name__ == "__main__":
-    args = parse_args()
-    for path in [args.input_file, args.output_path]:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    init_args = argparse_args()
+    with open(init_args.config_file, 'r') as file:
+        yaml_args = yaml.safe_load(file)
+    args = argparse.Namespace(**yaml_args)
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller
-    available_abstracts = args.input_file
+    cluster_data(args)
+    available_abstracts = args.clustered_file
     previous_pct = 1
 
     for pct in subset_pcts:
