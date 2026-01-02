@@ -53,8 +53,8 @@ def extract_abstracts_from_clusters(input_file, output_file, cluster_dir, sample
     # Save to new JSON file
     filtered_abstracts = output_file + f"ncbi_ner_train_{final_ratio*100:.0f}pct.json"
     with open(filtered_abstracts, "w", encoding="utf-8") as f:
-        for item in filtered_data:
-            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+        json.dump(filtered_data, f, ensure_ascii=False, indent=2)
+
 
     print(f"Saved {len(filtered_data)} sentences to {filtered_abstracts}")
 
