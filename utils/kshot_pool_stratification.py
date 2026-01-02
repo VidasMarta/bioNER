@@ -16,7 +16,7 @@ def cluster_data(args):
     with open(args.parsed_features, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f if line.strip()]
 
-    data = [item for item in data if data["corpus"] == "NCBI_train"]
+    data = [entry for entry in data if entry.get("corpus") == "NCBI_train"]
     graphs, _ = pe.build_dependency_graphs(data)
     emb, _ = pe.get_graph_embedding(graphs)
     if not os.path.exists(args.cluster_dir):
