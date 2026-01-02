@@ -295,8 +295,11 @@ def adaptive_syntax_generation(
             else:
                 num_new = max(1, int(regen_weight * args.min_samples_per_cluster))'''
             
-            cluster_syntax = synth_data[synth_labels == cluster_id]
-            cluster_real = real_data[real_labels == cluster_id]
+            synth_idxs = np.where(synth_labels == cluster_id)[0]
+            real_idxs = np.where(real_labels == cluster_id)[0]
+
+            cluster_syntax = [synth_data[i] for i in synth_idxs]
+            cluster_real = [real_data[i] for i in real_idxs]
 
             if args.test:
                 num_new = 3
