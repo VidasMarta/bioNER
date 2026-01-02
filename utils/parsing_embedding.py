@@ -21,7 +21,7 @@ def build_dependency_graphs(data):
     Returns:
     dict[int, nx.DiGraph]: mapping from sentence ID to NetworkX graph.
     """
-    graphs = {}
+    graphs = []
     sent_ids_list = []
     print(f"[DEBUG] in pe data length: {len(data)}")
     for entry in data:
@@ -41,7 +41,7 @@ def build_dependency_graphs(data):
         for child_idx, parent_idx in enumerate(parents):
             G.add_edge(parent_idx, child_idx, feature=f'{dep_labels[child_idx]}')
         
-        graphs[sent_id] = G
+        graphs.append(G)
     print(f"[DEBUG] in pe graphs length: {len(graphs)}")
     print(f"[DEBUG] in pe graphs len sent ids: {len(sent_ids_list)}")
     return graphs, sent_ids_list
@@ -61,7 +61,7 @@ def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iteratio
                             min_count=min_count, epochs=epochs)
         else:
             raise Exception(f"No such embedding type {embedding_type}!")
-    model.fit(list(graphs.values()))
+    model.fit(graphs) #list(graphs.values()))
     embeddings = model.get_embedding()
     embeddings_data = np.array(embeddings)
     return embeddings_data, model
