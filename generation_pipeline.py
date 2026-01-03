@@ -164,8 +164,11 @@ def visualize_embeddings_clusterwise(
 def delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, max_synthetic_ratio):
     ids_to_delete = []
     for cluster_id in clusters:
-        cluster_syntax = synth_data[synth_labels == cluster_id]
-        cluster_real = real_data[real_labels == cluster_id]
+        synth_idxs = np.where(synth_labels == cluster_id)[0]
+        real_idxs = np.where(real_labels == cluster_id)[0]
+
+        cluster_syntax = [synth_data[i] for i in synth_idxs]
+        cluster_real = [real_data[i] for i in real_idxs]
 
         if max_synthetic_ratio < len(cluster_syntax)/len(cluster_real): #delete random syntax sentences until ratio as wanted
             to_delete = abs(args.max_synthetic_ratio - len(cluster_syntax))*len(cluster_real)
