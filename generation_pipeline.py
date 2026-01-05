@@ -239,7 +239,7 @@ def adaptive_syntax_generation(
         term_list = term_list[:1000]
 
     while True:
-        '''print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+        print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
         os.makedirs(iter_output, exist_ok=True)
         # KARATE ENV
@@ -350,20 +350,15 @@ def adaptive_syntax_generation(
         # Add newly generated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
-        print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")'''
-
-        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
-        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
+        print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
         if args.ner_model_eval:
-            '''sub_results = subprocess.run([
+            sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
                 "--train", postprocessed,
                 "--output", f"{iter_output}ner_model",
                 "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
 
-            print(sub_results.stdout)
-            print(sub_results.stderr)'''
 
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
@@ -371,12 +366,8 @@ def adaptive_syntax_generation(
                 "--test", args.ncbi_dev_set,
                 "--logger", f"{iter_output}ner_model_logger.jsonl",
             ], capture_output=True, text=True, check=True)
-            print(sub_results.stdout)
-            print(sub_results.stderr)
         
         iteration += 1
-        return
-
 
     return synth_data, weighted_coverage
 
