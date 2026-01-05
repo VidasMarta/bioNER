@@ -19,9 +19,7 @@ def evaluate(model_path, test_path, logger_file):
     scorer = Scorer()
 
     # ---- FIX: score all examples at once ----
-    scorer.score(gold_examples)
-
-    scores = scorer.score
+    scores = scorer.score(gold_examples)
     ner_f = scores["ents_f"]
     ner_p = scores["ents_p"]
     ner_r = scores["ents_r"]
