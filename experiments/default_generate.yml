@@ -58,7 +58,7 @@ max_synthetic_ratio: 3 # 3:1 (synth:NCBI) per cluster
 
 #bioNER
 ner_model_eval: true
-ncbi_dev_set:  /home/mvidas/syn-bioner/data/ncbi/devel.json
+ncbi_dev_set:  /home/mvidas/syn-bioner/data/ncbi/ncbi/valid.json
 num_train_iter: 20
 
 

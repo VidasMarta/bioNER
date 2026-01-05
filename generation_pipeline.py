@@ -362,9 +362,6 @@ def adaptive_syntax_generation(
                 "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
 
-            print(sub_results.stdout)
-            print(sub_results.stderr)
-
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
                 "--model", f"{iter_output}ner_model",
