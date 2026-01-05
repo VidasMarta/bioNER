@@ -57,7 +57,7 @@ overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
 max_synthetic_ratio: 3 # 3:1 (synth:NCBI) per cluster
 
 #bioNER
-ner_model_eval: false
+ner_model_eval: true
 ncbi_dev_set:  /home/mvidas/syn-bioner/data/ncbi/devel.json
 num_train_iter: 20
 

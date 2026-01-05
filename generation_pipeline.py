@@ -288,18 +288,7 @@ def adaptive_syntax_generation(
         terms_per_cluster = []
         
         start = 0
-        for cluster_id in uncovered_clusters:
-            '''da uzmemo omjer sintetskih  i NCBI za pojedini (neprekriveni) klaster (a da imamo zadan neki željeni omjer, tipa 3:1) 
-            i onda ako je u klasteru manje sintetskih, generiramo toliko koliko  fali do tog omjera (cca jer možda koja rečenica više se izgenerira),
-              u nadi da će se generirane poslije naći  u tom klasteru, i ništa ne mičemo, a ako je sintetskih previše, onda da samo maknemo na random 
-              x rečenica kojih je viška do željenog omjera i ništa novo za taj klaster ne generiramo?'''
-            '''regen_weight = 1.0 - cluster_overlaps[cluster_id]
-
-            if args.test:
-                num_new = 3
-            else:
-                num_new = max(1, int(regen_weight * args.min_samples_per_cluster))'''
-            
+        for cluster_id in uncovered_clusters:            
             synth_idxs = np.where(synth_labels == cluster_id)[0]
             real_idxs = np.where(real_labels == cluster_id)[0]
 
@@ -337,7 +326,6 @@ def adaptive_syntax_generation(
 
         # Generate new samples from uncovered clusters using LLM
         # SPACY ENV
-        #new_path = generate_sentence_samples(args, kshot_file, regen_terms, method="a")
         new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen, uncovered_clusters, terms_per_cluster)
 
         print(f"[INFO] Generation finished...")

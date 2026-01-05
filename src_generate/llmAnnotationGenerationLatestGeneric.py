@@ -11,6 +11,7 @@ from collections import defaultdict
 from bioNER.src_generate import promptGeneration
 from bioNER.src_generate import utils
 from bioNER import generation_postprocessing
+import obonet
 
 
 def argparse_args():
@@ -242,13 +243,22 @@ def generate_sentence_samples(
     return output_path
 
 
+def get_diseases(args: argparse.Namespace):
+    graph = obonet.read_obo(args.obo_file_path)
+    do_terms = [(data["name"], node) for node, data in graph.nodes(data=True) if "name" in data]
+    if args.verbose:
+        print(f"Number of nodes (terms): {graph.number_of_nodes()}")
+        print(f"Number of edges (relations): {graph.number_of_edges()}")
+        print('First 20 terms: ', do_terms[:20])  # Show first 20 terms
+    return do_terms 
+
 def main(args: argparse.Namespace) -> None:
     os.makedirs(args.output_directory, exist_ok=True)
     # open json file where each line is one dict
     term_list = utils.generate_term_list(args.disease_file, args.verbose)
     
     if args.obo_file_path:
-        disease_terms = utils.get_diseases(args.obo_file_path, args.verbose)
+        disease_terms = get_diseases(args.obo_file_path, args.verbose)
         term_list += disease_terms
     # TODO: pairs and triplets of terms.
     if args.pairs_file_path:

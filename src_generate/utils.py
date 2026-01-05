@@ -11,7 +11,6 @@ import pandas as pd
 import subprocess
 from collections import defaultdict  
 import sys
-#import obonet
 
 
 SPACY_NLP = None
@@ -156,16 +155,6 @@ def generate_term_list(disease_file: str,
     if verbose:
         print('Term_sample: ', term_list[:10]) 
     return term_list
-
-
-'''def get_diseases(obo_file_path: str, verbose: bool) -> List[Tuple[Any, Any]]:
-    graph = obonet.read_obo(obo_file_path)
-    do_terms = [([data["name"]], [node]) for node, data in graph.nodes(data=True) if "name" in data]
-    if verbose:
-        print(f"Number of nodes (terms): {graph.number_of_nodes()}")
-        print(f"Number of edges (relations): {graph.number_of_edges()}")
-        print('First 20 terms: ', do_terms[:20])  # Show first 20 terms
-    return do_terms  '''
 
 
 if __name__ == "__main__":

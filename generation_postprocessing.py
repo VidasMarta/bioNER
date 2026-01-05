@@ -8,11 +8,6 @@ from src_generate import promptGeneration, utils
 
 SPACY_NLP = None
 
-
-# ==============================
-# spaCy utilities
-# ==============================
-
 def spacy_load_model(model_name: str):
     global SPACY_NLP
     if SPACY_NLP is None:
@@ -27,11 +22,6 @@ def get_spacy(model_name: str):
     except Exception:
         os.system(f"python3 -m spacy download {model_name}")
         return spacy.load(model_name)
-
-
-# ==============================
-# Sentence sanity checks
-# ==============================
 
 def check_generated_size(args, text: str) -> List[str]:
     nlp = spacy_load_model(args.spacy_model)
@@ -49,10 +39,6 @@ def check_generated_size(args, text: str) -> List[str]:
 
     return cleaned
 
-
-# ==============================
-# RULE-BASED ENTITY MATCHING
-# ==============================
 
 def create_rule_json(
     doc,
@@ -110,10 +96,6 @@ def create_rule_json(
     return tags, tokens, entities, final_spans
 
 
-# ==============================
-# LLM-BASED ENTITY SUGGESTION
-# ==============================
-
 def check_additional_disease_tags(
     args,
     text: str,
@@ -137,10 +119,6 @@ def check_additional_disease_tags(
     except Exception:
         return []
 
-
-# ==============================
-# MAIN JSON CREATION
-# ==============================
 
 def create_json(
     args,
@@ -209,11 +187,6 @@ def create_json(
         "terms": unpacked_terms,
     }
 
-
-# ==============================
-# DATA LOADING
-# ==============================
-
 def load_data(args):
     with open(args.generated) as f:
         new_data = [json.loads(line) for line in f]
@@ -227,10 +200,6 @@ def load_data(args):
                 f.write(json.dumps(js) + "\n")
                 idx += 1
 
-
-# ==============================
-# ENTRY POINT
-# ==============================
 
 def argparse_args():
     parser = argparse.ArgumentParser()
