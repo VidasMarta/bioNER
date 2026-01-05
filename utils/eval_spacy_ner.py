@@ -40,7 +40,8 @@ def evaluate(model_path, test_path, logger_file):
         }
     }
 
-    with open(logger_file, "a") as f:
+    print("[NER] Writing in log file")
+    with open("/home/mvidas/syn-bioner/data/generation_pipeline/logger.jsonl", "a") as f:
         f.write(json.dumps(ner_log) + "\n")
 
 
