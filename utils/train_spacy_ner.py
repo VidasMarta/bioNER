@@ -7,6 +7,7 @@ import argparse
 
 
 def train(output_dir, train_path, n_iter=20):
+    print("[NER] Started spacy NER model training.")
     nlp = spacy.blank("en")
 
     if "ner" not in nlp.pipe_names:

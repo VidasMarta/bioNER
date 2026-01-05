@@ -8,6 +8,7 @@ import argparse
 
 
 def evaluate(model_path, test_path, logger_file):
+    print("[NER] Spacy NER model evaluating.")
     nlp = spacy.load(model_path)
 
     # ---- Load gold data (token-based) ----
@@ -48,7 +49,6 @@ def evaluate(model_path, test_path, logger_file):
 
 
 if __name__ == "__main__":
-    print("Im here!!!!!!!!!!!!!!!!!!!!!")
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     parser.add_argument("--test", required=True)

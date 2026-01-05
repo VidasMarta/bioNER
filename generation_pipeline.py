@@ -360,7 +360,6 @@ def adaptive_syntax_generation(
                 for ex in synth_data:
                     f.write(json.dumps(ex) + "\n")
 
-            print("[NER] Started spacy NER model training.")
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
                 "--train", train_path,
@@ -370,7 +369,6 @@ def adaptive_syntax_generation(
 
             #print(sub_results)
 
-            print("[NER] Spacy NER model evaluating.")
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
                 "--model", f"{iter_output}ner_model",
