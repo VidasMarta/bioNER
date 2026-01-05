@@ -1,3 +1,4 @@
+from pathlib import Path
 import spacy
 from spacy.scorer import Scorer
 from spacy.tokens import Doc
@@ -40,11 +41,14 @@ def evaluate(model_path, test_path, logger_file):
         }
     }
 
+    Path(logger_file).parent.mkdir(parents=True, exist_ok=True)
+    print("LOGGER PATH:", logger_file)
     with open(logger_file, "a") as f:
         f.write(json.dumps(ner_log) + "\n")
 
 
 if __name__ == "__main__":
+    print("Im here!!!!!!!!!!!!!!!!!!!!!")
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     parser.add_argument("--test", required=True)
