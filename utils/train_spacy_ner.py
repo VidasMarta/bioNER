@@ -3,6 +3,7 @@ from spacy.util import minibatch
 import random
 from pathlib import Path
 from spacy_ner_utils import load_data
+import argparse
 
 
 def train(output_dir, train_path, n_iter=20):
@@ -38,8 +39,6 @@ def train(output_dir, train_path, n_iter=20):
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", required=True)
     parser.add_argument("--output", required=True)

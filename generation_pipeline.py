@@ -381,6 +381,7 @@ def adaptive_syntax_generation(
             print(sub_results.stderr)
         
         iteration += 1
+        return
 
 
     return synth_data, weighted_coverage
