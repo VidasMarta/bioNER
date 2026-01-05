@@ -1,23 +1,22 @@
 import spacy
-from spacy.training.example import Example
 from spacy.util import minibatch
 import random
-import json
 from pathlib import Path
-from spacy.tokens import Span, Doc
-from spacy_ner_utils import *
+from spacy_ner_utils import load_data
+
 
 def train(output_dir, train_path, n_iter=20):
     nlp = spacy.blank("en")
+
     if "ner" not in nlp.pipe_names:
         ner = nlp.add_pipe("ner")
     else:
         ner = nlp.get_pipe("ner")
 
-
+    # ---- Load data (token-based, aligned) ----
     train_examples = load_data(nlp, train_path)
 
-    # Add labels
+    # ---- Add labels ----
     for example in train_examples:
         for ent in example.reference.ents:
             ner.add_label(ent.label_)
@@ -28,8 +27,7 @@ def train(output_dir, train_path, n_iter=20):
         random.shuffle(train_examples)
         losses = {}
 
-        batches = minibatch(train_examples, size=8)
-        for batch in batches:
+        for batch in minibatch(train_examples, size=8):
             nlp.update(batch, drop=0.3, losses=losses, sgd=optimizer)
 
         print(f"Iter {it}: Loss = {losses}")

@@ -1,4 +1,3 @@
-
 import json
 from spacy.tokens import Span, Doc
 from spacy.training.example import Example
@@ -32,8 +31,10 @@ def bio_to_spans(tokens, bio_tags, label="DISEASE"):
 
     return spans
 
+
 def load_data(nlp, jsonl_path):
     examples = []
+
     with open(jsonl_path) as f:
         for line in f:
             item = json.loads(line)
@@ -41,7 +42,7 @@ def load_data(nlp, jsonl_path):
             tokens = item["tokens"]
             tag_ids = item["tags"]
 
-            # ---- FIX: remove empty tokens AND corresponding tags ----
+            # ---- FIX 1: remove empty tokens AND keep tags aligned ----
             clean_tokens = []
             clean_tags = []
             for tok, tag in zip(tokens, tag_ids):
@@ -50,16 +51,26 @@ def load_data(nlp, jsonl_path):
                     clean_tags.append(tag)
 
             if not clean_tokens:
-                continue  # skip empty examples
+                continue
 
             bio_tags = decode_tags(clean_tags)
             spans = bio_to_spans(clean_tokens, bio_tags, label="DISEASE")
 
+            # ---- FIX 2: build token-based Doc ----
             doc = Doc(nlp.vocab, words=clean_tokens)
-            ents = [Span(doc, start, end, label=label) for start, end, label in spans]
+
+            ents = []
+            for start, end, label in spans:
+                if 0 <= start < end <= len(doc):
+                    ents.append(Span(doc, start, end, label=label))
+
             doc.ents = ents
 
-            example = Example.from_dict(doc, {"entities": [(s, e, l) for s, e, l in spans]})
+            # ---- FIX 3: gold doc is a COPY (no text alignment) ----
+            gold = doc.copy()
+            gold.ents = ents
+
+            example = Example(doc, gold)
             examples.append(example)
 
     return examples
