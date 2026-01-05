@@ -14,11 +14,14 @@ def evaluate(model_path, test_path, logger_file):
 
     # ---- Load gold data (token-based) ----
     gold_examples = load_data(nlp, test_path)
-    print("[EVAL] Number of examples:", len(gold_examples), flush=True)
+    #print("[EVAL] Number of examples:", len(gold_examples), flush=True)
 
     scorer = Scorer()
+    for example in gold_examples:
+        text = " ".join([t.text for t in example.reference])
+        pred_doc = nlp(text)  # model tokenizes internally
+        example.predicted = pred_doc
 
-    # ---- FIX: score all examples at once ----
     scores = scorer.score(gold_examples)
     ner_f = scores["ents_f"]
     ner_p = scores["ents_p"]

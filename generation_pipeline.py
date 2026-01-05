@@ -369,7 +369,7 @@ def adaptive_syntax_generation(
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
                 "--model", f"{iter_output}ner_model",
                 "--test", args.ncbi_dev_set,
-                "--logger", f"{iter_output}ner_model/logger.jsonl",
+                "--logger", f"{iter_output}ner_model_logger.jsonl",
             ], capture_output=True, text=True, check=True)
             print(sub_results.stdout)
             print(sub_results.stderr)
