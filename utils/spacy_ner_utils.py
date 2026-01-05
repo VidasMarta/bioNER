@@ -37,15 +37,29 @@ def load_data(nlp, jsonl_path):
     with open(jsonl_path) as f:
         for line in f:
             item = json.loads(line)
+
             tokens = item["tokens"]
             tag_ids = item["tags"]
-            bio_tags = decode_tags(tag_ids)
-            spans = bio_to_spans(tokens, bio_tags, label="DISEASE")
 
-            doc = Doc(nlp.vocab, words=tokens)
+            # ---- FIX: remove empty tokens AND corresponding tags ----
+            clean_tokens = []
+            clean_tags = []
+            for tok, tag in zip(tokens, tag_ids):
+                if isinstance(tok, str) and tok.strip():
+                    clean_tokens.append(tok)
+                    clean_tags.append(tag)
+
+            if not clean_tokens:
+                continue  # skip empty examples
+
+            bio_tags = decode_tags(clean_tags)
+            spans = bio_to_spans(clean_tokens, bio_tags, label="DISEASE")
+
+            doc = Doc(nlp.vocab, words=clean_tokens)
             ents = [Span(doc, start, end, label=label) for start, end, label in spans]
             doc.ents = ents
 
-            example = Example(doc, doc)  # gold-standard is same doc for now
+            example = Example.from_dict(doc, {"entities": [(s, e, l) for s, e, l in spans]})
             examples.append(example)
+
     return examples

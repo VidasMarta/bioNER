@@ -14,7 +14,8 @@ def evaluate(model_path, test_path, logger_file):
     scorer = Scorer()
 
     for example in gold_examples:
-        example.predicted = nlp(example.reference.text)
+        text = " ".join(tok.text for tok in example.reference)
+        example.predicted = nlp(text)
         scorer.score(example)
 
     scores = scorer.score
