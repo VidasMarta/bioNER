@@ -353,16 +353,11 @@ def adaptive_syntax_generation(
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")'''
 
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         if args.ner_model_eval:
-            train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
-
-            with open(train_path, "w") as f:
-                for ex in synth_data:
-                    f.write(json.dumps(ex) + "\n")
-
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
-                "--train", train_path,
+                "--train", postprocessed,
                 "--output", f"{iter_output}ner_model",
                 "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
