@@ -375,6 +375,8 @@ def adaptive_syntax_generation(
                 "--test", args.ncbi_dev_set,
                 "--logger", logger_file,
             ], capture_output=True, text=True)
+
+            print(sub_results)
         
         iteration += 1
 

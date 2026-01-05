@@ -4,6 +4,7 @@ from spacy.training.example import Example
 import json
 from spacy.tokens import Span, Doc
 from spacy_ner_utils import *
+import argparse
 
 
 def evaluate(model_path, test_path, logger_file):
@@ -38,8 +39,6 @@ def evaluate(model_path, test_path, logger_file):
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     parser.add_argument("--test", required=True)
