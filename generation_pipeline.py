@@ -353,7 +353,6 @@ def adaptive_syntax_generation(
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")'''
 
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
-        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         if args.ner_model_eval:
             train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
 
@@ -364,7 +363,7 @@ def adaptive_syntax_generation(
             print("[NER] Started spacy NER model training.")
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
-                "--train", postprocessed,
+                "--train", train_path,
                 "--output", f"{iter_output}/ner_model",
                 "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
@@ -372,13 +371,14 @@ def adaptive_syntax_generation(
             #print(sub_results)
 
             print("[NER] Spacy NER model evaluating.")
-            logger_file = os.path.join(args.output_directory, "logger.jsonl")
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
                 "--model", f"{iter_output}/ner_model",
                 "--test", args.ncbi_dev_set,
                 "--logger", f"{iter_output}/ner_model/logger.jsonl",
-            ], capture_output=True, text=True)
+            ], capture_output=True, text=True, check=True)
+            print(sub_results.stdout)
+            print(sub_results.stderr)
         
         iteration += 1
 
