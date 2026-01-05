@@ -32,6 +32,7 @@ def evaluate(model_path, test_path, logger_file):
             "f1": ner_f
     }
 
+    print("writing into logger")
     with open(logger_file, "a") as f:
         f.write(json.dumps(ner_log) + "\n")
 
