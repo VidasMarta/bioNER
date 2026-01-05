@@ -355,7 +355,7 @@ def adaptive_syntax_generation(
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         if args.ner_model_eval:
-            sub_results = subprocess.run([
+            '''sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
                 "--train", postprocessed,
                 "--output", f"{iter_output}ner_model",
@@ -363,7 +363,7 @@ def adaptive_syntax_generation(
             ], capture_output=True, text=True)
 
             print(sub_results.stdout)
-            print(sub_results.stderr)
+            print(sub_results.stderr)'''
 
             sub_results = subprocess.run([
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
