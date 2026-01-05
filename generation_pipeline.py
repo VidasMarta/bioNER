@@ -369,7 +369,7 @@ def adaptive_syntax_generation(
                 "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
 
-            print(sub_results)
+            #print(sub_results)
 
             print("[NER] Spacy NER model evaluating.")
             logger_file = os.path.join(args.output_directory, "logger.jsonl")
@@ -377,7 +377,7 @@ def adaptive_syntax_generation(
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
                 "--model", f"{iter_output}/ner_model",
                 "--test", args.ncbi_dev_set,
-                "--logger", logger_file,
+                "--logger", f"{iter_output}/ner_model/logger.jsonl",
             ], capture_output=True, text=True)
         
         iteration += 1
