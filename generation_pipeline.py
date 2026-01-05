@@ -352,6 +352,8 @@ def adaptive_syntax_generation(
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")'''
 
+        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         if args.ner_model_eval:
             train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
 
