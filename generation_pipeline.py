@@ -239,7 +239,7 @@ def adaptive_syntax_generation(
         term_list = term_list[:1000]
 
     while True:
-        print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+        '''print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
         iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
         os.makedirs(iter_output, exist_ok=True)
         # KARATE ENV
@@ -350,7 +350,7 @@ def adaptive_syntax_generation(
         # Add newly generated ones
         synth_data.extend(newly_parsed_sentences)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
-        print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
+        print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")'''
 
         if args.ner_model_eval:
             train_path = os.path.join(iter_output, "train_synth_iter.jsonl")
@@ -367,6 +367,8 @@ def adaptive_syntax_generation(
                 "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
 
+            print(sub_results)
+
             print("[NER] Spacy NER model evaluating.")
             logger_file = os.path.join(args.output_directory, "logger.jsonl")
             sub_results = subprocess.run([
@@ -375,8 +377,6 @@ def adaptive_syntax_generation(
                 "--test", args.ncbi_dev_set,
                 "--logger", logger_file,
             ], capture_output=True, text=True)
-
-            print(sub_results)
         
         iteration += 1
 
