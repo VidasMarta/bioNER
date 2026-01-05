@@ -364,7 +364,7 @@ def adaptive_syntax_generation(
                 "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
                 "--train", postprocessed,
                 "--output", f"{iter_output}/ner_model",
-                "--n_iter", args.num_train_iter,
+                "--n_iter", str(args.num_train_iter),
             ], capture_output=True, text=True)
 
             print("[NER] Spacy NER model evaluating.")
