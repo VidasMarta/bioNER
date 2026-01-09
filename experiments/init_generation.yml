@@ -1,0 +1,17 @@
+disease_file: data/SNOMEDCT/concepts_filtered.csv
+output_directory: data/synthetic_snomed_sent_type
+server_url: http://0.0.0.0:8484
+pairs_file_path: data/hetionet/all.jsonl
+
+generate_k: 4 #40000
+random_seed: 42
+
+temperature: 0
+max_tokens: 400
+
+include_pos: true
+include_dep: true
+
+verbose: true #false
+test: true #false
+

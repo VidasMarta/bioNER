@@ -8,55 +8,8 @@ import numpy as np
 from datetime import datetime
 from collections import defaultdict  
 import obonet
-from src_generate import promptGeneration
+from src_generate import prompt_generation
 from src_generate import utils
-
-
-def argparse_args():
-    parser = argparse.ArgumentParser(description="LLM-based text Generator.")
-    parser.add_argument('--disease_file', type=str, required=True, 
-                        help='Path to the input text file to use as example of diseases.')
-    parser.add_argument('--disease_file_type', type=str, required=True, 
-                        help='Path to the input text file to use as example of diseases.')
-    parser.add_argument('--input_directory', type=str, default='',
-                        help='Path to the input directory containing ontology terms as example of diseases.')
-    parser.add_argument('--output_directory', type=str, required=True, 
-                        help='Directory where sample sentences are outputed using JSON format.')
-    parser.add_argument('--server_url', type=str, default="http://127.0.0.1:8080", 
-                        help='URL of the llama.cpp inference server (default: http://127.0.0.1:8080).')
-    parser.add_argument('--num_sentences', type=int, default=1, 
-                        help='Number of sentences to produce by LLM.')
-    parser.add_argument('--temperature', type=float, default=0.2, 
-                        help='Sampling temperature for the LLM. (default: 0.2).')
-    parser.add_argument('--max_tokens', type=int, default=2000, 
-                        help='Maximum number of tokens to generate in LLM response (default: 2000).')
-    parser.add_argument('--verbose', action='store_true', 
-                        help='If set, print detailed debug output including LLM responses.')
-    parser.add_argument('--use_context', action='store_true', 
-                        help='If set, include context of the ontology term')    
-    parser.add_argument('--obo_file_path', type=str, default='', 
-                        help='Directory where sample sentences are outputed using JSON format.')
-    parser.add_argument('--reprocess', action='store_true', 
-                        help="""If set, recalculate the generation for allready existing 
-                        sentences using terms.""")
-    parser.add_argument('--test', action='store_true', 
-                        help="""If set, recalculate the generation for allready existing 
-                        sentences using terms.""")
-    parser.add_argument('--kshot_path', type=str, default='', 
-                        help='Path to the file containing training examples for few-shot prompting.')
-    parser.add_argument('--kshot_size', type=int, default=0, 
-                        help='Number of examples to use for each prompt.')
-    parser.add_argument('--random_seed', type=int, default=42, 
-                        help='Random seed for reproducibility.')
-    parser.add_argument('--include_pos', action='store_true', 
-                        help='Include POS tags in k-shot examples.')
-    parser.add_argument('--include_dep', action='store_true', 
-                        help='Include dependency tags in k-shot examples.')
-    parser.add_argument('--no_entity_ratio', type=float, default=0.25,
-                        help='Ratio of sentences without entities.')
-
-
-    return parser.parse_args()
 
 def setup(args, iter_output):
     date_today = datetime.today().strftime("%Y%m%d")
@@ -85,20 +38,20 @@ def sample_kshot(args, no_entity_examples, entity_examples):
                             # Prefer no-entity examples
         if len(no_entity_examples) > 0:
             pool = no_entity_examples
-            user_template = 'kshot_genre_no_entity'
+            user_template = 'kshot_no_entity'
         else:
             # fallback
             pool = entity_examples
-            user_template = 'kshot_num_sent_genre_entity'
+            user_template = 'kshot_entity'
     else:
         # Prefer entity examples
         if len(entity_examples) > 0:
             pool = entity_examples
-            user_template = 'kshot_num_sent_genre_entity'
+            user_template = 'kshot_entity'
         else:
             # fallback
             pool = no_entity_examples
-            user_template = 'kshot_genre_no_entity'
+            user_template = 'kshot_no_entity'
 
     # FINAL fallback if both empty (should not happen)
     print(f"[INFO] wnat no entity: {want_no_entity}")
@@ -142,8 +95,7 @@ def generate_sentences_per_cluster(
     term_list: List[tuple], 
     clusters: List[int],
     num_of_terms_pc: List[int], #number of terms per cluster
-    system_template: str = 'role_prompt',
-    user_template: str = 'genre_prompt'
+    system_template: str = 'role_prompt'
 ) -> str:
     output_path = setup(args, iter_output)
     kshot_examples = load_kshot_examples(args, kshot_path)
@@ -172,7 +124,7 @@ def generate_sentences_per_cluster(
                 kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples)
                 args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
 
-                response = promptGeneration.message_request(
+                response = prompt_generation.message_request(
                         args,
                         term[0],
                         system_template=system_template,
@@ -189,52 +141,6 @@ def generate_sentences_per_cluster(
 
     return output_path
 
-    
-def generate_sentence_samples(
-    args: argparse.Namespace,
-    kshot_path: str,
-    term_list: List[tuple], 
-    method: str = 'a',
-    system_template: str = 'role_prompt',
-    user_template: str = 'genre_prompt'
-)-> str:
-    """
-    Generate sentences for a list of disease terms using optional k-shot examples.
-    - Randomly samples k-shot examples (from given NCBI subset) per term with fixed seed for reproducibility.
-    - Allows toggling inclusion of POS/DEP features in few-shot examples.
-    - Stores which k-shot example IDs were used in each generated JSON output.
-
-    returns path to the output JSON file.
-    """
-    output_path = setup(args)
-    kshot_examples = load_kshot_examples(args, kshot_path)
-    
-    # Filter by havig entity or not in a kshot_examples pool
-    entity_examples = [ex for ex in kshot_examples if ex.get("entities")]
-    no_entity_examples = [ex for ex in kshot_examples if not ex.get("entities")]
-
-    for i, term in enumerate(tqdm.tqdm(term_list)):
-        try:
-            kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples)
-
-            args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
-
-            response = promptGeneration.message_request(
-                        args,
-                        term[0],
-                        system_template=system_template,
-                        user_template=user_template,
-                        text=kshot_text_block
-                )
-                
-            save_generated_sentences(args, output_path, method, response, term, used_ids)  
-
-        except Exception as e:
-            args.logger.info(f"Failed to generate or parse sentence for term {term[0]}: {e}")
-            args.logger.info(f"Response content: {response.json().get('content', '')}")
-            if args.verbose:
-                print(f"[ERROR] Term {term[0]}: {e}")
-    return output_path
 
 def get_diseases(args: argparse.Namespace):
     graph = obonet.read_obo(args.obo_file_path)
@@ -309,50 +215,7 @@ def main(args: argparse.Namespace):
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
 
-    generate_sentence_samples(args, args.kshot_path, term_list)
     
-
-"""
-With included pos and dep
-python3 llmAnnotationGeneration.py \
-  --disease_file data/NCBI-Disease/test.txt \
-  --disease_file_type list \
-  --output_directory data/synthetic_aug \
-  --server_url http://0.0.0.0:8484 \
-  --kshot_path data/ncbi_ner_train_10pct.json \
-  --kshot_size 5 \
-  --num_sentences 2 \
-  --include_pos \
-  --include_dep \
-  --random_seed 42 \
-  --verbose
-
-
-python3 bioNER/src-generate/llmAnnotationGeneration.py \
-  --disease_file data/SNOMEDCT/concepts_filtered.csv \
-  --disease_file_type list \
-  --output_directory  data/synthetic-snomed-kshot \
-  --server_url http://med-llm-webapp-backend-1:8080  \
-  --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
-  --kshot_size 5 \
-  --num_sentences 2 \
-  --include_pos \
-  --include_dep \
-  --random_seed 42 \
-  --verbose \
-  --test --temperature 0 --max_tokens 500 --verbose
-  
-  
-  Excluded pos and dep
-  python3 llmAnnotationGeneration.py \
-  --disease_file data/NCBI-Disease/test.txt \
-  --output_directory data/synthetic_no_tags \
-  --kshot_path data/ncbi_ner_train_10pct.json \
-  --kshot_size 5 \
-  --num_sentences 2 \
-  --random_seed 42
-
-"""
 if __name__ == "__main__":
     args = argparse_args()
     args.logger = utils.setup_logger(args)

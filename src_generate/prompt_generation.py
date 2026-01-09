@@ -13,9 +13,8 @@ SYSTEM_PROMPTS = {
         the task and how to output and produce real example of text simple sentence without decoration. 
         """,
     'role':"""
-        You are a carefull {role} in writing you consider background knowledge 
-        and medical experties when dealing with tasks you solve. You think about
-        the task and how to output and produce real example of text simple sentence without decoration. 
+        You are a careful {role} with medical expertise. 
+        Output raw plain text only. No formatting, emojis, or commentary. 
         """,
     'role_sent_type':"""
         You are a careful {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence. 
@@ -102,24 +101,24 @@ PROMPT = {
         # ('this is the part where there could be noise)
         # json output
         
-    'kshot_genre_generation_with_entity': """
-        Generate one simple sentence that naturally includes the disease or diagnosis {condition}, as it would appear in a {genre}.
+    'kshot_entity': """
+        Generate one sentence that naturally includes the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
         Use {condition} exactly as written within the sentence.
         Keep the sentence factual, and contextually realistic for clinical or biomedical text.
         Output only the sentence — no explanations or extra text.
-        Use the following examples as inspiration for style and structure from provided part of speech tags and dependency parsing tags.
+        Use the following examples as inspiration for linguistic style and structure from provided sentence, part of speech tags (POS) and dependency parsing tags (DEP).
         Examples:
         {text}
         Your task is to produce just the sentence.
         Sentence:
         """,
-    'kshot_genre_no_entity': """
-        Generate one simple sentence that does NOT contain the disease or diagnosis, but resembles the syntax and tone of the examples.
+    'kshot_no_entity': """
+        Generate one sentence that does NOT contain the disease or diagnosis, but resembles the syntax and tone of the examples.
         Requirements:
         Keep the sentence factual, and contextually realistic for clinical or biomedical text.
         Output only the sentence — no explanations or extra text. 
-        Use the following examples as inspiration for style and structure from provided part of speech tags and dependency parsing tags.
+        Use the following examples as inspiration for linguistic style and structure from provided sentence, part of speech tags (POS) and dependency parsing tags (DEP).
         Examples:
         {text}
         Your task is to produce just the sentence that does not contain any disease or diagnosis.
@@ -232,7 +231,7 @@ class PromptBuilder:
             'role_sent_type_prompt', 'annotation'
         user_templates: str key to dictionary 'initial_prompt', 'genre_prompt',
             'disease_annotation', 'disease_annotation_reduced', 'kshot_num_sent_entity'
-            'kshot_genre_no_entity', 'kshot_genre_generation_with_entity', 'genre_new_prompt'
+            'kshot_no_entity', 'kshot_entity', 'genre_new_prompt'
     Output:
         
     """
@@ -262,8 +261,8 @@ class PromptBuilder:
             'disease_annotation': PROMPT['disease_annotation'],
             'disease_annotation_reduced': PROMPT['disease_annotation_reduced'],
             'kshot_num_sent_entity':PROMPT['kshot_num_sent_entity'],
-            'kshot_genre_no_entity':PROMPT['kshot_genre_no_entity'],
-            'kshot_genre_generation_with_entity':PROMPT['kshot_genre_generation_with_entity'],
+            'kshot_no_entity':PROMPT['kshot_no_entity'],
+            'kshot_entity':PROMPT['kshot_entity'],
             'genre_new_prompt':PROMPT['genre_syn_generation_new'],
         }
         
@@ -446,7 +445,7 @@ if __name__ == "__main__":
     condition = "diabetes mellitus type 2"
     messages = builder.build_messages(
         system_template='role_prompt',
-        user_template='kshot_genre_generation_with_entity',
+        user_template='kshot_entity',
         condition=condition,
     )
     print("Complete message structure:")

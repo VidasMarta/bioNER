@@ -17,9 +17,7 @@ server_url: http://0.0.0.0:8484
 temperature: 0
 max_tokens: 500
 num_sentences: 3
-system_prompt_key: generation
-system_template:
-user_template: 
+system_template_prompt: role_prompt
 reprocess: false
 include_pos: true
 include_dep: true
@@ -40,7 +38,7 @@ max_iterations: 5
 overlap_threshold: 1.5
 NCBI_train:  /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
 NCBI_kshot:  /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json
-Generated_train:  /home/mkeber/syn-bioner/data/synthetic_10_trial/generated_sentences_20251114.json
+Generated_train:  '' #/home/mkeber/syn-bioner/data/synthetic_10_trial/generated_sentences_20251114.json
 output_directory:  /home/mkeber/syn-bioner/data/generation_pipeline/
 spacy_model: en_core_web_trf
 

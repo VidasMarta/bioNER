@@ -12,7 +12,7 @@
 
 # Paths to your images
 SERVER_IMAGE=/home/mkeber/sif-files/llama.cpp_server-cuda.sif
-CLIENT_IMAGE=/home/mkeber/sif-files/synbioner_generate.sif
+CLIENT_IMAGE=/home/mkeber/sif-files/synbioner_generate2.sif
 WORKDIR=/home/mkeber/models/quantized
 WAIT=60
 # Optional binding
@@ -32,24 +32,6 @@ echo " "
 echo "STARTING generation:"
 echo "Bigger models will need even more waiting time currently $WAIT seconds"
 
-# singularity exec --nv --cleanenv $CLIENT_IMAGE python3 src/translateClinicalNotes.py --csv data/agbonnet/agbonet.csv\
-#     --system_template translation --temperature 0 --max_tokens 5000\
-#         --server_url http://0.0.0.0:8484 --column_to_translate full_note\
-#             --output_dir data/agbonnet
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.init_synthetic_generation.py 
 
-<<<<<<< HEAD
-singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
-  --disease_file data/SNOMEDCT/concepts_filtered.csv \
-  --disease_file_type list \
-  --pairs_file_path data/hetionet/all.jsonl \
-  --output_directory  data/synthetic_snomed_sent_type \
-  --server_url http://0.0.0.0:8484  \
-  --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
-  --kshot_size 0 \
-  --num_sentences 2 \
-  --include_pos \
-  --include_dep \
-  --random_seed 42 \
-  --generate_k 40000 --temperature 0 --max_tokens 400 --verbose
-  echo "Current time: $(date +"%H:%M:%S")"
-=======
+echo "Current time: $(date +"%H:%M:%S")"

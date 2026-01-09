@@ -266,14 +266,15 @@ def load_corpuses(ncbi_path, gen_path, nlp):
             entities = entry["entities"]
             corpus_list.append((id, entry["sentence"], entities, "NCBI_train", entry["abstract_id"], [None]*len(entities)))
     
-    with open(gen_path, "r", encoding="utf-8") as f:
-        for line in f:
-            entry = json.loads(line.strip())
-            doc = Doc(nlp.vocab, words=entry["tokens"])
-            sentence = doc.text
-            entities = extract_entities(entry)
-            id += 1
-            corpus_list.append((id, sentence, entities, "generated_train", None, entry["term_id"]))
+    if os.path.isfile(gen_path):
+        with open(gen_path, "r", encoding="utf-8") as f:
+            for line in f:
+                entry = json.loads(line.strip())
+                doc = Doc(nlp.vocab, words=entry["tokens"])
+                sentence = doc.text
+                entities = extract_entities(entry)
+                id += 1
+                corpus_list.append((id, sentence, entities, "generated_train", None, entry["term_id"]))
     
     return corpus_list
 
@@ -283,7 +284,7 @@ def extract_syntax_features(nlp, ids, sentences, entities, corpus_labels, abstra
     features = []
     if os.path.exists(output_path) and not rewrite:
         return 
-    for (id, sent, entity, corpus_name, abstract_id, term_id) in zip(ids, sentences, entities, corpus_labels, abstract_ids, term_ids):
+    for (id, sent, entity, corpus_name, abstract_id, term_id) in tqdm(zip(ids, sentences, entities, corpus_labels, abstract_ids, term_ids)):
         doc = nlp(sent)
         pos_tags = [token.pos_ for token in doc]
         dep_rels = [token.dep_ for token in doc]

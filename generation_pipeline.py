@@ -4,7 +4,7 @@ import os
 import random
 from typing import Any, Dict, List
 import yaml
-from src_generate.llmAnnotationGenerationLatest import *
+from src_generate.utils_kshot import *
 from src_generate.utils import setup_logger
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -239,7 +239,7 @@ def adaptive_syntax_generation(
 
     start = 0
     for i in range(0, args.max_iterations):
-        if synth_data is None and i == 0:
+        if not synth_data and i == 0:
             #inicijalno bez sitetskih
             uncovered_clusters = clusters
             terms_for_gen = []
@@ -257,8 +257,6 @@ def adaptive_syntax_generation(
                 start = end
                 if start >= len(term_list): #fallback ako baš iskoristimo sve termove
                     start = 0
-
-            synth_data = []
 
         else:
             print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
@@ -341,7 +339,8 @@ def adaptive_syntax_generation(
         # Generate new samples from uncovered clusters using LLM
         # SPACY ENV
 
-        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen, uncovered_clusters, terms_per_cluster, args.system_template, args.user_template)
+        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen,
+                                                   uncovered_clusters, terms_per_cluster, args.system_template_prompt)
 
         print(f"[INFO] Generation finished...")
         print(f"[DEBUG] regen term example: {terms_for_gen[0]}")
@@ -431,7 +430,7 @@ def main(args: argparse.Namespace):
         args,
         real_data=ncbi_data,
         kshot_data = kshot_data,
-        initial_synth_data=None #synth_data
+        initial_synth_data= synth_data
     )
 
     print(f"[RESULT] Final syntax overlap: {final_overlap:.3f}")
