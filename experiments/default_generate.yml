@@ -18,8 +18,8 @@ temperature: 0
 max_tokens: 500
 num_sentences: 3
 system_prompt_key: generation
-use_context: 
-obo_file_path: 
+system_template:
+user_template: 
 reprocess: false
 include_pos: true
 include_dep: true

@@ -340,7 +340,8 @@ def adaptive_syntax_generation(
 
         # Generate new samples from uncovered clusters using LLM
         # SPACY ENV
-        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen, uncovered_clusters, terms_per_cluster)
+
+        new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen, uncovered_clusters, terms_per_cluster, args.system_template, args.user_template)
 
         print(f"[INFO] Generation finished...")
         print(f"[DEBUG] regen term example: {terms_for_gen[0]}")

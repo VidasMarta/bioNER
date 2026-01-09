@@ -113,7 +113,7 @@ def sample_kshot(args, no_entity_examples, entity_examples):
     return kshot_text_block, user_template, used_ids
 
 
-def save_generated_sentences(args, output_path, method, response, term, used_ids):
+def save_generated_sentences(args, output_path, response, term, used_ids):
     text = response.json()['content'].strip()
     text = utils.clean_text(text)
     text = utils.remove_code_fences(text)
@@ -123,7 +123,7 @@ def save_generated_sentences(args, output_path, method, response, term, used_ids
         args.logger.info(f"Term is: {term}")
                 #f"Extracted entities proposed by LLM: {entities}\n Term is: {term}")
     record = {}
-    with open(output_path, method, encoding='utf-8') as file:
+    with open(output_path, 'a', encoding='utf-8') as file:
         record["text"] = text
         record["entity"] = []
         record["term"] = term
@@ -142,7 +142,6 @@ def generate_sentences_per_cluster(
     term_list: List[tuple], 
     clusters: List[int],
     num_of_terms_pc: List[int], #number of terms per cluster
-    method: str = 'a',
     system_template: str = 'role_prompt',
     user_template: str = 'genre_prompt'
 ) -> str:
@@ -181,7 +180,7 @@ def generate_sentences_per_cluster(
                         text=kshot_text_block
                     )
                 
-                save_generated_sentences(args, output_path, method, response, term, used_ids)
+                save_generated_sentences(args, output_path, response, term, used_ids)
         except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
