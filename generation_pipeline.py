@@ -240,7 +240,7 @@ def adaptive_syntax_generation(
 
     start = 0
     for i in range(0, args.max_iterations):
-        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
+        iter_output = os.path.join(args.output_directory, f"iteration_{i}/")
         os.makedirs(iter_output, exist_ok=True)
         if not synth_data and i == 0:
             #inicijalno bez sitetskih
@@ -262,7 +262,7 @@ def adaptive_syntax_generation(
                     start = 0
 
         else:
-            print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+            print(f"\n[ITERATION {i}] Computing synthetic embeddings...")
             # KARATE ENV
             synth_graphs, _ = pe.build_dependency_graphs(synth_data)
             synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
@@ -279,7 +279,7 @@ def adaptive_syntax_generation(
                 real_labels,
                 centroids_real,
                 args.overlap_threshold,
-                iteration,
+                i,
                 args.output_directory,
                 args.min_samples_per_cluster
             )
@@ -332,7 +332,7 @@ def adaptive_syntax_generation(
         )
 
         # Save temporarily for prompt conditioning
-        kshot_file = os.path.join(iter_output, f"kshot_iter_{iteration}.jsonl")
+        kshot_file = os.path.join(iter_output, f"kshot_iter_{i}.jsonl")
         with open(kshot_file, "w") as f:
             for ex in kshot_examples:
                 f.write(json.dumps(ex) + "\n")
@@ -351,7 +351,7 @@ def adaptive_syntax_generation(
         else:
             starting_id = synth_data[-1].get("id")+1
 
-        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{i}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", args.generation_postprocessing_py,
             "--generated", new_path,
@@ -388,8 +388,6 @@ def adaptive_syntax_generation(
                 "--test", args.ncbi_dev_set,
                 "--logger", f"{iter_output}ner_model_logger.jsonl",
             ], capture_output=True, text=True, check=True)
-        
-        iteration += 1
 
     return synth_data, weighted_coverage
 
