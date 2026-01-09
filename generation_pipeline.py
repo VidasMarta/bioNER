@@ -107,6 +107,7 @@ def compute_cluster_coverage(
 
 def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters):
     """Return a list of NCBI examples sampled from uncovered clusters."""
+    print(uncovered_clusters)
     with open(ncbi_clustered_path, "r") as f:
         data = [json.loads(line) for line in f]
     filtered = [ex for ex in data if ex.get("cluster_id") in uncovered_clusters]
@@ -239,6 +240,8 @@ def adaptive_syntax_generation(
 
     start = 0
     for i in range(0, args.max_iterations):
+        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
+        os.makedirs(iter_output, exist_ok=True)
         if not synth_data and i == 0:
             #inicijalno bez sitetskih
             uncovered_clusters = clusters
@@ -260,8 +263,6 @@ def adaptive_syntax_generation(
 
         else:
             print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
-            iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
-            os.makedirs(iter_output, exist_ok=True)
             # KARATE ENV
             synth_graphs, _ = pe.build_dependency_graphs(synth_data)
             synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
