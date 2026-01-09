@@ -226,7 +226,16 @@ class PromptTemplate:
         return self.base_template.format(role=role, sent_type=sent_type, **kwargs)
 
 class PromptBuilder:
-    """Advanced prompt builder with randomization and templating capabilities"""
+    """Advanced prompt builder with randomization and templating capabilities
+    Args:
+        sytem_templates: str key to dictionary: 'initial_prompt', 'role_prompt', 
+            'role_sent_type_prompt', 'annotation'
+        user_templates: str key to dictionary 'initial_prompt', 'genre_prompt',
+            'disease_annotation', 'disease_annotation_reduced', 'kshot_num_sent_genre_entity'
+            'kshot_genre_no_entity', 'kshot_genre_generation_with_entity', 'genre_new_prompt'
+    Output:
+        
+    """
     
     def __init__(self):
         self.system_templates = {

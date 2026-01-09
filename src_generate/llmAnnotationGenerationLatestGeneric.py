@@ -13,7 +13,6 @@ from bioNER.src_generate import utils
 from bioNER import generation_postprocessing
 import obonet
 
-
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator.")
     parser.add_argument('--disease_file', type=str, default='', 
@@ -272,6 +271,7 @@ def main(args: argparse.Namespace) -> None:
     term_list = random.sample(term_list, args.generate_k)
 
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
+    # TODO: system_template, user_template to args
     generate_sentence_samples(args, term_list, 
                               system_template='role_sent_type_prompt',
                               user_template='genre_new_prompt',
@@ -291,7 +291,8 @@ python3 llmAnnotationGeneration.py \
   --include_pos \
   --include_dep \
   --random_seed 42 \
-  --verbose
+  --verbose \
+
 
 
 python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
@@ -307,7 +308,21 @@ python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
   --include_dep \
   --random_seed 42 \
   --test \
-  --generate_k 4 --temperature 0 --max_tokens 500 --verbose
+  --generate_k 4 --temperature 0 --max_tokens 400 --verbose
+  
+  python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
+  --disease_file data/SNOMEDCT/concepts_filtered.csv \
+  --disease_file_type list \
+  --pairs_file_path data/hetionet/all.jsonl \
+  --output_directory  data/synthetic_snomed_sent_type \
+  --server_url http://0.0.0.0:8484  \
+  --kshot_path data/ncbi/trf/ncbi_ner_train_10pct.json \
+  --kshot_size 0 \
+  --num_sentences 2 \
+  --include_pos \
+  --include_dep \
+  --random_seed 42 --test \
+  --generate_k 40000 --temperature 0 --max_tokens 400
   
   
   Excluded pos and dep
@@ -323,5 +338,11 @@ python3 -m bioNER.src_generate.llmAnnotationGenerationLatestGeneric \
 if __name__ == "__main__":
     args = argparse_args()
     args.logger = utils.setup_logger(args.output_directory, args.verbose)
+    vars_str = '{'
+    for k, v in vars(args).items():
+        vars_str += f'\n {k}: {v},'
+    vars_str = '}'
+
+    args.logger.info(f"Arguments:\n {vars_str}")
     args.logger.info(f"Output directory: {args.output_directory}")
     main(args)
