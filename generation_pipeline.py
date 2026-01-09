@@ -406,7 +406,7 @@ def main(args: argparse.Namespace):
         print("[INFO] started SYNTAX FEATURES GENERATION!")
     
         sub_results = subprocess.run([
-                "/opt/conda/bin/python3", args.parsingv2_py,
+                "/opt/conda/bin/python3", args.parsing_v2_py,
                 "--parsed_mesh_file", args.NCBI_train,
                 "--gen_train_path", args.Generated_train,
                 "--output_path_features", parsed_data_path,
