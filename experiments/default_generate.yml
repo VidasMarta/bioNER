@@ -54,7 +54,7 @@ min_samples_per_cluster: 10 # Minimum number of synthetic samples required per c
 weighted_threshold: 0.75 # Weighted coverage threshold to stop iterations (global overlap).
 max_iterations: 5 
 overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
-max_synthetic_ratio: 3 # 3:1 (synth:NCBI) per cluster
+max_synthetic_ratio: 10 # 3:1 (synth:NCBI) per cluster
 
 #bioNER
 ner_model_eval: false
