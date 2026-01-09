@@ -4,7 +4,7 @@ import os
 import random
 import numpy as np
 import yaml
-import parsing_embedding as pe
+import kmeans_params as pe
 from sklearn.metrics.pairwise import cosine_similarity
 
 import kmeans_params
