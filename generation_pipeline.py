@@ -215,7 +215,7 @@ def adaptive_syntax_generation(
     
     real_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(args.cluster_dir, "cluster_centroids.npy"))
-    clusters = [range(0, max(real_labels)+1)]
+    clusters = [*range(0, max(real_labels)+1)]
 
     # Save NCBI examples with cluster labels for later k-shot selection
     # KARATE ENV
