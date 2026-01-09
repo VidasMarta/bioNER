@@ -352,7 +352,7 @@ def adaptive_syntax_generation(
 
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
-            "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/generation_postprocessing.py",
+            "/opt/conda/bin/python3", args.generation_postprocessing_py,
             "--generated", new_path,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(starting_id),
@@ -371,7 +371,7 @@ def adaptive_syntax_generation(
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
         if args.ner_model_eval:
             sub_results = subprocess.run([
-                "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/train_spacy_ner.py",
+                "/opt/conda/bin/python3", args.ner_train_py,
                 "--train", postprocessed,
                 "--output", f"{iter_output}ner_model",
                 "--n_iter", str(args.num_train_iter),
@@ -379,7 +379,7 @@ def adaptive_syntax_generation(
 
 
             sub_results = subprocess.run([
-                "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/eval_spacy_ner.py",
+                "/opt/conda/bin/python3", args.ner_eval_py,
                 "--model", f"{iter_output}ner_model",
                 "--test", args.ncbi_dev_set,
                 "--logger", f"{iter_output}ner_model_logger.jsonl",
@@ -406,7 +406,7 @@ def main(args: argparse.Namespace):
         print("[INFO] started SYNTAX FEATURES GENERATION!")
     
         sub_results = subprocess.run([
-                "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/utils/parsing_v2.py",
+                "/opt/conda/bin/python3", args.parsingv2_py,
                 "--parsed_mesh_file", args.NCBI_train,
                 "--gen_train_path", args.Generated_train,
                 "--output_path_features", parsed_data_path,
