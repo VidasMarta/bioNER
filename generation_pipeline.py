@@ -198,7 +198,6 @@ def adaptive_syntax_generation(
     Iteratively generate synthetic sentences until GL2Vec embedding overlap
     with NCBI syntax distribution exceeds threshold or max_iterations reached.
     """
-    iteration = 0
     synth_data = initial_synth_data
     # Precompute real embeddings once
     print("[INFO] Building real NCBI dependency graphs...")
@@ -235,81 +234,96 @@ def adaptive_syntax_generation(
 
     if args.test:
         args.max_iterations = 2
-        synth_data = synth_data[:10000]
         term_list = term_list[:1000]
+        num_new = 2
 
-    while True:
-        print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
-        iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
-        os.makedirs(iter_output, exist_ok=True)
-        # KARATE ENV
-        synth_graphs, _ = pe.build_dependency_graphs(synth_data)
-        synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
+    start = 0
+    for i in range(0, args.max_iterations):
+        if synth_data is None and i == 0:
+            #inicijalno bez sitetskih
+            uncovered_clusters = clusters
+            terms_for_gen = []
+            terms_per_cluster = []
+                
+            for cluster_id in uncovered_clusters:
+                if not args.test:
+                    real_idxs = np.where(real_labels == cluster_id)[0]
+                    cluster_real = [real_data[i] for i in real_idxs]
+                    num_new = args.max_synthetic_ratio * len(cluster_real)
 
-        (
-            cluster_overlaps,
-            uncovered_clusters,
-            weighted_coverage,
-            cluster_sizes,
-            synth_labels,
-        ) = compute_cluster_coverage(
-            real_emb,
-            synth_emb,
-            real_labels,
-            centroids_real,
-            args.overlap_threshold,
-            iteration,
-            args.output_directory,
-            args.min_samples_per_cluster
-        )
+                end = start + num_new
+                terms_for_gen.append(term_list[start:end]) 
+                terms_per_cluster.append(num_new)
+                start = end
+                if start >= len(term_list): #fallback ako baš iskoristimo sve termove
+                    start = 0
 
-        print(f"[INFO] Per-cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
-        print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
-        print(f"[INFO] Uncovered clusters: {uncovered_clusters}")
+            synth_data = []
 
-        # Stopping conditions
-        if weighted_coverage >= args.weighted_threshold and not uncovered_clusters:
-            print(
-                f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
-                f"(all clusters sufficiently represented)."
+        else:
+            print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
+            iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
+            os.makedirs(iter_output, exist_ok=True)
+            # KARATE ENV
+            synth_graphs, _ = pe.build_dependency_graphs(synth_data)
+            synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
+
+            (
+                cluster_overlaps,
+                uncovered_clusters,
+                weighted_coverage,
+                cluster_sizes,
+                synth_labels,
+            ) = compute_cluster_coverage(
+                real_emb,
+                synth_emb,
+                real_labels,
+                centroids_real,
+                args.overlap_threshold,
+                iteration,
+                args.output_directory,
+                args.min_samples_per_cluster
             )
-            delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
-            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
-            break
 
-        elif iteration == args.max_iterations:
-            print("[STOP] Max iteration reached target reached.")
-            delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
-            visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
-            break
+            print(f"[INFO] Per-cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
+            print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
+            print(f"[INFO] Uncovered clusters: {uncovered_clusters}")
 
-        # Adaptive regeneration: guided by uncovered clusters
-        terms_for_gen = []
-        terms_per_cluster = []
-        
-        start = 0
-        for cluster_id in uncovered_clusters:            
-            synth_idxs = np.where(synth_labels == cluster_id)[0]
-            real_idxs = np.where(real_labels == cluster_id)[0]
+            # Stopping conditions
+            if weighted_coverage >= args.weighted_threshold and not uncovered_clusters:
+                print(
+                    f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
+                    f"(all clusters sufficiently represented)."
+                )
+                delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
+                visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
+                break
 
-            cluster_syntax = [synth_data[i] for i in synth_idxs]
-            cluster_real = [real_data[i] for i in real_idxs]
+            # Adaptive regeneration: guided by uncovered clusters
+            terms_for_gen = []
+            terms_per_cluster = []
+                
+            for cluster_id in uncovered_clusters:            
+                synth_idxs = np.where(synth_labels == cluster_id)[0]
+                real_idxs = np.where(real_labels == cluster_id)[0]
 
-            if args.test:
-                num_new = 3
-            else:
-                if args.max_synthetic_ratio > len(cluster_syntax)/len(cluster_real): 
-                    num_new = abs(args.max_synthetic_ratio - len(cluster_syntax))*len(cluster_real)
+                cluster_syntax = [synth_data[i] for i in synth_idxs]
+                cluster_real = [real_data[i] for i in real_idxs]
+
+                if not args.test and args.max_synthetic_ratio > len(cluster_syntax)/len(cluster_real): 
+                    num_new = args.max_synthetic_ratio * len(cluster_real) - len(cluster_syntax)
+                elif args.test:
+                    num_new = 2
                 else:
                     print(f"[DEBUG] No need for generation in this cluster {cluster_id}!")
-                    num_new = 0 #TODO onda ne generiramo, ali ako je cluster neprekriven do ovog ne bi trebalo doći?
+                    num_new = 0 
 
-            end = start + num_new
-            terms_for_gen.append(term_list[start:end]) 
-            terms_per_cluster.append(num_new)
-            start = end
-            if start >= len(term_list): #fallback ako baš iskoristimo sve termove
-                start = 0
+                end = start + num_new
+                terms_for_gen.append(term_list[start:end]) 
+                terms_per_cluster.append(num_new)
+                start = end
+                if start >= len(term_list): #fallback ako baš iskoristimo sve termove
+                    start = 0
 
 
         # Select cluster-specific k-shot examples for uncovered clusters
@@ -331,7 +345,11 @@ def adaptive_syntax_generation(
         print(f"[INFO] Generation finished...")
         print(f"[DEBUG] regen term example: {terms_for_gen[0]}")
 
-        starting_id = synth_data[-1].get("id")+1
+        if i == 0:
+            starting_id = 0
+        else:
+            starting_id = synth_data[-1].get("id")+1
+
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", "/home/mvidas/syn-bioner/bioNER/generation_postprocessing.py",
@@ -412,7 +430,7 @@ def main(args: argparse.Namespace):
         args,
         real_data=ncbi_data,
         kshot_data = kshot_data,
-        initial_synth_data=synth_data
+        initial_synth_data=None #synth_data
     )
 
     print(f"[RESULT] Final syntax overlap: {final_overlap:.3f}")
