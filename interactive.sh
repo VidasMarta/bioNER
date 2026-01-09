@@ -11,9 +11,9 @@
 # #SBATCH --partition=gpu
 
 # Paths to your images
-SERVER_IMAGE=/home/mkeber/sif-files/llama.cpp_server-cuda.sif
-CLIENT_IMAGE=/home/mkeber/sif-files/synbioner_generate.sif
-WORKDIR=/home/mkeber/models/quantized
+SERVER_IMAGE=/home/${USERNAME}/sif-files/llama.cpp_server-cuda.sif
+CLIENT_IMAGE=/home/${USERNAME}/sif-files/synbioner_generate.sif
+WORKDIR=/home/${USERNAME}/models/quantized
 WAIT=60
 # Optional binding
 BIND_PATHS_SERVER="${WORKDIR}:/models"

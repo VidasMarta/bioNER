@@ -33,8 +33,8 @@ def check_last_token(tokens_lower: List[str]) -> List[str]:
     return tokens_lower
 
 
-def create_concept_txt_file(file_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/CONCEPT.csv',
-                            output_path = '/home/mkeber/syn-bioner/data/SNOMEDCT/concepts.txt'):
+def create_concept_txt_file(file_path = '/home/${USERNAME}/syn-bioner/data/SNOMEDCT/CONCEPT.csv',
+                            output_path = '/home/${USERNAME}/syn-bioner/data/SNOMEDCT/concepts.txt'):
     concept_df = pd.read_csv(file_path, 
                          delimiter='\t', on_bad_lines='skip', dtype=str)
     filtered_df = concept_df[concept_df.domain_id == 'Condition'].copy()

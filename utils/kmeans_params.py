@@ -91,8 +91,8 @@ def main(args, emb):
     print(f"[INFO] Labels and centroids saved in {args.cluster_dir}")
 
 
-"""python3 utils/kmeans_params.py --parsed_features /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json \
---cluster_dir /home/mkeber/syn-bioner/data/clustering --k_min 2 --k_max 4 """
+"""python3 utils/kmeans_params.py --parsed_features /home/${USERNAME}/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json \
+--cluster_dir /home/${USERNAME}/syn-bioner/data/clustering --k_min 2 --k_max 4 """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Determine optimal number of syntax clusters.")

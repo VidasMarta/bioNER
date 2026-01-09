@@ -7,7 +7,6 @@ import networkx as nx
 from karateclub import Graph2Vec
 from karateclub import GL2Vec
 import json
-from utils import kmeans_params
 from tqdm import tqdm
 
 def build_dependency_graphs(data):
@@ -62,55 +61,3 @@ def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iteratio
     embeddings = model.get_embedding()
     embeddings_data = np.array(embeddings)
     return embeddings_data, model
-
-if __name__ == '__main__':
-    # graphs = ... your graphs dictionary
-    # filename = os.path.basename('/home/mkeber/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json')[-10:-5]
-    
-    with open('/home/mkeber/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json', 'r') as file:
-        real_data = [json.loads(line) for line in file]
-    # Define the grid of hyperparameters
-    param_grid = {
-        "wl_iterations": [1, 2],
-        "dimensions": [16, 32, 64],
-        "workers": [24],  # fixed
-        "learning_rate": [0.04, 0.05, 0.06, 0.1],
-        "min_count": [1, 2, 3],
-        "epochs": [20, 25, 30]
-    }
-
-    # Generate all combinations of hyperparameters
-    keys, values = zip(*param_grid.items())
-    param_combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
-
-    output_path = "/home/mkeber/syn-bioner/data/clustering/grid_search_embeddings_train.jsonl"
-    output_path_kmeans = "/home/mkeber/syn-bioner/data/clustering/grid_search_embeddings_train_kmeans.jsonl"
-    
-    if os.path.isfile(output_path): f = open(output_path, "a")   
-    else: f = open(output_path, "w")
-    for i, combo in tqdm(enumerate(param_combinations)):
-        print(f"Running GL2Vec with params: {combo}")
-        
-        # Initialize and fit model
-        real_graphs, sent_ids_list = build_dependency_graphs(real_data)
-        real_emb, _ = get_graph_embedding(real_graphs, **combo)
-        embeddings_gl_data = np.array(real_emb)
-        
-        # Save each embedding with its hyperparameters
-        entry = {
-            "id": int(i),
-            # "sent": sent_ids_list,
-            "hyperparameters": combo,
-            # "embedding": [emb.tolist() for emb in embeddings_gl_data],
-        }
-
-        for k in tqdm(range(5, 25)):
-            kmeans_result = kmeans.evaluate_k(embeddings_gl_data, k)
-            entry[str(k)] = {
-                'inertia': str(kmeans_result['inertia']),
-                'silhouette': str(kmeans_result['silhouette']),
-                # 'centroids': kmeans_result['centroids'].tolist(),
-                # 'labels': kmeans_result['labels'].tolist() 
-            }
-        with open(output_path_kmeans, "a") as f:
-            f.write(json.dumps(entry) + "\n")
