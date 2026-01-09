@@ -1,6 +1,7 @@
 import argparse
 import os
 import json
+import time
 from typing import List, Tuple, Any
 
 import yaml
@@ -194,9 +195,11 @@ def load_data(args):
     with open(args.generated_postprocessed, "w") as f:
         idx = args.starting_id
         for item in new_data:
+            start_time = time.time()
             sentences = check_generated_size(args, item["text"])
             for sent in sentences:
                 js = create_json(args, sent, idx, item["term"])
+                js["time"] = item["time"] + time.time() - start_time
                 f.write(json.dumps(js) + "\n")
                 idx += 1
 

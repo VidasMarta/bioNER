@@ -367,6 +367,9 @@ def adaptive_syntax_generation(
 
         # Add newly generated ones
         synth_data.extend(newly_parsed_sentences)
+        #graphs = ...
+        #embs = ...
+        #synth_emb.extend(embs)
         print(f"[INFO] Added {len(newly_parsed_sentences)} parsed sentences to synthetic corpus.")
         print(f"[INFO] Now I have {len(synth_data)} parsed sentences in synthetic corpus.")
         if args.ner_model_eval:

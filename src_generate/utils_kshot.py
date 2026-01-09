@@ -1,5 +1,6 @@
 import json
 import argparse
+import time
 import pandas as pd
 from typing import List, Dict, Any, Optional, Tuple
 import tqdm
@@ -66,7 +67,7 @@ def sample_kshot(args, no_entity_examples, entity_examples):
     return kshot_text_block, user_template, used_ids
 
 
-def save_generated_sentences(args, output_path, response, term, used_ids):
+def save_generated_sentences(args, output_path, response, term, used_ids, sent_gen_time):
     text = response.json()['content'].strip()
     text = utils.clean_text(text)
     text = utils.remove_code_fences(text)
@@ -84,6 +85,7 @@ def save_generated_sentences(args, output_path, response, term, used_ids):
         record["include_pos"] = getattr(args, "include_pos", True)
         record["include_dep"] = getattr(args, "include_dep", True)
         record["random_seed"] = getattr(args, "random_seed", 42)
+        record["time"] = sent_gen_time
         file.write(json.dumps(record))
         file.write("\n")
 
@@ -120,6 +122,7 @@ def generate_sentences_per_cluster(
                 continue
 
             for term in terms:
+                start_time = time.time()
                 print(f"[INFO] Generating sentence for term: {term[0]}")
                 kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples)
                 args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
@@ -131,8 +134,9 @@ def generate_sentences_per_cluster(
                         user_template=user_template,
                         text=kshot_text_block
                     )
-                
-                save_generated_sentences(args, output_path, response, term, used_ids)
+                sent_gen_time = time.time() - start_time
+                save_generated_sentences(args, output_path, response, term, used_ids, sent_gen_time)
+
         except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
