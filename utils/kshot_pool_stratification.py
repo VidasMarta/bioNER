@@ -91,6 +91,8 @@ def argparse_args():
     return parser.parse_args()
 
 def load_yaml_with_env(path):
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
     with open(path) as f:
         content = os.path.expandvars(f.read())
     return yaml.safe_load(content)
@@ -99,7 +101,7 @@ def load_yaml_with_env(path):
 '''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/${USERNAME}/syn-bioner/bioNER/utils/kshot_pool_stratification.py'''
 if __name__ == "__main__":
     init_args = argparse_args()
-    yaml_args = load_yaml_with_env(init_args.config_file,)
+    yaml_args = load_yaml_with_env(init_args.config_file)
     args = argparse.Namespace(**yaml_args)
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller

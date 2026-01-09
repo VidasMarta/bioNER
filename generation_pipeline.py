@@ -447,6 +447,8 @@ singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 \
     /home/mvidas/syn-bioner/bioNER/generation_pipeline.py
 '''
 def load_yaml_with_env(path):
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
     with open(path) as f:
         content = os.path.expandvars(f.read())
     return yaml.safe_load(content)
@@ -455,7 +457,7 @@ if __name__ == "__main__":
     init_args = argparse_args()
     yaml_args = load_yaml_with_env(init_args.config_file,)
     args = argparse.Namespace(**yaml_args)
-    
+
     logger = setup_logger(args.output_directory, args.verbose)
     args.logger = logger
     args.config_file = init_args.config_file
