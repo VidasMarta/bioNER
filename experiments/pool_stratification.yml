@@ -1,4 +1,4 @@
-pcts: ['0.5', '0.2', '0.1'] 
+pcts: ['0.5', '0.2', '0.1', '0.05'] 
 parsed_features: /home/mkeber/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json #ncbi train dataset (without cluster labels)
 clustered_file: /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_clustered.json # ncbi train dataset (with cluster labels)
 output_path: /home/mkeber/syn-bioner/data/ncbi/trf/
