@@ -14,3 +14,7 @@ seaborn
 pandas
 regex
 PyYAML
+obonet
+requests
+pyyaml
+tqdm
