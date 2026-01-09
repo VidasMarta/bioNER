@@ -126,7 +126,7 @@ PROMPT = {
         Sentence:
         """,
         
-    'kshot_num_sent_genre_entity': """Generate {number_of_sentences} sentences that contain the disease or diagnosis {condition}, as it would appear in a {genre}.
+    'kshot_num_sent_entity': """Generate {number_of_sentences} sentences that contain the disease or diagnosis {condition}, as it would appear in a {genre}.
         Requirements:
         Keep the sentences factual, and contextually realistic for clinical or biomedical text.
         Output only sentences — no explanations or extra text or decorations. 
@@ -231,7 +231,7 @@ class PromptBuilder:
         sytem_templates: str key to dictionary: 'initial_prompt', 'role_prompt', 
             'role_sent_type_prompt', 'annotation'
         user_templates: str key to dictionary 'initial_prompt', 'genre_prompt',
-            'disease_annotation', 'disease_annotation_reduced', 'kshot_num_sent_genre_entity'
+            'disease_annotation', 'disease_annotation_reduced', 'kshot_num_sent_entity'
             'kshot_genre_no_entity', 'kshot_genre_generation_with_entity', 'genre_new_prompt'
     Output:
         
@@ -261,7 +261,7 @@ class PromptBuilder:
             'genre_prompt': PROMPT['genre_syn_generation'],
             'disease_annotation': PROMPT['disease_annotation'],
             'disease_annotation_reduced': PROMPT['disease_annotation_reduced'],
-            'kshot_num_sent_genre_entity':PROMPT['kshot_num_sent_genre_entity'],
+            'kshot_num_sent_entity':PROMPT['kshot_num_sent_entity'],
             'kshot_genre_no_entity':PROMPT['kshot_genre_no_entity'],
             'kshot_genre_generation_with_entity':PROMPT['kshot_genre_generation_with_entity'],
             'genre_new_prompt':PROMPT['genre_syn_generation_new'],
