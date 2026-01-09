@@ -41,6 +41,8 @@ def compute_cluster_coverage(
         overlap_threshold (float): Minimum cosine similarity to consider cluster covered.
         min_samples_per_cluster (int): Minimum number of synthetic samples per cluster.
     """
+    real_emb = normalize(real_emb)
+    synth_emb = normalize(synth_emb)
     n_clusters = len(np.unique(real_labels))
     print(f"[DEBUG] emb length {len(synth_emb)}")
     # Assign synthetic embeddings to nearest real cluster center
@@ -110,8 +112,8 @@ def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters):
     print(uncovered_clusters)
     with open(ncbi_clustered_path, "r") as f:
         data = [json.loads(line) for line in f]
-    filtered = [ex for ex in data if ex.get("cluster_id") in uncovered_clusters]
-    
+    filtered = [ex for ex in data if ex.get("cluster_id") in uncovered_clusters] 
+
     if not filtered:
         print("[WARN] No NCBI examples found for uncovered clusters, using random fallback.") #TODO dodati da se "sakriju" entiteti
         filtered = data
@@ -223,6 +225,7 @@ def adaptive_syntax_generation(
     if not os.path.exists(ncbi_clustered_path):
         kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
         kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
+        kshot_emb = normalize(kshot_emb)
         similarities = cosine_similarity(kshot_emb, centroids_real)
         kshot_labels = np.argmax(similarities, axis=1)
         with open(ncbi_clustered_path, "w") as f:
