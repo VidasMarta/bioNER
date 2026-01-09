@@ -5,7 +5,6 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import normalize
 from typing import List, Dict, Any
-from utils import parsing_embedding as pe
 import os
 
 import os
@@ -75,8 +74,8 @@ def load_syntax_data(path: str) -> List[Dict[str, Any]]:
         return [json.loads(line) for line in f]
 
 def compute_embeddings(parsed_data: List[Dict[str, Any]]) -> np.ndarray:
-    graphs, _ = pe.build_dependency_graphs(parsed_data)
-    return pe.get_graph_embedding(graphs)
+    graphs, _ = build_dependency_graphs(parsed_data)
+    return get_graph_embedding(graphs)
 
 def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
     real_emb = normalize(real_emb)
