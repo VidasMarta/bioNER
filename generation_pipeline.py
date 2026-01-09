@@ -17,7 +17,7 @@ from sklearn.preprocessing import normalize
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
-    parser.add_argument('--config_file', type=str, default='/home/mvidas/syn-bioner/bioNER/experiments/default_generate.yml', help='Path to config file with all arguments.')
+    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/default_generate.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
 
@@ -444,7 +444,7 @@ def main(args: argparse.Namespace):
 
 '''
 singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 \
-    /home/mvidas/syn-bioner/bioNER/generation_pipeline.py
+    /home/${USERNAME}/syn-bioner/bioNER/generation_pipeline.py
 '''
 def load_yaml_with_env(path):
     path = os.path.expandvars(path)
