@@ -235,8 +235,8 @@ def adaptive_syntax_generation(
 
     if args.test:
         args.max_iterations = 2
-        synth_data = synth_data[:10000]
-        term_list = term_list[:1000]
+        synth_data = synth_data[:5]
+        term_list = term_list[:5]
 
     while True:
         print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
