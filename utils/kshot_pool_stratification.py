@@ -86,11 +86,11 @@ def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, ncbi_
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
-    parser.add_argument('--config_file', type=str, default='/home/mvidas/syn-bioner/bioNER/experiments/pool_stratification.yml', help='Path to config file with all arguments.')
+    parser.add_argument('--config_file', type=str, default='/home/mkeber/syn-bioner/bioNER/experiments/pool_stratification.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
 
-'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py'''
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mkeber/syn-bioner/bioNER/utils/kshot_pool_stratification.py'''
 if __name__ == "__main__":
     init_args = argparse_args()
     with open(init_args.config_file, 'r') as file:
