@@ -7,7 +7,6 @@ import networkx as nx
 from karateclub import Graph2Vec
 from karateclub import GL2Vec
 import json
-from utils import kmeans_params
 from tqdm import tqdm
 
 def build_dependency_graphs(data):
