@@ -1,11 +1,11 @@
 disease_file: data/SNOMEDCT/concepts_filtered.csv
-output_directory: data/synthetic_snomed_sent_type
+output_directory: data/init_synthetic_snomed_sent_type
 server_url: http://0.0.0.0:8484
 pairs_file_path: data/hetionet/all.jsonl
 
 spacy_model: en_core_web_trf
 
-generate_k: 4 #40000
+generate_k: 80000
 random_seed: 42
 
 temperature: 0
@@ -15,5 +15,5 @@ include_pos: true
 include_dep: true
 
 verbose: true #false
-test: true #false
+test: false
 
