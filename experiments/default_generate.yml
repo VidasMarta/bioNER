@@ -8,7 +8,7 @@ min_count: 1
 epochs: 20
 
 #  kmeans:
-cluster_dir:  /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters/
+cluster_dir:  /home/${USERNAME}/syn-bioner/data/generation_pipeline/kmeans_clusters/
 k_min: 5
 k_max: 25
 
@@ -24,7 +24,7 @@ include_dep: true
 no_entity_ratio: 0.25
 
 #terms
-disease_file: /home/mkeber/syn-bioner/data/SNOMEDCT/concepts_filtered.csv
+disease_file: /home/${USERNAME}/syn-bioner/data/SNOMEDCT/concepts_filtered.csv
 disease_file_type: list
 obo_file_path: '' #TODO za što je ovo, koristi li se uopće
 
@@ -36,10 +36,10 @@ min_samples_per_cluster: 10
 weighted_threshold: 1.5
 max_iterations: 5
 overlap_threshold: 1.5
-NCBI_train:  /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
-NCBI_kshot:  /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json
-Generated_train:  '' #/home/mkeber/syn-bioner/data/synthetic_10_trial/generated_sentences_20251114.json
-output_directory:  /home/mkeber/syn-bioner/data/generation_pipeline/
+NCBI_train:  /home/${USERNAME}/syn-bioner/data/ncbi/trf/ncbi_ner_train.json
+NCBI_kshot:  /home/${USERNAME}/syn-bioner/data/ncbi/trf/ncbi_ner_train_5pct.json
+Generated_train:  '' #/home/${USERNAME}/syn-bioner/data/synthetic_10_trial/generated_sentences_20251114.json
+output_directory:  /home/${USERNAME}/syn-bioner/data/generation_pipeline/
 spacy_model: en_core_web_trf
 
 #general:
@@ -53,15 +53,15 @@ weighted_threshold: 0.75 # Weighted coverage threshold to stop iterations (globa
 max_iterations: 5 
 overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
 max_synthetic_ratio: 10 # 3:1 (synth:NCBI) per cluster
-parsing_v2_py: /home/mkeber/syn-bioner/bioNER/utils/parsing_v2.py
-generation_postprocessing_py: /home/mkeber/syn-bioner/bioNER/generation_postprocessing.py
+parsing_v2_py: /home/${USERNAME}/syn-bioner/bioNER/utils/parsing_v2.py
+generation_postprocessing_py: /home/${USERNAME}/syn-bioner/bioNER/generation_postprocessing.py
 
 #bioNER
 ner_model_eval: false
-ncbi_dev_set:  /home/mkeber/syn-bioner/data/ncbi/ncbi/valid.json
+ncbi_dev_set:  /home/${USERNAME}/syn-bioner/data/ncbi/ncbi/valid.json
 num_train_iter: 20
-ner_train_py: /home/mkeber/syn-bioner/bioNER/utils/train_spacy_ner.py
-ner_eval_py: /home/mkeber/syn-bioner/bioNER/utils/eval_spacy_ner.py
+ner_train_py: /home/${USERNAME}/syn-bioner/bioNER/utils/train_spacy_ner.py
+ner_eval_py: /home/${USERNAME}/syn-bioner/bioNER/utils/eval_spacy_ner.py
 
 
 

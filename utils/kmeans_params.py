@@ -1,7 +1,5 @@
 import argparse
 import json
-from pyexpat import model
-from unittest import result
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
@@ -10,13 +8,75 @@ from typing import List, Dict, Any
 from . import parsing_embedding as pe
 import os
 
+import os
+import numpy as np
+import networkx as nx
+from karateclub import Graph2Vec
+from karateclub import GL2Vec
+import json
+from tqdm import tqdm
+
+def build_dependency_graphs(data):
+    """
+    Build directed dependency graphs encoding only syntactic structure (POS + dependency).
+    Graphs are directed from parent -> child.
+    
+    Args:
+    data (list[dict]): list of dependency-parsed sentence dicts.
+    
+    Returns:
+    dict[int, nx.DiGraph]: mapping from sentence ID to NetworkX graph.
+    """
+    graphs = []
+    sent_ids_list = []
+    for entry in data:
+        sent_ids_list.append(entry["id"])
+        sent_id = entry["id"]
+        sentence = entry["sentence"]
+        pos_tags = entry["pos"]
+        dep_labels = entry["dep"]
+        parents = entry["parents"]
+        G = nx.DiGraph(id=sent_id, sentence=sentence)
+        n = len(pos_tags)
+        for i in range(0, n):
+            node_label = f"{pos_tags[i]}"
+            G.add_node(i, feature=node_label, is_root=False)
+    
+        # --- Add edges (parent -> child) ---
+        for child_idx, parent_idx in enumerate(parents):
+            G.add_edge(parent_idx, child_idx, feature=f'{dep_labels[child_idx]}')
+        
+        graphs.append(G)
+    return graphs, sent_ids_list
+ 
+def get_graph_embedding(graphs, model=None, embedding_type="gl2vec", wl_iterations=1, 
+                        dimensions=16, workers=24, learning_rate=0.05,
+                        min_count=1, epochs=20):
+
+    if model is None:
+        if embedding_type == "gl2vec" :
+            model = GL2Vec(wl_iterations=wl_iterations, dimensions=dimensions, 
+                        workers=workers, learning_rate=learning_rate, 
+                        min_count=min_count, epochs=epochs)
+        elif embedding_type == "graph2vec":
+            model = Graph2Vec(wl_iterations=wl_iterations, dimensions=dimensions, 
+                            workers=workers, learning_rate=learning_rate,
+                            min_count=min_count, epochs=epochs)
+        else:
+            raise Exception(f"No such embedding type {embedding_type}!")
+    model.fit(graphs) #list(graphs.values()))
+    embeddings = model.get_embedding()
+    embeddings_data = np.array(embeddings)
+    return embeddings_data, model
+
+
 def load_syntax_data(path: str) -> List[Dict[str, Any]]:
     with open(path, "r") as f:
         return [json.loads(line) for line in f]
 
 def compute_embeddings(parsed_data: List[Dict[str, Any]]) -> np.ndarray:
-    graphs, _ = pe.build_dependency_graphs(parsed_data)
-    return pe.get_graph_embedding(graphs)
+    graphs, _ = build_dependency_graphs(parsed_data)
+    return get_graph_embedding(graphs)
 
 def evaluate_k(real_emb: np.ndarray, k: int) -> Dict[str, float]:
     real_emb = normalize(real_emb)
@@ -91,8 +151,8 @@ def main(args, emb):
     print(f"[INFO] Labels and centroids saved in {args.cluster_dir}")
 
 
-"""python3 utils/kmeans_params.py --parsed_features /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json \
---cluster_dir /home/mkeber/syn-bioner/data/clustering --k_min 2 --k_max 4 """
+"""python3 utils/kmeans_params.py --parsed_features /home/${USERNAME}/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json \
+--cluster_dir /home/${USERNAME}/syn-bioner/data/clustering --k_min 2 --k_max 4 """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Determine optimal number of syntax clusters.")

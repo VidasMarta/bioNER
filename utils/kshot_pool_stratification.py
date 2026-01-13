@@ -4,7 +4,7 @@ import os
 import random
 import numpy as np
 import yaml
-import parsing_embedding as pe
+import kmeans_params as pe
 from sklearn.metrics.pairwise import cosine_similarity
 
 import kmeans_params
@@ -86,15 +86,22 @@ def extract_abstracts_from_clusters(input_file, output_file, sample_ratio, ncbi_
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
-    parser.add_argument('--config_file', type=str, default='/home/mvidas/syn-bioner/bioNER/experiments/pool_stratification.yml', help='Path to config file with all arguments.')
+    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/pool_stratification.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
 
-'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/mvidas/syn-bioner/bioNER/utils/kshot_pool_stratification.py'''
+def load_yaml_with_env(path):
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
+    with open(path) as f:
+        content = os.path.expandvars(f.read())
+    return yaml.safe_load(content)
+
+
+'''singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 /home/${USERNAME}/syn-bioner/bioNER/utils/kshot_pool_stratification.py'''
 if __name__ == "__main__":
     init_args = argparse_args()
-    with open(init_args.config_file, 'r') as file:
-        yaml_args = yaml.safe_load(file)
+    yaml_args = load_yaml_with_env(init_args.config_file)
     args = argparse.Namespace(**yaml_args)
         
     subset_pcts = sorted(args.pcts, reverse=True) #make sure pcts go from bigger to smaller

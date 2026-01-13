@@ -5,4 +5,4 @@ output_path: /home/mkeber/syn-bioner/data/ncbi/trf/
 
 k_min: 5
 k_max: 25
-cluster_dir: /home/mkeber/syn-bioner/data/generation_pipeline/kmeans_clusters/
+cluster_dir: /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/

@@ -110,6 +110,7 @@ def generate_sentences_per_cluster(
     for i, cluster in enumerate(tqdm.tqdm(clusters)):
         try:
             kshot_pool = [ex for ex in kshot_examples if ex.get("cluster_id") == cluster]
+            print(kshot_pool[:4])
             entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
             no_entity_examples = [ex for ex in kshot_pool if not ex.get("entities")]
 

@@ -17,7 +17,7 @@ from sklearn.preprocessing import normalize
 
 def argparse_args():
     parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
-    parser.add_argument('--config_file', type=str, default='/home/mvidas/syn-bioner/bioNER/experiments/default_generate.yml', help='Path to config file with all arguments.')
+    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/default_generate.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
 
@@ -41,6 +41,8 @@ def compute_cluster_coverage(
         overlap_threshold (float): Minimum cosine similarity to consider cluster covered.
         min_samples_per_cluster (int): Minimum number of synthetic samples per cluster.
     """
+    real_emb = normalize(real_emb)
+    synth_emb = normalize(synth_emb)
     n_clusters = len(np.unique(real_labels))
     print(f"[DEBUG] emb length {len(synth_emb)}")
     # Assign synthetic embeddings to nearest real cluster center
@@ -107,10 +109,11 @@ def compute_cluster_coverage(
 
 def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters):
     """Return a list of NCBI examples sampled from uncovered clusters."""
+    print(uncovered_clusters)
     with open(ncbi_clustered_path, "r") as f:
         data = [json.loads(line) for line in f]
-    filtered = [ex for ex in data if ex.get("cluster_id") in uncovered_clusters]
-    
+    filtered = [ex for ex in data if ex.get("cluster_id") in uncovered_clusters] 
+
     if not filtered:
         print("[WARN] No NCBI examples found for uncovered clusters, using random fallback.") #TODO dodati da se "sakriju" entiteti
         filtered = data
@@ -214,7 +217,7 @@ def adaptive_syntax_generation(
     
     real_labels = np.load(os.path.join(args.cluster_dir, "cluster_labels.npy"))
     centroids_real = np.load(os.path.join(args.cluster_dir, "cluster_centroids.npy"))
-    clusters = [range(0, max(real_labels)+1)]
+    clusters = [*range(0, max(real_labels)+1)]
 
     # Save NCBI examples with cluster labels for later k-shot selection
     # KARATE ENV
@@ -222,6 +225,7 @@ def adaptive_syntax_generation(
     if not os.path.exists(ncbi_clustered_path):
         kshot_graphs, _ = pe.build_dependency_graphs(kshot_data)
         kshot_emb, _ = pe.get_graph_embedding(kshot_graphs, model)
+        kshot_emb = normalize(kshot_emb)
         similarities = cosine_similarity(kshot_emb, centroids_real)
         kshot_labels = np.argmax(similarities, axis=1)
         with open(ncbi_clustered_path, "w") as f:
@@ -239,6 +243,8 @@ def adaptive_syntax_generation(
 
     start = 0
     for i in range(0, args.max_iterations):
+        iter_output = os.path.join(args.output_directory, f"iteration_{i}/")
+        os.makedirs(iter_output, exist_ok=True)
         if not synth_data and i == 0:
             #inicijalno bez sitetskih
             uncovered_clusters = clusters
@@ -259,9 +265,7 @@ def adaptive_syntax_generation(
                     start = 0
 
         else:
-            print(f"\n[ITERATION {iteration}] Computing synthetic embeddings...")
-            iter_output = os.path.join(args.output_directory, f"iteration_{iteration}/")
-            os.makedirs(iter_output, exist_ok=True)
+            print(f"\n[ITERATION {i}] Computing synthetic embeddings...")
             # KARATE ENV
             synth_graphs, _ = pe.build_dependency_graphs(synth_data)
             synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
@@ -278,7 +282,7 @@ def adaptive_syntax_generation(
                 real_labels,
                 centroids_real,
                 args.overlap_threshold,
-                iteration,
+                i,
                 args.output_directory,
                 args.min_samples_per_cluster
             )
@@ -331,7 +335,7 @@ def adaptive_syntax_generation(
         )
 
         # Save temporarily for prompt conditioning
-        kshot_file = os.path.join(iter_output, f"kshot_iter_{iteration}.jsonl")
+        kshot_file = os.path.join(iter_output, f"kshot_iter_{i}.jsonl")
         with open(kshot_file, "w") as f:
             for ex in kshot_examples:
                 f.write(json.dumps(ex) + "\n")
@@ -350,7 +354,7 @@ def adaptive_syntax_generation(
         else:
             starting_id = synth_data[-1].get("id")+1
 
-        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{iteration}.jsonl")
+        postprocessed = os.path.join(iter_output, f"syntax_features_iter_{i}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", args.generation_postprocessing_py,
             "--generated", new_path,
@@ -387,8 +391,6 @@ def adaptive_syntax_generation(
                 "--test", args.ncbi_dev_set,
                 "--logger", f"{iter_output}ner_model_logger.jsonl",
             ], capture_output=True, text=True, check=True)
-        
-        iteration += 1
 
     return synth_data, weighted_coverage
 
@@ -445,15 +447,20 @@ def main(args: argparse.Namespace):
 
 '''
 singularity exec --nv --cleanenv $CLIENT_IMAGE /opt/conda/envs/gen/bin/python3 \
-    /home/mvidas/syn-bioner/bioNER/generation_pipeline.py
+    /home/${USERNAME}/syn-bioner/bioNER/generation_pipeline.py
 '''
-
+def load_yaml_with_env(path):
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
+    with open(path) as f:
+        content = os.path.expandvars(f.read())
+    return yaml.safe_load(content)
 
 if __name__ == "__main__":
     init_args = argparse_args()
-    with open(init_args.config_file, 'r') as file:
-        yaml_args = yaml.safe_load(file)
+    yaml_args = load_yaml_with_env(init_args.config_file,)
     args = argparse.Namespace(**yaml_args)
+
     logger = setup_logger(args.output_directory, args.verbose)
     args.logger = logger
     args.config_file = init_args.config_file
