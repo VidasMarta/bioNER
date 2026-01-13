@@ -92,7 +92,8 @@ def generate_sentence_samples(
             with open(corrected_output_path, method, encoding='utf-8') as file:
                 file.write(json.dumps(generated_json))
                 file.write("\n")
-            
+            with open(os.path.join(args.output_directory, 'term_list.txt'), 'a') as f:
+                f.write(term + '\n')
         except Exception as e:
             args.logger.info(f"Failed to generate or parse sentence for term {term[0]}: {e}")
             args.logger.info(f"Response content: {response.json().get('content', '')}")
@@ -127,8 +128,13 @@ def main(args: argparse.Namespace) -> None:
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
-    term_list = random.sample(term_list, args.generate_k)
-
+    if os.path.isfile(os.path.join(args.output_directory, 'term_list.txt')):
+        with open(os.path.join(args.output_directory, 'term_list.txt'), 'r') as f:
+            used_terms = [line.strip() for line in f.readlines()]
+        term_list = list(set(term_list) - set(used_terms))
+    if len(term_list) > args.generate_k:
+        term_list = random.sample(term_list, args.generate_k)
+        
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
     # TODO: system_template, user_template to args
     generate_sentence_samples(args, term_list, 
