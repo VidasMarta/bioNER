@@ -3,9 +3,65 @@ from collections import Counter, defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 
-
 import hashlib
 
+from sklearn.feature_extraction.text import CountVectorizer
+
+
+def build_dependency_graphs(data):
+    """
+    Build directed dependency graphs encoding only syntactic structure (POS + dependency).
+    Graphs are directed from parent -> child.
+    
+    Args:
+    data (list[dict]): list of dependency-parsed sentence dicts.
+    
+    Returns:
+    dict[int, nx.DiGraph]: mapping from sentence ID to NetworkX graph.
+    """
+    graphs = []
+    sent_ids_list = []
+    for entry in data:
+        sent_ids_list.append(entry["id"])
+        sent_id = entry["id"]
+        sentence = entry["sentence"]
+        pos_tags = entry["pos"]
+        dep_labels = entry["dep"]
+        parents = entry["parents"]
+        G = nx.DiGraph(id=sent_id, sentence=sentence)
+        n = len(pos_tags)
+        for i in range(0, n):
+            is_root = (parents[i] == i)
+            node_label = f"{pos_tags[i]}|ROOT" if is_root else pos_tags[i]
+            G.add_node(i, feature=node_label, is_root=is_root)
+
+    
+        # --- Add edges (parent -> child) ---
+        for child_idx, parent_idx in enumerate(parents):
+            G.add_edge(parent_idx, child_idx, feature=f'{dep_labels[child_idx]}')
+        
+        graphs.append(G)
+    return graphs, sent_ids_list
+
+def hash_to_vector(h, dim):
+    v = np.zeros(dim, dtype=np.float32)
+    idx = int(hashlib.md5(h.encode()).hexdigest(), 16) % dim
+    v[idx] = 1.0
+    return v
+
+
+def get_graph_embedding(graphs, wl_iterations=2, dimensions=16):
+    embeddings = []
+    for G in graphs:
+        h = nx.weisfeiler_lehman_graph_hash(
+            G,
+            node_attr='feature',
+            iterations=wl_iterations
+        )
+        embeddings.append(hash_to_vector(h, dimensions))
+    return np.vstack(embeddings)
+
+'''
 def wl_relabel(graph, node_labels, h):
     labels = dict(node_labels)
     all_labels = []
@@ -129,3 +185,4 @@ def get_graph_embedding(
         embeddings = model.transform(graphs)
 
     return embeddings, model
+'''

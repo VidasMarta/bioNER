@@ -1,8 +1,8 @@
-pcts: ['0.5', '0.2', '0.1', '0.05'] 
-parsed_features: /home/${USERNAME}/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json #ncbi train dataset (without cluster labels)
-clustered_file: /home/${USERNAME}/syn-bioner/data/ncbi/trf/ncbi_ner_train_clustered.json # ncbi train dataset (with cluster labels)
-output_path: /home/${USERNAME}/syn-bioner/data/ncbi/trf/
+pcts: ['0.5', '0.2', '0.1'] 
+parsed_features: /home/mkeber/syn-bioner/data/ncbi/trf/syntax_features_sent_tree_head.json #ncbi train dataset (without cluster labels)
+clustered_file: /home/mkeber/syn-bioner/data/ncbi/trf/ncbi_ner_train_clustered.json # ncbi train dataset (with cluster labels)
+output_path: /home/mkeber/syn-bioner/data/ncbi/trf/
 
 k_min: 5
 k_max: 25
-cluster_dir: /home/${USERNAME}/syn-bioner/data/generation_pipeline/kmeans_clusters/
+cluster_dir: /home/mvidas/syn-bioner/data/generation_pipeline/kmeans_clusters/
