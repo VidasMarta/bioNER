@@ -125,7 +125,7 @@ def print_args(model_args, settings_args):
 
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
-    model_name, model_args, settings_args = extract_args()
+    '''model_name, model_args, settings_args = extract_args()
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         main(model_name, model_args, settings_args, logger)
         
     
-    logger.calculate_mean_stddev()
+    logger.calculate_mean_stddev()'''
     """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
@@ -152,14 +152,14 @@ if __name__ == "__main__":
             f.write(f"{error} \n")"""
 
     #---> Train with generated data (with 5 different seeds - commented)
-    """model_name, model_args, settings_args = extract_args()
+    model_name, model_args, settings_args = extract_args()
     settings_args['dataset'] = 'gen2_json'
     settings_args['train_filename'] = 'train.json'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = model_name + "Data_mean" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = " S_ftB_C_L_5_A_with_S1_NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         
     
     logger.calculate_mean_stddev()
-    logger_2.calculate_mean_stddev()"""
+    logger_2.calculate_mean_stddev()
     
 
 
