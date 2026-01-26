@@ -153,13 +153,13 @@ if __name__ == "__main__":
 
     #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'gen2_json'
-    settings_args['train_filename'] = 'train.json'
+    settings_args['dataset'] = 'synthetic'
+    settings_args['train_filename'] = 'corrected_generated_sentences_20260109.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = " S_ftB_C_L_5_A_with_S1_NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "S_ftB_C_L_5_A_with_S1_NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
