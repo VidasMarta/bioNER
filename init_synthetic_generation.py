@@ -133,7 +133,13 @@ def main(args: argparse.Namespace) -> None:
         term_list = list(set(term_list) - set(used_terms))
     if len(term_list) > args.generate_k:
         term_list = random.sample(term_list, args.generate_k)
-
+    
+    nlp = generation_postprocessing.spacy_load_model(args.spacy_model)
+    # TODO: system_template, user_template to args
+    generate_sentence_samples(args, term_list, 
+                              system_template='role_sent_type_prompt',
+                              user_template='genre_new_prompt',
+                              nlp = nlp)
 
 if __name__ == "__main__":
     init_args = argparse_args()
