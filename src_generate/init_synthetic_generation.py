@@ -10,9 +10,9 @@ from datetime import datetime
 from collections import defaultdict
 
 import yaml  
-from bioNER.src_generate import prompt_generation
-from bioNER.src_generate import utils
-from bioNER import generation_postprocessing
+from .src_generate import prompt_generation
+from .src_generate import utils
+from . import generation_postprocessing
 import obonet
 
 def argparse_args():
