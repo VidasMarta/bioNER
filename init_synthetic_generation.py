@@ -12,7 +12,7 @@ from collections import defaultdict
 import yaml  
 from .src_generate import prompt_generation
 from .src_generate import utils
-import generation_postprocessing
+from . import generation_postprocessing
 import obonet
 
 def argparse_args():
@@ -132,7 +132,7 @@ def main(args: argparse.Namespace) -> None:
         term_list = list(set(term_list) - set(used_terms))
     if len(term_list) > args.generate_k:
         term_list = random.sample(term_list, args.generate_k)
-        
+
 
 if __name__ == "__main__":
     init_args = argparse_args()
