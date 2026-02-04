@@ -1,6 +1,6 @@
 disease_file: data/SNOMEDCT/concepts_filtered.csv
 obo_file_path: false
-output_directory: data/synthetic_snomed_sent_type_02_2026
+output_directory: data/init_syn_generation_all
 server_url: http://0.0.0.0:8484
 pairs_file_path: data/hetionet/all.jsonl
 
@@ -10,7 +10,7 @@ generate_k: 800000
 random_seed: 42
 
 temperature: 0
-max_tokens: 400
+max_tokens: 500
 
 include_pos: true
 include_dep: true

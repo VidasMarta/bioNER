@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:2
-#SBATCH --time=80:30:00
+#SBATCH --time=120:30:00
 # #SBATCH --partition=gpu
 
 # Paths to your images
@@ -33,6 +33,6 @@ echo " "
 echo "STARTING generation:"
 echo "Bigger models will need even more waiting time currently $WAIT seconds"
 
-singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.src_generate.init_synthetic_generation 
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.init_synthetic_generation 
 
 echo "Current time: $(date +"%H:%M:%S")"
