@@ -1,6 +1,5 @@
 disease_file: data/SNOMEDCT/concepts_filtered.csv
 obo_file_path: false
-output_directory: data/synthetic_snomed_sent_type
 server_url: http://0.0.0.0:8484
 pairs_file_path: data/hetionet/all.jsonl
 

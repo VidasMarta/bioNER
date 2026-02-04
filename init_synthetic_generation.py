@@ -16,7 +16,7 @@ from . import generation_postprocessing
 import obonet
 
 def argparse_args():
-    parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
+    parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline for initial generation.")
     parser.add_argument('--config_file', type=str, default=f'/home/mkeber/syn-bioner/bioNER/experiments/init_generation.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
@@ -74,6 +74,7 @@ def generate_sentence_samples(
     returns path to the output JSON file.
     """
     output_path, corrected_output_path = setup(args)
+    print(f"Starting generation of tokens. It is test: {args.test}.")
     for i, term in enumerate(tqdm.tqdm(term_list)):
         try:
             args.logger.info(f"Term '{term[0][0]}'!")
