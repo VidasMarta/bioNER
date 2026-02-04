@@ -144,7 +144,7 @@ if __name__ == "__main__":
     vars_str = '{'
     for k, v in vars(args).items():
         vars_str += f'\n {k}: {v},'
-    vars_str = '}'
+    vars_str += '}'
 
     args.logger.info(f"Arguments:\n {vars_str}")
     args.logger.info(f"Output directory: {args.output_directory}")
