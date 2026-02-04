@@ -10,8 +10,8 @@ from datetime import datetime
 from collections import defaultdict
 
 import yaml  
-from src_generate import prompt_generation
-from src_generate import utils
+from .src_generate import prompt_generation
+from .src_generate import utils
 import generation_postprocessing
 import obonet
 
