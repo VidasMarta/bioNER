@@ -167,7 +167,8 @@ if __name__ == "__main__":
         set_seed(seed)
         #First train on gen data
         model_name_seed = model_name + f"_seed{seed}"
-        main(model_name_seed, model_args, settings_args, logger)
+        if not os.path.exists(settings.MODEL_PATH + f"/{model_name_seed}_best.bin"):
+            main(model_name_seed, model_args, settings_args, logger)
 
         #Then take weights and finetune on NCBI-disease train set
         model_args_2 = copy.deepcopy(model_args)
