@@ -10,9 +10,9 @@ from datetime import datetime
 from collections import defaultdict
 
 import yaml  
-from .src_generate import prompt_generation
-from .src_generate import utils
-from . import generation_postprocessing
+from src_generate import prompt_generation
+from src_generate import utils
+import generation_postprocessing
 import obonet
 
 def argparse_args():
@@ -86,14 +86,12 @@ def generate_sentence_samples(
                         system_template=system_template,
                         user_template=user_template
                 )
-            text = save_generated_sentences(args, output_path, method, response, term)  
-            generated_json = generation_postprocessing.create_json(args, text, term, nlp, 
-                                                                   user_template='disease_annotation_reduced')
+            text = save_generated_sentences(args, output_path, method, response, term)
+            generated_json = generation_postprocessing.create_json(args, text, i, term, nlp)
             with open(corrected_output_path, method, encoding='utf-8') as file:
                 file.write(json.dumps(generated_json))
                 file.write("\n")
-            with open(os.path.join(args.output_directory, 'term_list.txt'), 'a') as f:
-                f.write(term + '\n')
+            
         except Exception as e:
             args.logger.info(f"Failed to generate or parse sentence for term {term[0]}: {e}")
             args.logger.info(f"Response content: {response.json().get('content', '')}")
@@ -115,10 +113,6 @@ def main(args: argparse.Namespace) -> None:
     os.makedirs(args.output_directory, exist_ok=True)
     # open json file where each line is one dict
     term_list = utils.generate_term_list(args.disease_file, args.verbose)
-    
-    if args.obo_file_path:
-        disease_terms = get_diseases(args)
-        term_list += disease_terms
     # TODO: pairs and triplets of terms.
     if args.pairs_file_path:
         disease_terms = utils.generate_term_list(args.pairs_file_path, args.verbose)
@@ -128,13 +122,8 @@ def main(args: argparse.Namespace) -> None:
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
-    if os.path.isfile(os.path.join(args.output_directory, 'term_list.txt')):
-        with open(os.path.join(args.output_directory, 'term_list.txt'), 'r') as f:
-            used_terms = [line.strip() for line in f.readlines()]
-        term_list = list(set(term_list) - set(used_terms))
-    if len(term_list) > args.generate_k:
-        term_list = random.sample(term_list, args.generate_k)
-        
+    term_list = random.sample(term_list, args.generate_k)
+
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
     # TODO: system_template, user_template to args
     generate_sentence_samples(args, term_list, 

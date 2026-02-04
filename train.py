@@ -125,17 +125,18 @@ def print_args(model_args, settings_args):
 
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
-    model_name, model_args, settings_args = extract_args()
+    '''model_name, model_args, settings_args = extract_args()
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
-    """model_args['weights'] = None
+    model_args['weights'] = None
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         main(model_name, model_args, settings_args, logger)
         
     
-    logger.calculate_mean_stddev()"""
+    logger.calculate_mean_stddev()'''
+    """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
     errors_val, errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
@@ -148,38 +149,39 @@ if __name__ == "__main__":
 
     with open(output_path+'/wrong_test.log',"w") as f:
         for error in errors_test:
-            f.write(f"{error} \n")
+            f.write(f"{error} \n")"""
 
     #---> Train with generated data (with 5 different seeds - commented)
-    """model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'gen2_json'
-    settings_args['train_filename'] = 'train.json'
+    model_name, model_args, settings_args = extract_args()
+    settings_args['dataset'] = 'synthetic'
+    settings_args['train_filename'] = 'corrected_generated_sentences_20260109.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = model_name + "Data_mean" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "S_ftB_C_L_5_A_with_S1_10NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         #First train on gen data
-        main(model_name, model_args, settings_args, logger)
+        model_name_seed = model_name + f"_seed{seed}"
+        main(model_name_seed, model_args, settings_args, logger)
 
         #Then take weights and finetune on NCBI-disease train set
         model_args_2 = copy.deepcopy(model_args)
-        model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
+        model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json'
-        settings_args_2['train_filename'] = 'train.json'
+        settings_args_2['train_filename'] = 'ncbi_ner_train_10pct.json' #'train.json'
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
         
     
     logger.calculate_mean_stddev()
-    logger_2.calculate_mean_stddev()"""
+    logger_2.calculate_mean_stddev()
     
 
 
