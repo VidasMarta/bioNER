@@ -10,13 +10,13 @@ from datetime import datetime
 from collections import defaultdict
 
 import yaml  
-from src_generate import prompt_generation
-from src_generate import utils
-import generation_postprocessing
+from .src_generate import prompt_generation
+from .src_generate import utils
+from . import generation_postprocessing
 import obonet
 
 def argparse_args():
-    parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
+    parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline for initial generation.")
     parser.add_argument('--config_file', type=str, default=f'/home/mkeber/syn-bioner/bioNER/experiments/init_generation.yml', help='Path to config file with all arguments.')
 
     return parser.parse_args()
@@ -74,6 +74,7 @@ def generate_sentence_samples(
     returns path to the output JSON file.
     """
     output_path, corrected_output_path = setup(args)
+    print(f"Starting generation of tokens. It is test: {args.test}.")
     for i, term in enumerate(tqdm.tqdm(term_list)):
         try:
             args.logger.info(f"Term '{term[0][0]}'!")
@@ -113,24 +114,32 @@ def main(args: argparse.Namespace) -> None:
     os.makedirs(args.output_directory, exist_ok=True)
     # open json file where each line is one dict
     term_list = utils.generate_term_list(args.disease_file, args.verbose)
+    if os.path.isfile(os.path.join(args.output_directory, 'term_list.txt')):
+        with open(os.path.join(args.output_directory, 'term_list.txt'), 'r') as f:
+            used_terms = [line.strip() for line in f.readlines()]
+        term_list = list(set(term_list) - set(used_terms))
+    if args.obo_file_path:
+        disease_terms = get_diseases(args)
+        term_list += disease_terms
     # TODO: pairs and triplets of terms.
     if args.pairs_file_path:
         disease_terms = utils.generate_term_list(args.pairs_file_path, args.verbose)
         term_list += disease_terms
-    # print(term_list[:150])
+
     if args.test:
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
-    term_list = random.sample(term_list, args.generate_k)
 
-    nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
+    if len(term_list) > args.generate_k:
+        term_list = random.sample(term_list, args.generate_k)
+    
+    nlp = generation_postprocessing.spacy_load_model(args.spacy_model)
     # TODO: system_template, user_template to args
     generate_sentence_samples(args, term_list, 
                               system_template='role_sent_type_prompt',
                               user_template='genre_new_prompt',
                               nlp = nlp)
-
 
 if __name__ == "__main__":
     init_args = argparse_args()
@@ -141,7 +150,7 @@ if __name__ == "__main__":
     vars_str = '{'
     for k, v in vars(args).items():
         vars_str += f'\n {k}: {v},'
-    vars_str = '}'
+    vars_str += '}'
 
     args.logger.info(f"Arguments:\n {vars_str}")
     args.logger.info(f"Output directory: {args.output_directory}")

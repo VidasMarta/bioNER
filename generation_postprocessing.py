@@ -5,7 +5,7 @@ import time
 from typing import List, Tuple, Any
 
 import yaml
-from src_generate import prompt_generation, utils
+from .src_generate import prompt_generation, utils
 
 SPACY_NLP = None
 
