@@ -159,7 +159,7 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "S_ftB_C_L_5_A_with_S1_NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "S_ftB_C_L_5_A_with_S1_10NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         set_seed(seed)
         #First train on gen data
         model_name_seed = model_name + f"_seed{seed}"
-        #main(model_name_seed, model_args, settings_args, logger)
+        main(model_name_seed, model_args, settings_args, logger)
 
         #Then take weights and finetune on NCBI-disease train set
         model_args_2 = copy.deepcopy(model_args)
