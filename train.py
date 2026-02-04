@@ -166,11 +166,12 @@ if __name__ == "__main__":
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         #First train on gen data
-        main(model_name, model_args, settings_args, logger)
+        model_name_seed = model_name + f"_seed{seed}"
+        main(model_name_seed, model_args, settings_args, logger)
 
         #Then take weights and finetune on NCBI-disease train set
         model_args_2 = copy.deepcopy(model_args)
-        model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
+        model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json'
         settings_args_2['train_filename'] = 'ncbi_ner_train_10pct.json' #'train.json'
