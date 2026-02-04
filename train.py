@@ -173,7 +173,7 @@ if __name__ == "__main__":
         model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json'
-        settings_args_2['train_filename'] = 'train.json'
+        settings_args_2['train_filename'] = 'ncbi_ner_train_10pct.json' #'train.json'
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
