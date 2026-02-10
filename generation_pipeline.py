@@ -122,7 +122,7 @@ def get_cluster_specific_kshot(ncbi_clustered_path, uncovered_clusters):
 
 
 def visualize_embeddings_clusterwise(
-    real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, save_path
+    real_emb, real_labels, synth_emb, synth_labels, save_path
 ):
     reducer = umap.UMAP(
         n_neighbors=15, min_dist=0.1, metric="cosine", random_state=42
@@ -156,8 +156,6 @@ def visualize_embeddings_clusterwise(
     plt.tight_layout()
     plt.show()
 
-    print(f"[FINAL] Cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
-
     os.makedirs(save_path, exist_ok=True)
     fname = f"umap_overlap.png"
     full_path = os.path.join(save_path, fname)
@@ -190,6 +188,48 @@ def delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_da
         print(f"[DEBUG] Len synth_data before {len(synth_data)}")
         synth_data = [item for item in synth_data if item.get("id") not in ids_to_delete]
         print(f"[DEBUG] Len synth_data after {len(synth_data)}")
+
+def find_uncovered_clusters(real_emb, synth_emb, real_labels, centroids_real, min_synthetic_ratio, iteration):
+    real_emb = normalize(real_emb)
+    synth_emb = normalize(synth_emb)
+    n_clusters = len(np.unique(real_labels))
+    print(f"[DEBUG] emb length {len(synth_emb)}")
+    # Assign synthetic embeddings to nearest real cluster center
+    similarities = cosine_similarity(synth_emb, centroids_real)
+    synth_labels = np.argmax(similarities, axis=1)
+    print(f"[DEBUG] labels length {len(synth_labels)}")
+
+    uncovered_clusters = []
+    cluster_sizes = []
+    synth_counts = []
+
+    log = {"per_cluster": []}
+
+    for i in range(n_clusters):
+        real_cluster_emb = real_emb[real_labels == i] #take all embeddings from real data that belong to cluster i
+        synth_cluster_emb = synth_emb[synth_labels == i] #take all embeddings from synthetic data that belong to cluster i
+
+        cluster_sizes.append(len(real_cluster_emb))
+        synth_counts.append(len(synth_cluster_emb))
+        ratio = synth_counts[-1] / cluster_sizes[-1]
+        if ratio < min_synthetic_ratio:
+            uncovered_clusters.append(i)
+
+        log["per_cluster"].append({
+            "cluster_id": i,  
+            "real_cluster_size": int(cluster_sizes[-1]),
+            "synth_cluster_size": int(synth_counts[-1]),
+            "ratio S:R": ratio,
+            "is_uncovered": i in uncovered_clusters
+        })
+
+    log["iteration_summary"] = {
+        "iteration": iteration,
+        "uncovered_clusters": uncovered_clusters
+    }
+
+    return uncovered_clusters, synth_labels
+
 
 def adaptive_syntax_generation(
     args,
@@ -270,7 +310,7 @@ def adaptive_syntax_generation(
             synth_graphs, _ = pe.build_dependency_graphs(synth_data)
             synth_emb, _ = pe.get_graph_embedding(synth_graphs, model) 
 
-            (
+            '''(
                 cluster_overlaps,
                 uncovered_clusters,
                 weighted_coverage,
@@ -288,18 +328,24 @@ def adaptive_syntax_generation(
             )
 
             print(f"[INFO] Per-cluster overlaps: {[round(x, 3) for x in cluster_overlaps]}")
-            print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")
+            print(f"[INFO] Weighted coverage = {weighted_coverage:.3f}")'''
+            uncovered_clusters, synth_labels = find_uncovered_clusters(real_emb, synth_emb, real_labels, centroids_real, args.min_synthetic_ratio, i)
             print(f"[INFO] Uncovered clusters: {uncovered_clusters}")
 
             # Stopping conditions
-            if weighted_coverage >= args.weighted_threshold and not uncovered_clusters:
+            '''if weighted_coverage >= args.weighted_threshold and not uncovered_clusters:
                 print(
                     f"[STOP] Coverage target reached: {weighted_coverage:.3f} "
                     f"(all clusters sufficiently represented)."
                 )
                 delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
-                visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, cluster_overlaps, args.output_directory)
+                visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, args.output_directory)
+                break'''
+            if not uncovered_clusters:
+                delete_excess_synht(clusters, synth_labels, real_labels, synth_data, real_data, args.max_synthetic_ratio)
+                visualize_embeddings_clusterwise(real_emb, real_labels, synth_emb, synth_labels, args.output_directory)
                 break
+
 
             # Adaptive regeneration: guided by uncovered clusters
             terms_for_gen = []
