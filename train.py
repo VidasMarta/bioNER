@@ -154,12 +154,12 @@ if __name__ == "__main__":
     #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
     settings_args['dataset'] = 'synthetic'
-    settings_args['train_filename'] = 'corrected_generated_sentences_20260205.jsonl'
+    settings_args['train_filename'] = 'corrected_generated_sentences_20260109.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "S_ftB_C_L_5_A_with_S2_10NCBIft" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "S_ftB_C_L_5_A_with_S1_20NCBIft_2" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -169,13 +169,15 @@ if __name__ == "__main__":
         model_name_seed = model_name + f"_seed{seed}"
         if not os.path.exists(settings.MODEL_PATH + f"/{model_name_seed}_best.bin"):
             main(model_name_seed, model_args, settings_args, logger)
+        else:
+            print("Ima predtreniranog")
 
         #Then take weights and finetune on NCBI-disease train set
         model_args_2 = copy.deepcopy(model_args)
         model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json'
-        settings_args_2['train_filename'] = 'ncbi_ner_train_10pct.json' #'train.json'
+        settings_args_2['train_filename'] = 'ncbi_ner_train_20pct.json' #'train.json'
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
