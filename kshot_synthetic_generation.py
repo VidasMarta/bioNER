@@ -187,7 +187,7 @@ def main(args: argparse.Namespace) -> None:
         
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
     # TODO: system_template, user_template to args
-    kshot_generation(args, term_list, 
+    kshot_generation(args, '', term_list, 
                               system_template='role_sent_type_prompt',
                               user_template='genre_new_prompt',
                               nlp = nlp)
