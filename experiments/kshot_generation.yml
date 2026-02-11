@@ -10,7 +10,7 @@ generate_k: 25000 #800000
 random_seed: 42
 
 kshot_size: 3
-kshot_pool: /home/${USERNAME}/syn-bioner/data/ncbi/trf/ncbi_ner_train_10pct.json
+kshot_pool: data/ncbi/trf/ncbi_ner_train_10pct.json
 no_entity_ratio: 0.17 #calculated on whole NCBI train
 
 temperature: 0
