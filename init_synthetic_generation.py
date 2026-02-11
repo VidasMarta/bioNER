@@ -117,7 +117,7 @@ def main(args: argparse.Namespace) -> None:
     if os.path.isfile(os.path.join(args.output_directory, 'term_list.txt')):
         with open(os.path.join(args.output_directory, 'term_list.txt'), 'r') as f:
             used_terms = [line.strip() for line in f.readlines()]
-        term_list = list(set(term_list) - set(used_terms))
+        # term_list = list(set(term_list) - set(used_terms))
     if args.obo_file_path:
         disease_terms = get_diseases(args)
         term_list += disease_terms
