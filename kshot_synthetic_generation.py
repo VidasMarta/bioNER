@@ -165,7 +165,10 @@ def main(args: argparse.Namespace) -> None:
     os.makedirs(args.output_directory, exist_ok=True)
     # open json file where each line is one dict
     term_list = utils.generate_term_list(args.disease_file, args.verbose)
-    
+    if os.path.isfile(os.path.join(args.output_directory, 'term_list.txt')):
+        with open(os.path.join(args.output_directory, 'term_list.txt'), 'r') as f:
+            used_terms = [line.strip() for line in f.readlines()]
+        # term_list = list(set(term_list) - set(used_terms))
     if args.obo_file_path:
         disease_terms = get_diseases(args)
         term_list += disease_terms
@@ -173,15 +176,12 @@ def main(args: argparse.Namespace) -> None:
     if args.pairs_file_path:
         disease_terms = utils.generate_term_list(args.pairs_file_path, args.verbose)
         term_list += disease_terms
-    # print(term_list[:150])
+
     if args.test:
         term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
         print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
-    if os.path.isfile(os.path.join(args.output_directory, 'term_list.txt')):
-        with open(os.path.join(args.output_directory, 'term_list.txt'), 'r') as f:
-            used_terms = [line.strip() for line in f.readlines()]
-        term_list = list(set(term_list) - set(used_terms))
+
     if len(term_list) > args.generate_k:
         term_list = random.sample(term_list, args.generate_k)
         
