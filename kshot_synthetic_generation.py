@@ -116,11 +116,10 @@ def kshot_generation(
     user_template: str = 'genre_prompt',
     nlp: Any = None
     ) -> str:
-    output_path = setup(args, iter_output)
+    output_path, corrected_output_path = setup(args, iter_output)
     kshot_pool = load_kshot_examples(args, args.kshot_pool)
-    open(output_path, "w").close()  
+    # open(output_path, "w").close()  
 
-    output_path, corrected_output_path = setup(args)
     for i, term in enumerate(tqdm.tqdm(term_list)):
         try:
             start_time = time.time()
