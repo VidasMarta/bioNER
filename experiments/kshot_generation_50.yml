@@ -1,6 +1,6 @@
 disease_file: data/SNOMEDCT/concepts_filtered.csv
 obo_file_path: false
-output_directory: data/kshot_syn_generation_all
+output_directory: data/kshot_syn_generation_50pct
 server_url: http://0.0.0.0:8484
 pairs_file_path: data/hetionet/all.jsonl
 
