@@ -37,12 +37,15 @@ singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.init_synthetic_
     --config_file bioNER/experiments/kshot_generation_10.yml
 
 echo "STARTING generation 20 percent:"
-echo "Bigger models will need even more waiting time currently $WAIT seconds"
 singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.init_synthetic_generation \
     --config_file bioNER/experiments/kshot_generation_20.yml
 
 echo "STARTING generation 50 percent:"
 singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.init_synthetic_generation \
     --config_file bioNER/experiments/kshot_generation_50.yml
+
+echo "STARTING generation 100 percent:"
+singularity exec --nv --cleanenv $CLIENT_IMAGE python3 -m bioNER.init_synthetic_generation \
+    --config_file bioNER/experiments/kshot_generation.yml
 
 echo "Current time: $(date +"%H:%M:%S")"
