@@ -159,7 +159,7 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "S_ftB_C_L_5_A_with_S1_20NCBIft_2" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "S_ftB_C_L_5_A_with_S1_50NCBIft_2" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json'
-        settings_args_2['train_filename'] = 'ncbi_ner_train_20pct.json' #'train.json'
+        settings_args_2['train_filename'] = 'ncbi_ner_train_50pct.json' #'train.json'
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
