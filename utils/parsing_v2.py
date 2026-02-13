@@ -317,7 +317,7 @@ def parse_args():
     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="data/MeSH_NCBI/sm/plots/")
     parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)', default=0.10)  
     parser.add_argument('--spacy_model', type=str, required=False, help='Name of spacy model', default='en_core_web_sm')  
-    parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="data/ncbi/gen2_json/train.json")
+    parser.add_argument('--gen_train_path', type=str, required=False, help='Path to where generated train json is saved', default="gen2_json/train.json")
     parser.add_argument('--output_path_features', type=str, required=False, help='Path where to save output features', default="data/MeSH_NCBI/sm/syntax_features_sent_tree_head.json")
     parser.add_argument('--rewrite', action='store_true', help='Whether to rewrite existing features file')
     parser.add_argument('--gen_pipeline', action='store_true', help='Run as a part of generation pipeline for loading datasets.')
@@ -353,13 +353,14 @@ if __name__ == "__main__":
 
 
     # EXTRACT SYNATX FEATURES FOR BOTH DATASETS
+    print("Starting snytax generation:")
     if args.gen_pipeline:
         nlp = spacy_load_model(args.spacy_model)
         
         corpus_list = load_corpuses(args.parsed_mesh_file, args.gen_train_path, nlp)
         ids, sentences, entities, corpus_labels, abstract_id, term_id = zip(*corpus_list)
         print(f"Loaded {len(sentences)} sentences: "
-            f"{corpus_labels.count('NCBI_train')} from NCBI_train and "
+            f"{corpus_labels.count('NCBI_train')} from train and "
             f"{corpus_labels.count('generated_train')} from Generated.")
         
         extract_syntax_features(
@@ -407,6 +408,6 @@ python3 bioNER/utils/parsing_v2.py \
     --histograms data/bc5cdr/trf/plots/ \
     --pct 0.50 0.20 0.10 \
     --spacy_model en_core_web_trf \
-    --gen_train_path /home/mkeber/syn-bioner/bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json \
-    --output_path_features data/bc5cdr/trf/syntax_features_sent_tree_head.json
+    --output_path_features data/bc5cdr/trf/syntax_features_sent_tree_head.json \
+    --gen_pipeline
 """
