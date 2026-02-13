@@ -2,15 +2,12 @@ import argparse
 import json
 import re
 import statistics
-import string
-import numpy as np
 import spacy
 from tqdm import tqdm
-import random
 import os
-import matplotlib.pyplot as plt
 import subprocess
 import sys
+from og_dataset_to_json import *
 
 def parse_text_file(input_file):
     abstracts = {}
@@ -30,6 +27,9 @@ def parse_text_file(input_file):
                 if pmid not in abstracts:
                     abstracts[pmid] = {"text": ""}
                 abstracts[pmid]["text"] += text + " "
+            
+            elif "\tCID\t" in line:
+                continue
 
             # Entity annotation lines
             elif re.match(r"^\d+\t\d+\t\d+\t", line):
@@ -37,6 +37,7 @@ def parse_text_file(input_file):
                 pmid = int(parts[0])
                 start, end = int(parts[1]), int(parts[2])
                 mention = parts[3]
+                ent_type = parts[4]      # Chemical or Disease
                 code = parts[-1]
                 if pmid not in annotations:
                     annotations[pmid] = []
@@ -44,6 +45,7 @@ def parse_text_file(input_file):
                     "start": start,
                     "end": end,
                     "text": mention,
+                    "type": ent_type,
                     "code": code
                 })
     return abstracts, annotations
@@ -70,6 +72,8 @@ def create_and_save_json(abstracts, annotations, output_file, model):
 
             # Step 3: assign BIO tags
             for ent in ents:
+                if ent["type"] != "Disease":
+                    continue  # ignore chemicals entirely
                 if ent["end"] <= sent_start or ent["start"] >= sent_end:
                     continue  # entity outside sentence
 
@@ -105,107 +109,25 @@ def create_and_save_json(abstracts, annotations, output_file, model):
 
     print(f"Saved {len(json_data)} sentence objects to {output_file}")
 
-def filter_by_abstract_ids(input_file, output_file, sample_ratio):
-    # Load the full dataset
-    with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    # Collect unique abstract IDs
-    abstract_ids = sorted({item["abstract_id"] for item in data})
-    print(f"Total abstracts: {len(abstract_ids)}")
-
-    # Randomly sample args.pct of abstract IDs
-    sample_size = max(1, int(len(abstract_ids) * sample_ratio))
-    sampled_ids = set(random.sample(abstract_ids, sample_size))
-    print(f"Selected {len(sampled_ids)} abstracts for the 10% sample.")
-
-    # Filter all sentences that belong to sampled abstracts
-    filtered_data = [item for item in data if item["abstract_id"] in sampled_ids]
-
-    # Save to new JSON file
-    with open(output_file + f"ncbi_ner_train_{sample_ratio*100:.0f}pct.json", "w", encoding="utf-8") as f:
-        json.dump(filtered_data, f, ensure_ascii=False, indent=2)
-
-    print(f"Saved {len(filtered_data)} sentences to {output_file}")
-
-
-def compute_stats(input_file, output_file):
-    # Load data
-    with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    stats_data = []
-
-    # Define punctuation characters to count
-    punct_chars = set(string.punctuation)
-
-    for item in data:
-        tokens = item["tokens"]
-        entities = item.get("entities", [])
-        
-        # Basic metrics
-        sentence_length = len(tokens)
-        num_entities = len(entities)
-        num_punct = sum(1 for tok in tokens if any(ch in punct_chars for ch in tok))
-        
-        # Compute entity lengths (in tokens)
-        entity_lengths = []
-        for ent in entities:
-            ent_tokens = [t for t in tokens if t in ent.split()]  # approximate matching
-            if ent_tokens:
-                entity_lengths.append(len(ent_tokens))
-        
-        avg_entity_length = np.mean(entity_lengths) if entity_lengths else 0
-
-        # Add metrics to each record
-        item.update({
-            "sentence_length": sentence_length,
-            "num_entities": num_entities,
-            "avg_entity_length": round(float(avg_entity_length), 2),
-            "num_punctuations": num_punct
-        })
-        stats_data.append(item)
-
-    # Save enriched dataset
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(stats_data, f, ensure_ascii=False, indent=2)
-
-    print(f"Saved statistics-enriched data to {output_file}")
-
-    return stats_data
-
-def plot_histogram(values, title, xlabel, filename, output_dir):
-    plt.figure(figsize=(8, 5))
-    plt.hist(values, bins="fd", edgecolor="black", alpha=0.7)
-    plt.title(title, fontsize=14)
-    plt.xlabel(xlabel, fontsize=12)
-    plt.ylabel("Frequency", fontsize=12)
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    save_path = os.path.join(output_dir, filename)
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-    print(f"Saved histogram: {save_path}")
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Parsing")
-    parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH NCBI train json is saved', default="bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt")
-    parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/ncbi_ner_train.json")
-    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/")
-    parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/ncbi_ner_sentence_stats.json")
-    parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh NCBI train json', default="bioNER/data/ncbi/trf/plots/")
+    parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH bc5cdr train json is saved', default="bioNER/data/bc5cdr/bc5cdr_train.txt")
+    parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json")
+    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/")
+    parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json")
+    parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/plots/")
     parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf')    
     return parser.parse_args()
 
 """
 python3 bioNER/utils/og_dataset_to_json.py \
-    --input_file bioNER/data/ncbi/NCBItrainset_corpus/NCBItrainset_corpus.txt \
-    --parsed_mesh_file bioNER/data/ncbi/lg/ncbi_ner_train.json \
-    --filtered_parsed_mesh_file bioNER/data/ncbi/lg/ \
-    --stats_file bioNER/data/ncbi/lg/ncbi_ner_sentence_stats.json \
-    --histograms bioNER/data/ncbi/lg/plots/ \
+    --input_file bioNER/data/bc5cdr/bc5cdrtrainset_corpus/bc5cdrtrainset_corpus.txt \
+    --parsed_mesh_file bioNER/data/bc5cdr/lg/bc5cdr_ner_train.json \
+    --filtered_parsed_mesh_file bioNER/data/bc5cdr/lg/ \
+    --stats_file bioNER/data/bc5cdr/lg/bc5cdr_ner_sentence_stats.json \
+    --histograms bioNER/data/bc5cdr/lg/plots/ \
     --pct 0.10 \
     --model en_core_web_lg
 """
@@ -226,10 +148,11 @@ def extract_args():
 
 if __name__ == "__main__":
     input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms= extract_args()
-    subprocess.run([sys.executable, "-m", "spacy", "download", model])
+    if not spacy.util.is_package(model):
+        subprocess.run([sys.executable, "-m", "spacy", "download", model])
     abstracts, annotations = parse_text_file(input_file)
     create_and_save_json(abstracts, annotations, parsed_mesh_file, model)
-    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct)
+    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct, "bc5cdr")
     stats_data = compute_stats(parsed_mesh_file, stats_file)
 
     # --- Aggregate statistics ---

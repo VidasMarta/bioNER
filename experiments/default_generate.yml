@@ -53,6 +53,7 @@ weighted_threshold: 0.75 # Weighted coverage threshold to stop iterations (globa
 max_iterations: 5 
 overlap_threshold: 0.75 # Wanted cluster overlap treshold per cluster.
 max_synthetic_ratio: 10 # 3:1 (synth:NCBI) per cluster
+min_synthetic_ratio: 3 #R u dokumentaciji
 parsing_v2_py: /home/${USERNAME}/syn-bioner/bioNER/utils/parsing_v2.py
 generation_postprocessing_py: /home/${USERNAME}/syn-bioner/bioNER/generation_postprocessing.py
 

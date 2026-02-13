@@ -1,3 +1,4 @@
+from itertools import combinations
 import json
 import os
 import random
@@ -94,6 +95,18 @@ def save_jsonl(data_split, filename):
             for entry in data_split:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
+def check_for_duplicates(generated_data, ncbi_train):
+    ncbi_sentences = {item['sentence'].strip().lower() for item in ncbi_train}
+    
+    duplicates = []
+    for gen in generated_data:
+        gen_sent = gen['sentence'].strip().lower()
+        if gen_sent in ncbi_sentences:
+            duplicates.append(gen['sentence'])
+            
+    return duplicates
+
+
 # Example usage
 if __name__ == "__main__":
     """ dataset = Dataset_Converter("ncbi_kaggle", "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/")
@@ -142,7 +155,7 @@ if __name__ == "__main__":
             f.write(json.dumps(item) + "\n")"""
     
     #code to split synthetic data into train(70) - val(15) - test(15)
-    output_folder = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/gen2_json/"
+    '''output_folder = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/gen2_json/"
     input_file = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/generated2_json/generated_sentences_20250912_do_val.json"
 
     train_ratio, val_ratio, test_ratio = 0.7, 0.15,0.15
@@ -170,6 +183,27 @@ if __name__ == "__main__":
     
     save_jsonl(train_data, output_folder + "train.json")
     save_jsonl(val_data, output_folder + "devel.json")
-    save_jsonl(test_data, output_folder + "test.json")
+    save_jsonl(test_data, output_folder + "test.json")'''
 
-    
+    '''data_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data"
+    with open(os.path.join(data_path, "synthetic/corrected_generated_sentences_20260109.jsonl"), "r", encoding="utf-8") as f:
+        json_list_syn = [json.loads(line) for line in f if line.strip()]'''
+
+    with open("/home/martavidas/Documents/FER/Diplomski/Diplomski/data/MeSH_NCBI/trf/ncbi_ner_train.json", "r", encoding="utf-8") as f:
+        json_list_ncbi = json.load(f) 
+
+    '''dupl = check_for_duplicates(json_list_syn, json_list_ncbi)
+    print(f"Found {len(dupl)} duplicates.")
+    print(dupl)'''
+
+    save_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/ncbi_ner_train_10_20_50pct/20pct_ner.json"
+    with open("/home/martavidas/Documents/FER/Diplomski/Diplomski/data/ncbi_ner_train_10_20_50pct/ncbi_ner_train_20pct.json", "r", encoding="utf-8") as f:
+        json_list_10ncbi = [json.loads(line) for line in f if line.strip()]
+
+    token_lookup = {item["id"]: item["tokens"] for item in json_list_ncbi}
+    tags_lookup = {item["id"]: item["tags"] for item in json_list_ncbi}
+    with open(save_path, "a") as f:
+        for ncbi in json_list_10ncbi:
+            ncbi["tokens"] = token_lookup.get(ncbi["id"])
+            ncbi["tags"] = tags_lookup.get(ncbi["id"])
+            f.write(json.dumps(ncbi) + "\n")
