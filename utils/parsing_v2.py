@@ -395,7 +395,18 @@ python3 bioNER/utils/parsing_v2.py \
     --stats_file data/ncbi/trf/ncbi_ner_sentence_stats.json \
     --histograms data/ncbi/trf/plots/ \
     --pct 0.50 0.20 0.10 \
-    --model en_core_web_trf \
+    --spacy_model en_core_web_trf \
     --gen_train_path data/ncbi/gen2_json/train.json \
     --output_path_features data/ncbi/trf/syntax_features_sent_tree_head.json
+
+python3 bioNER/utils/parsing_v2.py \
+    --input_file /home/mkeber/syn-bioner/bioNER/data/bc5cdr/bc5cdr_train.txt \
+    --parsed_mesh_file /home/mkeber/syn-bioner/bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json \
+    --filtered_parsed_mesh_file data/bc5cdr/trf/ \
+    --stats_file data/bc5cdr/trf/ncbi_ner_sentence_stats.json \
+    --histograms data/bc5cdr/trf/plots/ \
+    --pct 0.50 0.20 0.10 \
+    --spacy_model en_core_web_trf \
+    --gen_train_path /home/mkeber/syn-bioner/bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json \
+    --output_path_features data/bc5cdr/trf/syntax_features_sent_tree_head.json
 """

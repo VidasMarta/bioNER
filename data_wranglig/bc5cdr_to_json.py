@@ -122,14 +122,14 @@ def parse_args():
     return parser.parse_args()
 
 """
-python3 bioNER/utils/og_dataset_to_json.py \
-    --input_file bioNER/data/bc5cdr/bc5cdrtrainset_corpus/bc5cdrtrainset_corpus.txt \
-    --parsed_mesh_file bioNER/data/bc5cdr/lg/bc5cdr_ner_train.json \
-    --filtered_parsed_mesh_file bioNER/data/bc5cdr/lg/ \
-    --stats_file bioNER/data/bc5cdr/lg/bc5cdr_ner_sentence_stats.json \
-    --histograms bioNER/data/bc5cdr/lg/plots/ \
+python3 bioNER/data_wranglig/bc5cdr_to_json.py \
+    --input_file /home/mkeber/syn-bioner/bioNER/data/bc5cdr/bc5cdr_train.txt \
+    --parsed_mesh_file bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json \
+    --filtered_parsed_mesh_file bioNER/data/bc5cdr/trf/ \
+    --stats_file bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json \
+    --histograms bioNER/data/bc5cdr/trf/plots/ \
     --pct 0.10 \
-    --model en_core_web_lg
+    --model en_core_web_trf
 """
 
 def extract_args():
