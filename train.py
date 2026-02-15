@@ -72,6 +72,8 @@ def main(model_name, model_args, settings_args, logger):
     test_data = Dataset(tokens_test_padded, tags_test_padded, attention_masks_test, crf_mask_test)
     test_data_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size)
 
+    model_args['word_embedding'] = settings_args['word_embedding']
+
     if settings_args['bert_finetuning'] and settings_args['word_embedding'] == 'bioBERT':
         model_args['ft_lr'] = settings_args['ft_lr']
         trainer_object = trainer.Finetuning_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
