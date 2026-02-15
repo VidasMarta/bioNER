@@ -392,8 +392,22 @@ def adaptive_syntax_generation(
         new_path = generate_sentences_per_cluster(args, iter_output, kshot_file, terms_for_gen,
                                                    uncovered_clusters, terms_per_cluster, args.system_template_prompt)
 
+        new_path_syntax_features = os.path.join(iter_output, "_syntax_features.json")
         print(f"[INFO] Generation finished...")
         print(f"[DEBUG] regen term example: {terms_for_gen[0]}")
+
+        sub_results = subprocess.run([
+                "/opt/conda/bin/python3", args.parsing_v2_py,
+                "--corpus_name", "Generated_train",
+                "--input_file", new_path,
+                "--output_path_features", new_path_syntax_features,
+                "--rewrite",
+                "--gen_pipeline",
+                "--spacy_model", args.spacy_model
+            ], capture_output=True, text=True)
+        if args.verbose:
+            print("STDOUT:\n", sub_results.stdout)
+            print("STDERR:\n", sub_results.stderr)
 
         if i == 0:
             starting_id = 0
@@ -403,7 +417,7 @@ def adaptive_syntax_generation(
         postprocessed = os.path.join(iter_output, f"syntax_features_iter_{i}.jsonl")
         sub_results = subprocess.run([
             "/opt/conda/bin/python3", args.generation_postprocessing_py,
-            "--generated", new_path,
+            "--generated", new_path_syntax_features,
             "--generated_postprocessed", postprocessed,
             "--starting_id", str(starting_id),
             "--config_file", args.config_file
@@ -438,7 +452,7 @@ def adaptive_syntax_generation(
                 "--logger", f"{iter_output}ner_model_logger.jsonl",
             ], capture_output=True, text=True, check=True)
 
-    return synth_data, weighted_coverage
+    return synth_data #, weighted_coverage
 
 def main(args: argparse.Namespace):    
     ''' 
@@ -448,19 +462,21 @@ def main(args: argparse.Namespace):
     np.random.seed(args.random_seed)
     random.seed(args.random_seed)
 
-    parsed_data_path = os.path.join(args.output_directory, "syntax_features.jsonl")
+    parsed_data_path_ncbi = os.path.join(args.output_directory, "ncbi_syntax_features.jsonl")
+    parsed_data_path_generated = os.path.join(args.output_directory, "generated_syntax_features.jsonl")
+
     os.makedirs(args.output_directory, exist_ok=True)
     # Load and parse data
     # SPACY ENV
 
-    if not os.path.exists(parsed_data_path):
+    if not os.path.exists(parsed_data_path_ncbi):
         print("[INFO] started SYNTAX FEATURES GENERATION!")
     
         sub_results = subprocess.run([
                 "/opt/conda/bin/python3", args.parsing_v2_py,
-                "--parsed_mesh_file", args.NCBI_train,
-                "--gen_train_path", args.Generated_train,
-                "--output_path_features", parsed_data_path,
+                "--corpus_name", "NCBI_train",
+                "--input_file", args.NCBI_train,
+                "--output_path_features", parsed_data_path_ncbi,
                 "--rewrite",
                 "--gen_pipeline",
                 "--spacy_model", args.spacy_model
@@ -469,11 +485,27 @@ def main(args: argparse.Namespace):
             print("STDOUT:\n", sub_results.stdout)
             print("STDERR:\n", sub_results.stderr)
 
-    with open(parsed_data_path, "r") as f:
-        all_data = [json.loads(line) for line in f] 
-    ncbi_data = [entry for entry in all_data if entry.get("corpus") == "NCBI_train"]
-    synth_data = [entry for entry in all_data if entry.get("corpus") == "generated_train"]
-    print(f"[INFO] SAVED: SYNTAX FEATURES GENERATION! {parsed_data_path}")
+    if not os.path.exists(parsed_data_path_generated):
+        sub_results = subprocess.run([
+                "/opt/conda/bin/python3", args.parsing_v2_py,
+                "--corpus_name", "Generated_train",
+                "--input_file", args.Generated_train,
+                "--output_path_features", parsed_data_path_generated,
+                "--rewrite",
+                "--gen_pipeline",
+                "--spacy_model", args.spacy_model
+            ], capture_output=True, text=True)
+        if args.verbose:
+            print("STDOUT:\n", sub_results.stdout)
+            print("STDERR:\n", sub_results.stderr)
+
+    with open(parsed_data_path_ncbi, "r") as f:
+        ncbi_data = [json.loads(line) for line in f] 
+
+    with open(parsed_data_path_generated, "r") as f:
+        synth_data = [json.loads(line) for line in f] 
+
+    print("[INFO] SAVED: SYNTAX FEATURES GENERATION!")
     with open(args.NCBI_kshot, ) as f:
         kshot_data = [json.loads(line) for line in f]
 

@@ -137,7 +137,6 @@ def generate_sentences_per_cluster(
                     )
                 sent_gen_time = time.time() - start_time
                 save_generated_sentences(args, output_path, response, term, used_ids, sent_gen_time)
-
         except Exception as e:
                 args.logger.info(f"Failed to generate or parse sentence for cluster {cluster}: {e}")
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
