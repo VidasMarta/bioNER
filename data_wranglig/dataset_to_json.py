@@ -5,10 +5,11 @@ import random
 import os
 import matplotlib.pyplot as plt
 
-def filter_by_abstract_ids(input_file, output_file, sample_ratio, dataset_name):
+
+def filter_by_abstract_ids(corpus_name, input_file, output_file, sample_ratio, pct_train):
     # Load the full dataset
     with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        data = [json.loads(line) for line in f]
 
     # Collect unique abstract IDs
     abstract_ids = sorted({item["abstract_id"] for item in data})
@@ -17,17 +18,20 @@ def filter_by_abstract_ids(input_file, output_file, sample_ratio, dataset_name):
     # Randomly sample args.pct of abstract IDs
     sample_size = max(1, int(len(abstract_ids) * sample_ratio))
     sampled_ids = set(random.sample(abstract_ids, sample_size))
-    print(f"Selected {len(sampled_ids)} abstracts for the 10% sample.")
+    print(f"Selected {len(sampled_ids)} abstracts for the {float(pct_train)*100:.0f}% sample.")
 
     # Filter all sentences that belong to sampled abstracts
     filtered_data = [item for item in data if item["abstract_id"] in sampled_ids]
 
     # Save to new JSON file
-    with open(output_file + f"{dataset_name}_ner_train_{sample_ratio*100:.0f}pct.json", "w", encoding="utf-8") as f:
-        json.dump(filtered_data, f, ensure_ascii=False, indent=2)
+    filtered_abstracts = output_file + f"{corpus_name}_ner_train_{float(pct_train)*100:.0f}pct.json"
+    with open(filtered_abstracts, "w", encoding="utf-8") as f:
+        for item in filtered_data:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
-    print(f"Saved {len(filtered_data)} sentences to {output_file}")
+    print(f"Saved {len(filtered_data)} sentences to {filtered_abstracts}")
 
+    return filtered_abstracts
 
 def compute_stats(input_file, output_file):
     # Load data
@@ -68,7 +72,8 @@ def compute_stats(input_file, output_file):
 
     # Save enriched dataset
     with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(stats_data, f, ensure_ascii=False, indent=2)
+        for entry in stats_data:
+            f.write(json.dumps(entry) + "\n")
 
     print(f"Saved statistics-enriched data to {output_file}")
 

@@ -7,7 +7,9 @@ from tqdm import tqdm
 import os
 import subprocess
 import sys
-from og_dataset_to_json import *
+
+import yaml
+from dataset_to_json import *
 
 def parse_text_file(input_file):
     abstracts = {}
@@ -117,7 +119,7 @@ def parse_args():
     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/")
     parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json")
     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/plots/")
-    parser.add_argument('--pct', type=float, required=False, help='Percentage of abstracts to extract', default=0.10)  
+    parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)')   
     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf')    
     return parser.parse_args()
 
@@ -138,22 +140,69 @@ def extract_args():
     parsed_mesh_file = args.parsed_mesh_file
     model = args.model
     filtered_parsed_mesh_file = args.filtered_parsed_mesh_file
-    pct = args.pct
     stats_file = args.stats_file
     histograms = args.histograms
     for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file, args.histograms]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms
+    
+    pcts = args.pcts
+    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, stats_file, histograms, pcts
 
 
-if __name__ == "__main__":
-    input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, pct, stats_file, histograms= extract_args()
-    if not spacy.util.is_package(model):
-        subprocess.run([sys.executable, "-m", "spacy", "download", model])
-    abstracts, annotations = parse_text_file(input_file)
-    create_and_save_json(abstracts, annotations, parsed_mesh_file, model)
-    filter_by_abstract_ids(parsed_mesh_file, filtered_parsed_mesh_file, pct, "bc5cdr")
-    stats_data = compute_stats(parsed_mesh_file, stats_file)
+def argparse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/data/bc5cdr.yml', help='Path to config file with all arguments.')
+
+    return parser.parse_args()
+
+def load_yaml_with_env(path):
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
+    with open(path) as f:
+        content = os.path.expandvars(f.read())
+    return yaml.safe_load(content)
+
+if __name__=='__main__':
+    init_args = argparse_args()
+    yaml_args = load_yaml_with_env(init_args.config_file,)
+    args = argparse.Namespace(**yaml_args)
+    
+    if not spacy.util.is_package(args.model):
+        subprocess.run([sys.executable, "-m", "spacy", "download", args.model])
+
+    nlp = spacy.load(args.model, disable=["ner", "tagger", "parser", "lemmatizer"])
+    nlp.add_pipe("sentencizer")
+
+    os.makedirs(args.parsed_mesh_folder, exist_ok=True)
+    
+    #Train
+    train_parsed = args.parsed_mesh_folder + "bc5cdr_ner_train.json"
+    abstracts, annotations = parse_text_file(args.train)
+    create_and_save_json(abstracts, annotations, train_parsed, nlp)
+
+    subset_pcts = sorted(args.pcts, reverse=True)
+    available_abstracts = train_parsed
+    previous_pct = 1
+    for pct in subset_pcts:
+        samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
+        filtered_abstracts = filter_by_abstract_ids("bc5cdr", available_abstracts, args.parsed_mesh_folder, samples_pct, pct)
+        available_abstracts = filtered_abstracts
+        previous_pct = pct
+
+    #Devel
+    abstracts, annotations = parse_text_file(args.devel)
+    devel_parsed = args.parsed_mesh_folder + "bc5cdr_ner_devel.json"
+    create_and_save_json(abstracts, annotations, devel_parsed, nlp)
+
+    #Test
+    abstracts, annotations = parse_text_file(args.test)
+    test_parsed = args.parsed_mesh_folder + "bc5cdr_ner_test.json"
+    create_and_save_json(abstracts, annotations, test_parsed, nlp)
+
+
+    #Train set statistics
+    '''stats_file = os.path.join(args.parsed_mesh_folder, "bc5cdr_train_stats.json")
+    stats_data = compute_stats(train_parsed, stats_file)
 
     # --- Aggregate statistics ---
     def describe(values):
@@ -180,10 +229,10 @@ if __name__ == "__main__":
     for k, v in global_stats.items():
         print(f"{k}: {v}")
 
-    plot_histogram(sentence_lengths, "Sentence Length Distribution", "Number of Tokens", "hist_sentence_length.png", histograms)
-    plot_histogram(entity_counts, "Number of Entities per Sentence", "Number of Entities", "hist_num_entities.png", histograms)
-    plot_histogram(avg_ent_lens, "Average Entity Length per Sentence", "Entity Length (tokens)", "hist_avg_entity_length.png", histograms)
-    plot_histogram(punct_counts, "Punctuation Count per Sentence", "Number of Punctuations", "hist_num_punctuations.png", histograms)
+    os.makedirs(args.histograms, exist_ok=True)
+    plot_histogram(sentence_lengths, "Sentence Length Distribution", "Number of Tokens", "hist_sentence_length.png", args.histograms)
+    plot_histogram(entity_counts, "Number of Entities per Sentence", "Number of Entities", "hist_num_entities.png", args.histograms)
+    plot_histogram(avg_ent_lens, "Average Entity Length per Sentence", "Entity Length (tokens)", "hist_avg_entity_length.png", args.histograms)
+    plot_histogram(punct_counts, "Punctuation Count per Sentence", "Number of Punctuations", "hist_num_punctuations.png", args.histograms)
 
-    print(f"\nAll histograms saved in folder: {histograms}")
-
+    print(f"\nAll histograms saved in folder: {args.histograms}")'''
