@@ -29,4 +29,4 @@ settings:
   feature_size: 128
   dataset: "ncbi_disease_json/trf" # Options: "bc5cdr_json", "ncbi_disease_json", "generated1_json", "generated1a_json", "generated1b_json", "synthetic"
   tagging_scheme : "IOB1" #Other options: IOBES (depends on how the dataset is tagged)
-  train_filename: "synthetic/corrected_generated_sentences_20260205.jsonl" #generated_sentences_20250902.json, train_and_gen.json, train.json, "corrected_generated_sentences_20260109.jsonl"
+  train_filename: "train.json" #generated_sentences_20250902.json, train_and_gen.json, train.json, "corrected_generated_sentences_20260109.jsonl"
