@@ -8,6 +8,7 @@ MAX_LEN = 256
 
 class DatasetLoader:
     def __init__(self, dataset_name, dataset_path):
+        self.dataset_path = dataset_path
         self.folder_path = os.path.join(dataset_path, dataset_name)
         self.dataset_name = dataset_name
     
@@ -24,7 +25,7 @@ class DatasetLoader:
         else:
             print(f"File {file_path} not found")
 
-    def load_data(self, train_filename = "train.json" ):
+    def load_data(self, train_filepath = "train.json" ):
         ''' 
         Load the dataset
         Returns:    
@@ -37,8 +38,13 @@ class DatasetLoader:
         text_train, text_val, text_test = [], [], []
         tags_train, tags_val, tags_test = [], [], []
 
+        if len(train_filepath.split('/')) == 1:
+            train_filepath = os.path.join(self.folder_path, train_filepath)
+        else:
+            train_filepath = os.path.join(self.dataset_path, train_filepath)
+
         tags_file = os.path.join(self.folder_path, "label.json")        
-        train_file = os.path.join(self.folder_path, train_filename)
+        train_file = train_filepath
         val_file = os.path.join(self.folder_path, "devel.json")
         test_file = os.path.join(self.folder_path, "test.json")
         
