@@ -2,8 +2,8 @@ train: /home/${USERNAME}/syn-bioner/data/raw/MeSH_bc5cdr/bc5cdr_train.txt
 devel: /home/${USERNAME}/syn-bioner/data/raw/MeSH_bc5cdr/bc5cdr_devel.txt
 test: /home/${USERNAME}/syn-bioner/data/raw/MeSH_bc5cdr/bc5cdr_test.txt
 
-parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/bc5cdr/trf/
-histograms: /home/${USERNAME}/syn-bioner/data/bc5cdr/trf/plots/
+parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/bc5cdr/trf/
+histograms: /home/${USERNAME}/syn-bioner/data/processed/bc5cdr/trf/plots/
 
 
 pcts: ['0.5', '0.2', '0.1'] 

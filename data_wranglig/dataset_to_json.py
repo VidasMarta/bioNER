@@ -4,8 +4,15 @@ import numpy as np
 import random
 import os
 import matplotlib.pyplot as plt
+import yaml
+import argparse
 
-
+def save_to_json_line(output_file, json_data):
+    with open(output_file, "w", encoding="utf-8") as f:
+        for entry in json_data:
+            f.write(json.dumps(entry) + "\n")
+    return
+        
 def filter_by_abstract_ids(corpus_name, input_file, output_file, sample_ratio, pct_train):
     # Load the full dataset
     with open(input_file, "r", encoding="utf-8") as f:
@@ -93,7 +100,29 @@ def plot_histogram(values, title, xlabel, filename, output_dir):
     print(f"Saved histogram: {save_path}")
 
 
+def argparse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_file', type=str, 
+                        default='', 
+                        help="""Path to config file with all arguments.
+                        Options:
+                        /home/${USERNAME}/syn-bioner/bioNER/experiments/data/ncbi.yml
+                        /home/${USERNAME}/syn-bioner/bioNER/experiments/data/distemist.yml
+                        /home/${USERNAME}/syn-bioner/bioNER/experiments/data/bc5cdr.yml
+                        """)
+    return parser.parse_args()
 
+
+def load_yaml_with_env(path):
+    if os.getenv("USERNAME") is None:
+        os.environ["USERNAME"] = os.getenv("USER", "")
+    path = os.path.expandvars(path)
+    path = os.path.expanduser(path)
+    print(path)
+
+    with open(path) as f:
+        content = os.path.expandvars(f.read())
+    return yaml.safe_load(content)
 
 
 

@@ -52,8 +52,8 @@ def parse_text_file(input_file):
                 })
     return abstracts, annotations
 
-def create_and_save_json(abstracts, annotations, output_file, model):
-    nlp = spacy.load(model)
+def create_and_save_json(abstracts, annotations, output_file, nlp):
+    # nlp = spacy.load(model)
     json_data = []
 
     for pmid, abs_data in tqdm(abstracts.items()):
@@ -105,62 +105,47 @@ def create_and_save_json(abstracts, annotations, output_file, model):
                 "abstract_id": pmid
             })
 
-    # Step 4: Save to JSON file
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(json_data, f, ensure_ascii=False, indent=2)
-
+        # Step 4: Save to JSON file
+    save_to_json_line(output_file, json_data)
     print(f"Saved {len(json_data)} sentence objects to {output_file}")
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Parsing")
-    parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH bc5cdr train json is saved', default="bioNER/data/bc5cdr/bc5cdr_train.txt")
-    parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json")
-    parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/")
-    parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json")
-    parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/plots/")
-    parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)')   
-    parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf')    
-    return parser.parse_args()
+# def parse_args():
+#     parser = argparse.ArgumentParser(description="Parsing")
+#     parser.add_argument('--input_file', type=str, required=False, help='Path to where MeSH bc5cdr train json is saved', default="bioNER/data/bc5cdr/bc5cdr_train.txt")
+#     parser.add_argument('--parsed_mesh_file', type=str, required=False, help='Path to where to save parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json")
+#     parser.add_argument('--filtered_parsed_mesh_file', type=str, required=False, help='Path to where to save filtered parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/")
+#     parser.add_argument('--stats_file', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json")
+#     parser.add_argument('--histograms', type=str, required=False, help='Path to where to save statistics of parsed mesh bc5cdr train json', default="bioNER/data/bc5cdr/trf/plots/")
+#     parser.add_argument('--pcts', type=float, nargs="+", required=False, help='Percentages of abstracts to extract from train (smaller ptcs are subsets from bigger)')   
+#     parser.add_argument('--model', type=str, required=False, help='Name of spacy model', default='en_core_web_trf')    
+#     return parser.parse_args()
 
-"""
-python3 bioNER/data_wranglig/bc5cdr_to_json.py \
-    --input_file /home/mkeber/syn-bioner/bioNER/data/bc5cdr/bc5cdr_train.txt \
-    --parsed_mesh_file bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json \
-    --filtered_parsed_mesh_file bioNER/data/bc5cdr/trf/ \
-    --stats_file bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json \
-    --histograms bioNER/data/bc5cdr/trf/plots/ \
-    --pct 0.10 \
-    --model en_core_web_trf
-"""
+# """
+# python3 bioNER/data_wranglig/bc5cdr_to_json.py \
+#     --input_file /home/mkeber/syn-bioner/bioNER/data/bc5cdr/bc5cdr_train.txt \
+#     --parsed_mesh_file bioNER/data/bc5cdr/trf/bc5cdr_ner_train.json \
+#     --filtered_parsed_mesh_file bioNER/data/bc5cdr/trf/ \
+#     --stats_file bioNER/data/bc5cdr/trf/bc5cdr_ner_sentence_stats.json \
+#     --histograms bioNER/data/bc5cdr/trf/plots/ \
+#     --pct 0.10 \
+#     --model en_core_web_trf
+# """
 
-def extract_args():
-    args = parse_args()
-    input_file = args.input_file
-    parsed_mesh_file = args.parsed_mesh_file
-    model = args.model
-    filtered_parsed_mesh_file = args.filtered_parsed_mesh_file
-    stats_file = args.stats_file
-    histograms = args.histograms
-    for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file, args.histograms]:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+# def extract_args():
+#     args = parse_args()
+#     input_file = args.input_file
+#     parsed_mesh_file = args.parsed_mesh_file
+#     model = args.model
+#     filtered_parsed_mesh_file = args.filtered_parsed_mesh_file
+#     stats_file = args.stats_file
+#     histograms = args.histograms
+#     for path in [args.parsed_mesh_file, args.filtered_parsed_mesh_file, args.stats_file, args.histograms]:
+#         os.makedirs(os.path.dirname(path), exist_ok=True)
     
-    pcts = args.pcts
-    return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, stats_file, histograms, pcts
+#     pcts = args.pcts
+#     return input_file, parsed_mesh_file, model, filtered_parsed_mesh_file, stats_file, histograms, pcts
 
-
-def argparse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/data/bc5cdr.yml', help='Path to config file with all arguments.')
-
-    return parser.parse_args()
-
-def load_yaml_with_env(path):
-    path = os.path.expandvars(path)
-    path = os.path.expanduser(path)
-    with open(path) as f:
-        content = os.path.expandvars(f.read())
-    return yaml.safe_load(content)
 
 if __name__=='__main__':
     init_args = argparse_args()

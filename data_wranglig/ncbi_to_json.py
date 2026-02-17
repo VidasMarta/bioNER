@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import subprocess
 import sys
 
-import yaml
 from dataset_to_json import *
 
 def parse_text_file(input_file):
@@ -102,25 +101,9 @@ def create_and_save_json(abstracts, annotations, output_file, nlp):
             })
 
     # Step 4: Save to JSON file
-    with open(output_file, "w", encoding="utf-8") as f:
-        for entry in json_data:
-            f.write(json.dumps(entry) + "\n")
-
+    save_to_json_line(output_file, json_data)
     print(f"Saved {len(json_data)} sentence objects to {output_file}")
-    
 
-def argparse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/data/ncbi.yml', help='Path to config file with all arguments.')
-
-    return parser.parse_args()
-
-def load_yaml_with_env(path):
-    path = os.path.expandvars(path)
-    path = os.path.expanduser(path)
-    with open(path) as f:
-        content = os.path.expandvars(f.read())
-    return yaml.safe_load(content)
 
 if __name__=='__main__':
     init_args = argparse_args()

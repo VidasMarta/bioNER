@@ -2,8 +2,8 @@ train: /home/${USERNAME}/syn-bioner/data/raw/MeSH_NCBI/NCBItrainset_corpus.txt
 devel: /home/${USERNAME}/syn-bioner/data/raw/MeSH_NCBI/NCBIdevelopset_corpus.txt
 test: /home/${USERNAME}/syn-bioner/data/raw/MeSH_NCBI/NCBItestset_corpus.txt
 
-parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/ncbi/trf/
-histograms: /home/${USERNAME}/syn-bioner/data/ncbi/trf/plots/
+parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/ncbi/trf/
+histograms: /home/${USERNAME}/syn-bioner/data/ncbi/processed/trf/plots/
 
 pcts: ['0.5', '0.2', '0.1'] 
 model: en_core_web_trf

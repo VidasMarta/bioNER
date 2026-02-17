@@ -6,7 +6,7 @@ import subprocess
 import sys
 import spacy
 import random
-
+from dataset_to_json import save_to_json_line
 import yaml
 
 def load_distemist(data_dir):
@@ -129,26 +129,11 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
 
     # Save to new JSON file
     filtered = output_file + f"{corpus_name}_ner_train_{float(pct_train)*100:.0f}pct.json"
-    with open(filtered, "w", encoding="utf-8") as f:
-        for entry in filtered_data:
-            f.write(json.dumps(entry) + "\n")
-
+    save_to_json_line(filtered, filtered_data)
     print(f"Saved {len(filtered_data)} sentences to {output_file}")
 
     return filtered
 
-def argparse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default='/home/${USERNAME}/syn-bioner/bioNER/experiments/data/distemist.yml', help='Path to config file with all arguments.')
-
-    return parser.parse_args()
-
-def load_yaml_with_env(path):
-    path = os.path.expandvars(path)
-    path = os.path.expanduser(path)
-    with open(path) as f:
-        content = os.path.expandvars(f.read())
-    return yaml.safe_load(content)
 
 if __name__=='__main__':
     init_args = argparse_args()

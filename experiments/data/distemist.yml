@@ -1,8 +1,8 @@
-training: /home/${USERNAME}/syn-bioner/data/distemist/training
-test: /home/${USERNAME}/syn-bioner/data/distemist/test_annotated
+training: /home/${USERNAME}/syn-bioner/data/raw/distemist/training
+test: /home/${USERNAME}/syn-bioner/data/raw/distemist/test_annotated
 
 dev_pct: 0.1
-parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/distemist/trf/
+parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/distemist/trf/
 
 pcts: ['0.5', '0.2', '0.1'] 
 model: es_dep_news_trf
