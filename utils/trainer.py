@@ -115,7 +115,7 @@ class Finetuning_Trainer(Trainer):
         self.model = models.ft_bb_BiRNN_CRF(num_tags, model_args, model_args['char_embedding_dim'])
         self.best_model = models.ft_bb_BiRNN_CRF(num_tags, model_args, model_args['char_embedding_dim'])
 
-        if weights != None:
+        if model_args['weights'] != None:
             self.model.load_state_dict(weights)
         
 
@@ -181,7 +181,7 @@ class Normal_Trainer(Trainer):
         self.model = models.BiRNN_CRF(num_tags, model_args, word_embeddings_model.embedding_dim, model_args['char_embedding_dim'])
         self.best_model = models.BiRNN_CRF(num_tags, model_args, word_embeddings_model.embedding_dim, model_args['char_embedding_dim'])
 
-        if weights != None:
+        if model_args['weights'] != None:
             self.model.load_state_dict(weights)
 
 
