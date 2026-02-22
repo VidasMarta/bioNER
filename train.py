@@ -157,7 +157,7 @@ if __name__ == "__main__":
     #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
     settings_args['dataset'] = 'ncbi_disease_json/trf'
-    settings_args['train_filename'] = 'synthetic/corrected_generated_sentences_20260109.jsonl'
+    settings_args['train_filename'] = 'synthetic/corrected_generated_sentences_20260205.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
