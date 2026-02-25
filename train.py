@@ -166,10 +166,11 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
+    model_name_seed = model_name
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         #First train on gen data
-        model_name_seed = model_name + f"_seed{seed}" #TODO kad pokrenem za S2 ovdje staviti model_name_seed += f"_seed{seed} i model_name_seed = model_name prije petlje
+        model_name_seed += f"_seed{seed}" #TODO kad pokrenem za S2 ovdje staviti model_name_seed += f"_seed{seed} i model_name_seed = model_name prije petlje
         if not os.path.exists(settings.MODEL_PATH + f"/{model_name_seed}_best.bin"):
             main(model_name_seed, model_args, settings_args, logger)
         else:
