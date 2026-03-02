@@ -138,7 +138,7 @@ def kshot_generation(
                     text=kshot_text_block
                 )
             sent_gen_time = time.time() - start_time
-            text = save_generated_sentences(args, output_path, response, term, sent_gen_time, used_ids)
+            text = save_generated_sentences(args, output_path, 'a', response, term, sent_gen_time, used_ids)
             generated_json = generation_postprocessing.create_json(args, text, term, nlp, 
                                                                    user_template='disease_annotation_reduced')
             with open(corrected_output_path, 'a', encoding='utf-8') as file:
