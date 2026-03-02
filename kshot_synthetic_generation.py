@@ -50,9 +50,9 @@ def save_generated_sentences(args, output_path, method, response, term, sent_gen
         record["entity"] = []
         record["term"] = term
         record["kshot_example_ids"] = used_ids
-        record["include_pos"] = args.include_pos
-        record["include_dep"] = args.include_dep
-        record["random_seed"] = args.random_seed
+        record["include_pos"] = getattr(args, "include_pos", True)
+        record["include_dep"] = getattr(args, "include_dep", True)
+        record["random_seed"] = getattr(args, "random_seed", 42)
         record["time"] = sent_gen_time
         file.write(json.dumps(record))
         file.write("\n")
@@ -97,12 +97,12 @@ def sample_kshot(args, kshot_pool):
             user_template = 'kshot_no_entity'
 
     # FINAL fallback if both empty (should not happen)
-    print(f"[INFO] wnat no entity: {want_no_entity}")
-    print(f"[INFO] pool: {len(pool)}")
+    args.logger.info(f"[INFO] want no entity: {want_no_entity}")
+    args.logger.info(f"[INFO] pool: {len(pool)}")
     if len(pool) == 0:
         kshot_text_block = ""
         used_ids = []
-        print("[DEBUG] This shouldn't be happening...")
+        args.logger.info("[DEBUG] This shouldn't be happening...")
     else:
         kshot_text_block, used_ids = utils.sample_k_examples(args, pool)
 
@@ -113,10 +113,13 @@ def kshot_generation(
     iter_output: str, 
     term_list: List[tuple], 
     system_template: str = 'role_prompt',
-    user_template: str = 'genre_prompt',
     nlp: Any = None
     ) -> str:
     output_path, corrected_output_path = setup(args, iter_output)
+    args.logger.info(f"[INFO] Output path: {output_path}")
+    args.logger.info(f"[INFO] Corrected output path: {corrected_output_path}")
+    # print(f"[INFO] Output path: {output_path}",
+    #       f"\n[INFO] Corrected output path: {corrected_output_path}")
     kshot_pool = load_kshot_examples(args, args.kshot_pool)
     # open(output_path, "w").close()  
 
@@ -126,7 +129,7 @@ def kshot_generation(
             print(f"[INFO] Generating sentence for term: {term[0]}")
             kshot_text_block, user_template, used_ids = sample_kshot(args, kshot_pool)
             args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
-
+            
             response = prompt_generation.message_request(
                     args,
                     term[0],
@@ -186,9 +189,9 @@ def main(args: argparse.Namespace) -> None:
         
     nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
     # TODO: system_template, user_template to args
+    # Defined later depends on the ration of no entitiy sentences
     kshot_generation(args, '', term_list, 
-                              system_template='role_sent_type_prompt',
-                              user_template='genre_new_prompt',
+                              system_template=args.system_template,
                               nlp = nlp)
 
 

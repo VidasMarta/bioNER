@@ -113,6 +113,7 @@ PROMPT = {
         Your task is to produce just the sentence.
         Sentence:
         """,
+
     'kshot_no_entity': """
         Generate one sentence that does NOT contain the disease or diagnosis, but resembles the syntax and tone of the examples.
         Requirements:
@@ -231,7 +232,7 @@ class PromptBuilder:
             'role_sent_type_prompt', 'annotation'
         user_templates: str key to dictionary 'initial_prompt', 'genre_prompt',
             'disease_annotation', 'disease_annotation_reduced', 'kshot_num_sent_entity'
-            'kshot_no_entity', 'kshot_entity', 'genre_new_prompt'
+            'kshot_no_entity', 'kshot_entity', 'genre_syn_generation_new'
     Output:
         
     """
@@ -263,7 +264,7 @@ class PromptBuilder:
             'kshot_num_sent_entity':PROMPT['kshot_num_sent_entity'],
             'kshot_no_entity':PROMPT['kshot_no_entity'],
             'kshot_entity':PROMPT['kshot_entity'],
-            'genre_new_prompt':PROMPT['genre_syn_generation_new'],
+            'genre_syn_generation_new':PROMPT['genre_syn_generation_new'],
         }
         
         self.randomization_options = {
@@ -332,8 +333,7 @@ class PromptBuilder:
         user_content = self.get_user_prompt(
             user_template, condition, text=text, randomize=user_randomize, 
             number_of_sentences=number_of_sentences, **user_kwargs
-        )
-        
+        )        
         return [
             {"role": "system", "content": system_content},
             {"role": "user", "content": user_content}
@@ -390,7 +390,6 @@ def message_request(args: argparse.Namespace,
     args.logger.info(f'Generated SYSTEM prompt: {messages[0]["content"]}')
     args.logger.info(f'Generated USER prompt: {messages[1]["content"]}')
     prompt = format_chat(messages)
-    
     # Send to llama.cpp HTTP server
     response = requests.post(
         f"{args.server_url}/completion",
@@ -402,9 +401,9 @@ def message_request(args: argparse.Namespace,
         })
     
     if args.verbose:
-        args.logger.info('Translation response:')
+        args.logger.info('API response:')
         args.logger.info(f'Response status code: {response.status_code}')
-        args.logger.info(f'System prompt used: {messages[0]["content"][:100]}...')
+        # args.logger.info(f'System prompt used: {messages[0]["content"][:100]}...')
         args.logger.info(response.json()['content'])
     
     if response.status_code != 200:
@@ -490,7 +489,7 @@ if __name__ == "__main__":
     print('+'*120)
     messages = builder.build_messages(
         system_template='role_sent_type_prompt',
-        user_template='genre_new_prompt',
+        user_template='genre_syn_generation_new',
         condition=condition,
         text="The patient was diagnosed with diabetes mellitus type 2 and hypertension."
     )
