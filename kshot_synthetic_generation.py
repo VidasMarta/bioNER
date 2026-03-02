@@ -139,11 +139,14 @@ def kshot_generation(
                 )
             sent_gen_time = time.time() - start_time
             text = save_generated_sentences(args, output_path, 'a', response, term, sent_gen_time, used_ids)
+            print("saved to ", output_path)
             generated_json = generation_postprocessing.create_json(args, text, term, nlp, 
-                                                                   user_template='disease_annotation_reduced')
+                                            user_template='disease_annotation_reduced')
+            print("created json: ", generated_json)
             with open(corrected_output_path, 'a', encoding='utf-8') as file:
                 file.write(json.dumps(generated_json))
                 file.write("\n")
+            print("saved corrected to ", corrected_output_path)
             with open(os.path.join(args.output_directory, 'term_list.txt'), 'a') as f:
                 f.write(term + '\n')
 
