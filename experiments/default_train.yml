@@ -15,6 +15,7 @@ model:
   early_stopping: 10 #patience preporuca se izmedu 10 i 100 (obicno 10 ili 20)
   attention: true #if false, ignore att_* params
   att_num_of_heads: 4 #rule of thumb - d_model/h = 256 (za d_model=2*512 to je postavljenih 4)
+  weights: None
 
 
 # Embedding and Dataset Configuration
