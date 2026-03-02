@@ -21,5 +21,5 @@ include_pos: false #true
 include_dep: false #true
 
 verbose: true #false
-test: true
+test: false
 
