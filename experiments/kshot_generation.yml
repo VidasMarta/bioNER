@@ -11,7 +11,7 @@ random_seed: 42
 
 system_template: 'role_sent_type_prompt'
 kshot_size: 3
-kshot_pool: data/processed/ncbi/trf/ncbi_ner_train.json
+kshot_pool: data/processed/ncbi/trf/syntax_features_sent_tree_head.json
 no_entity_ratio: 0.17 #calculated on whole NCBI train
 
 temperature: 0
