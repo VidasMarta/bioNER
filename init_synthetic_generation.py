@@ -138,7 +138,7 @@ def main(args: argparse.Namespace) -> None:
     # TODO: system_template, user_template to args
     generate_sentence_samples(args, term_list, 
                               system_template='role_sent_type_prompt',
-                              user_template='genre_new_prompt',
+                              user_template='genre_syn_generation_new',
                               nlp = nlp)
 
 if __name__ == "__main__":

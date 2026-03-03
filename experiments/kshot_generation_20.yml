@@ -1,16 +1,17 @@
-disease_file: data/SNOMEDCT/concepts_filtered.csv
+disease_file: data/KB/SNOMEDCT/concepts_filtered.csv
 obo_file_path: false
-output_directory: data/kshot_syn_generation_20pct
+output_directory: data/synthetic/kshot_syn_generation_20pct
 server_url: http://0.0.0.0:8484
-pairs_file_path: data/hetionet/all.jsonl
+pairs_file_path: data/KB/hetionet/all.jsonl
 
 spacy_model: en_core_web_trf
 
 generate_k: 25000 #800000
 random_seed: 42
 
+system_template: 'role_sent_type_prompt'
 kshot_size: 3
-kshot_pool: data/ncbi/trf/ncbi_ner_train_20pct.json
+kshot_pool: data/processed/ncbi/trf/ncbi_ner_train_20pct.json
 no_entity_ratio: 0.17 #calculated on whole NCBI train
 
 temperature: 0
