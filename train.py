@@ -137,7 +137,7 @@ if __name__ == "__main__":
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         new_model_name = model_name + f"_seed{seed}"
-        main(model_name, model_args, settings_args, logger)
+        main(new_model_name, model_args, settings_args, logger)
         
     
     logger.calculate_mean_stddev()'''
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "kshot_10pct_C_L_5_A_with_20NCBI_ft" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "kshot_10pct_C_L_5_A_with_10NCBI_ft" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -174,6 +174,7 @@ if __name__ == "__main__":
         #First train on gen data
         model_name_seed += f"_seed{seed}" #TODO kad pokrenem za S2 ovdje staviti model_name_seed += f"_seed{seed} i model_name_seed = model_name prije petlje
         if not os.path.exists(settings.MODEL_PATH + f"/{model_name_seed}_best.bin"):
+            model_args['weights'] = None
             main(model_name_seed, model_args, settings_args, logger)
         else:
             print("Ima predtreniranog")
@@ -183,7 +184,7 @@ if __name__ == "__main__":
         model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json/trf'
-        settings_args_2['train_filename'] = 'train_20pct.json' # 'train.json', train_50pct.json
+        settings_args_2['train_filename'] = 'train_10pct.json' # 'train.json', train_50pct.json
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
