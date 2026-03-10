@@ -1,0 +1,16 @@
+training_emea: /home/${USERNAME}/syn-bioner/data/quaero/train/EMEA_train_bioc
+devel_emea: /home/${USERNAME}/syn-bioner/data/quaero/dev/EMEA_dev_bioc
+test_emea: /home/${USERNAME}/syn-bioner/data/quaero/test/EMEA_test_bioc
+parsed_mesh_folder_emea: /home/${USERNAME}/syn-bioner/data/processed/quaero/trf/emea/
+
+training_medline: /home/${USERNAME}/syn-bioner/data/quaero/train/MEDLINE_train_bioc
+devel_medline: /home/${USERNAME}/syn-bioner/data/quaero/dev/MEDLINE_dev_bioc
+test_medline: /home/${USERNAME}/syn-bioner/data/quaero/test/MEDLINE_test_bioc
+parsed_mesh_folder_medline: /home/${USERNAME}/syn-bioner/data/processed/quaero/trf/medline/
+
+dev_pct: 0.1
+
+pcts: ['0.5', '0.2', '0.1'] 
+model: fr_core_news_sm
+
+

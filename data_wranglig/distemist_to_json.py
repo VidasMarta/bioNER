@@ -6,8 +6,8 @@ import subprocess
 import sys
 import spacy
 import random
-from dataset_to_json import save_to_json_line
-import yaml
+import argparse
+from dataset_to_json import *
 
 def load_distemist(data_dir):
     # Collect text files
@@ -133,6 +133,7 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
     print(f"Saved {len(filtered_data)} sentences to {output_file}")
 
     return filtered
+
 
 
 if __name__=='__main__':
