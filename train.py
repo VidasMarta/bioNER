@@ -128,7 +128,7 @@ def print_args(model_args, settings_args):
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
     model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'k_shot/50_pct/'
+    settings_args['dataset'] = 'k_shot/100_pct/'
     settings_args['train_filename'] = 'corrected_generated_sentences_20260304.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         #First train on gen data
-        model_name_seed += f"_seed{seed}" #TODO kad pokrenem za S2 ovdje staviti model_name_seed += f"_seed{seed} i model_name_seed = model_name prije petlje
+        model_name_seed += f"_seed{seed}" 
         if not os.path.exists(settings.MODEL_PATH + f"/{model_name_seed}_best.bin"):
             model_args['weights'] = None
             main(model_name_seed, model_args, settings_args, logger)
