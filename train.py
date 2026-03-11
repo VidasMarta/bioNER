@@ -128,8 +128,8 @@ def print_args(model_args, settings_args):
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
     model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'k_shot/20_pct/'
-    settings_args['train_filename'] = 'corrected_generated_sentences_20260303.jsonl'
+    settings_args['dataset'] = 'k_shot/50_pct/'
+    settings_args['train_filename'] = 'corrected_generated_sentences_20260304.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
