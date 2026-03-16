@@ -126,8 +126,9 @@ def setup_logger(output_directory, verbose):
 
 # TODO: move to utils and edit for DO, SNOMED CT and DO pairs and triplets.
 # Structure so multiple languages can be read.
-def generate_term_list(disease_file: str, 
-                       verbose: bool = True) -> List[Tuple[str]]:
+def generate_term_list(disease_file: str,
+                       verbose: bool = True,
+                       ) -> List[Tuple[str]]:
     entities = []
     data = []
     # Read the file (one dict per line)

@@ -7,7 +7,8 @@ import xml.etree.ElementTree as ET
 import spacy
 from collections import defaultdict
 import argparse
-from dataset_to_json import argparse_args, save_to_json_line, load_yaml_with_env
+from .dataset_to_json import argparse_args, save_to_json_line, load_yaml_with_env
+# from .dataset_to_json import *
 
 def parse_bioc_file(xml_path):
     """

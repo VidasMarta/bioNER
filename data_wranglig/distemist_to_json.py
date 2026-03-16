@@ -7,7 +7,7 @@ import sys
 import spacy
 import random
 import argparse
-from dataset_to_json import *
+from .dataset_to_json import *
 
 def load_distemist(data_dir):
     # Collect text files
@@ -139,6 +139,7 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
 if __name__=='__main__':
     init_args = argparse_args()
     yaml_args = load_yaml_with_env(init_args.config_file,)
+    print(yaml_args)
     args = argparse.Namespace(**yaml_args)
 
     if not spacy.util.is_package(args.model):

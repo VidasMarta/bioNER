@@ -17,8 +17,12 @@ SYSTEM_PROMPTS = {
         Output raw plain text only. No formatting, emojis, or commentary. 
         """,
     'role_sent_type':"""
-        You are a careful {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence. 
-        Output raw plain text only. No formatting, emojis, or commentary.
+        You are a careful {language} {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence in {language}. 
+        Output {language} raw plain text only. No formatting, emojis, or commentary.
+        """,
+    'role_sent_type_sp':"""
+        You are a careful spanish {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence in spanish. 
+        Output spanish raw plain text only. No formatting, emojis, or commentary.
         """,
     'annotation':"""You are a carefull medical expert in finding
         medical entities in text. You take context in to account when 
@@ -90,11 +94,17 @@ PROMPT = {
         Your task is to generate next sentence containing following disease or diagnosis <{condition}>. \n\n""",
         
     'genre_syn_generation_new' : """
+        You are a {language} medical expert generating realistic clinical language. For the given {condition}, 
+        infer a plausible clinical context within a {genre}. Use semantic memory retrieval, contextual inference, 
+        and perspective-taking to avoid generic or templated phrasing. Generate exactly one medically appropriate sentence 
+        using {condition} as it would appear in a real medical document. Avoid diagnostic boilerplate (e.g., “diagnosed with”). 
+        Do not use the words patient, individual, or subject. Output plain {language} text only. \n\n""",    
+    'genre_syn_generation_new_sp' : """
         You are a medical expert generating realistic clinical language. For the given {condition}, 
         infer a plausible clinical context within a {genre}. Use semantic memory retrieval, contextual inference, 
         and perspective-taking to avoid generic or templated phrasing. Generate exactly one medically appropriate sentence 
         using {condition} as it would appear in a real medical document. Avoid diagnostic boilerplate (e.g., “diagnosed with”). 
-        Do not use the words patient, individual, or subject. Output plain text only. \n\n""",
+        Do not use the words patient, individual, or subject. Output plain text in spanish language only. \n\n""",
         
         # genre = anamnesis, abstract, case-study
         # We want to check if there are additional diagnoses in produced sentence 
@@ -110,7 +120,7 @@ PROMPT = {
         Use the following examples as inspiration for linguistic style and structure from provided sentence, part of speech tags (POS) and dependency parsing tags (DEP).
         Examples:
         {text}
-        Your task is to produce just the sentence.
+        Your task is to produce just the sentence in {language}.
         Sentence:
         """,
 
@@ -122,7 +132,7 @@ PROMPT = {
         Use the following examples as inspiration for linguistic style and structure from provided sentence, part of speech tags (POS) and dependency parsing tags (DEP).
         Examples:
         {text}
-        Your task is to produce just the sentence that does not contain any disease or diagnosis.
+        Your task is to produce just the sentence in {language} that does not contain any disease or diagnosis.
         Sentence:
         """,
         
@@ -251,6 +261,11 @@ class PromptBuilder:
                 role_variations=[role.value for role in Role],
                 sent_type_variations=[sent_type.value for sent_type in SentType],
             ),
+            'role_sent_type_prompt_sp': PromptTemplate(
+                base_template=SYSTEM_PROMPTS['role_sent_type_sp'],
+                role_variations=[role.value for role in Role],
+                sent_type_variations=[sent_type.value for sent_type in SentType],
+            ),
             'annotation': PromptTemplate(
                 base_template=SYSTEM_PROMPTS['annotation']
             ),
@@ -287,7 +302,7 @@ class PromptBuilder:
         }
     
     def get_system_prompt(self, template_key: str, role: str = None, sent_type: str = None,
-                         randomize: bool = False, **kwargs) -> str:
+                         randomize: bool = False, language: str = 'english',**kwargs) -> str:
         """Generate system prompt with optional randomization"""
         if template_key not in self.system_templates:
             raise ValueError(f"Template '{template_key}' not found. Available: {list(self.system_templates.keys())}")
@@ -297,11 +312,11 @@ class PromptBuilder:
             # Use provided values or defaults
             role = role or (template.role_variations[0] if template.role_variations else "medical professional")
             sent_type = sent_type or (template.sent_type_variations[0] if template.sent_type_variations else "simple")
-        return template.format(role=role, sent_type=sent_type, **kwargs)
+        return template.format(role=role, sent_type=sent_type, language=language, **kwargs)
     
     def get_user_prompt(self, template_key: str, condition: str, 
                         text: Optional[str] = None, randomize: bool = True, 
-                        number_of_sentences: int = 1, **kwargs) -> str:
+                        number_of_sentences: int = 1, language='english', **kwargs) -> str:
         """Generate user prompt with optional randomization"""
         if template_key not in self.user_templates:
             raise ValueError(f"Template '{template_key}' not found. Available: {list(self.user_templates.keys())}")
@@ -313,7 +328,9 @@ class PromptBuilder:
                 kwargs['genre'] = random.choice(self.randomization_options['genre'])
                 kwargs['sent_type'] = random.choice(self.randomization_options['sent_type'])
                 kwargs['first_sentence'] = random.choice(self.randomization_options['first_sentence'])
-        return template.format(condition=condition, text=text, number_of_sentences=number_of_sentences, **kwargs)
+        return template.format(condition=condition, text=text, 
+                               number_of_sentences=number_of_sentences, 
+                               language=language, **kwargs)
 
     def build_messages(self, system_template: str, 
                        user_template: str, 
@@ -324,15 +341,16 @@ class PromptBuilder:
                       system_kwargs: Dict = {}, 
                       user_kwargs: Dict = {},
                       number_of_sentences: int = 1,
+                      language: str = 'english',
                       ) -> List[Dict[str, Any]]:
         """Build complete message array for API request"""
         
         system_content = self.get_system_prompt(
-            system_template, randomize=system_randomize, **system_kwargs
+            system_template, randomize=system_randomize, language=language, **system_kwargs
         )
         user_content = self.get_user_prompt(
             user_template, condition, text=text, randomize=user_randomize, 
-            number_of_sentences=number_of_sentences, **user_kwargs
+            number_of_sentences=number_of_sentences, language=language, **user_kwargs
         )        
         return [
             {"role": "system", "content": system_content},
@@ -386,6 +404,7 @@ def message_request(args: argparse.Namespace,
         text=text,
         user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         number_of_sentences=getattr(args, 'num_sentences', 1), 
+        language=getattr(args, 'language', 'english'),
     )
     args.logger.info(f'Generated SYSTEM prompt: {messages[0]["content"]}')
     args.logger.info(f'Generated USER prompt: {messages[1]["content"]}')

@@ -1,0 +1,26 @@
+disease_file: data/KB/SNOMEDCT/concepts_filtered_fr.csv
+obo_file_path: false
+output_directory: data/synthetic/quaero/kshot_syn_generation_10pct
+server_url: http://0.0.0.0:8484
+pairs_file_path: ''
+
+spacy_model: fr_dep_news_trf
+
+generate_k: 25000 #800000
+random_seed: 42
+
+system_template: role_sent_type_prompt
+language: french
+kshot_size: 3
+kshot_pool: data/processed/quaero/trf/quaero_ner_train_10pct.json
+no_entity_ratio: 0.1 #calculated on whole NCBI train
+
+temperature: 0
+max_tokens: 500
+
+include_pos: false #true
+include_dep: false #true
+
+verbose: true #false
+test: false
+

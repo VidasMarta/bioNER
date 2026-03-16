@@ -343,7 +343,60 @@ class DistanceMatrixGenerator:
             # Compressed NumPy format (can include sentence_ids as metadata)
             np.savez_compressed(output_path, distance_matrix=distance_matrix, sentence_ids=sentence_ids)
             print(f"✓ Saved to {output_path} (Compressed NumPy format)")
+            
+    @staticmethod
+    def load_distance_matrix(input_path: str) -> Tuple[np.ndarray, List[int]]:
+        """
+        Load distance matrix from file. Format is inferred from file extension.
+
+        Args:
+            input_path: Path to the saved distance matrix file.
+                        Supported extensions: .csv, .npy, .txt, .npz
+
+        Returns:
+            Tuple of (distance_matrix: np.ndarray, sentence_ids: List[int])
+            Note: .npy and .txt formats do not store sentence_ids —
+                a 0-based integer range is returned in that case.
+        """
+        input_path = Path(input_path)
+
+        if not input_path.exists():
+            raise FileNotFoundError(f"Distance matrix file not found: {input_path}")
+
+        suffix = input_path.suffix.lower()
+
+        if suffix == '.csv':
+            df = pd.read_csv(input_path, index_col=0)
+            sentence_ids = list(df.index.astype(int))
+            distance_matrix = df.values.astype(float)
+
+        elif suffix == '.npy':
+            distance_matrix = np.load(input_path)
+            sentence_ids = list(range(len(distance_matrix)))  # no metadata stored
+
+        elif suffix == '.txt':
+            distance_matrix = np.loadtxt(input_path, delimiter=',')
+            sentence_ids = list(range(len(distance_matrix)))  # no metadata stored
+
+        elif suffix == '.npz':
+            data = np.load(input_path, allow_pickle=True)
+            if 'distance_matrix' not in data:
+                raise KeyError(f"'distance_matrix' array not found in {input_path}. "
+                            f"Available keys: {list(data.keys())}")
+            distance_matrix = data['distance_matrix']
+            sentence_ids = list(data['sentence_ids']) if 'sentence_ids' in data \
+                        else list(range(len(distance_matrix)))
+
+        else:
+            raise ValueError(f"Unsupported file extension '{suffix}'. "
+                            f"Expected one of: .csv, .npy, .txt, .npz")
+
+        print(f"✓ Loaded from {input_path} — "
+            f"shape {distance_matrix.shape}, {len(sentence_ids)} sentence IDs")
+
+        return distance_matrix, sentence_ids
     
+
     @staticmethod
     def print_distance_matrix(distance_matrix: np.ndarray,
                              sentence_ids: List[int],
@@ -861,7 +914,7 @@ def main():
         verbose=True
     )
     DistanceMatrixGenerator.save_distance_matrix(
-        dist_matrix_simple, ids, f"{OUTPUT_DIR}/distance_matrix_{basename}.csv", format='csv'
+        dist_matrix_simple, ids, f"{OUTPUT_DIR}/distance_matrix_{basename}_{dist_matrix_simple.shape[0]}.npz", format='npz'
     )
     DistanceAnalyzer.print_statistics(dist_matrix_simple)
     # Dz distance (z statistics)
@@ -883,7 +936,7 @@ def main():
             verbose=True
             )
         dist, sentence_ids = DistanceMatrixGenerator.create_distance_matrix_nm(results, results_synth)
-        DistanceMatrixGenerator.save_distance_matrix(dist, sentence_ids, f"{OUTPUT_DIR_SYNTH}/distance_matrix_nm_{}.npz", format='npz')
+        DistanceMatrixGenerator.save_distance_matrix(dist, sentence_ids, f"{OUTPUT_DIR_SYNTH}/distance_matrix_nm_{dist.shape[0]}_{dist.shape[1]}.npz", format='npz')
     print("\n✓ All distance matrices saved!")
 
 

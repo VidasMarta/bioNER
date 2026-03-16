@@ -6,5 +6,7 @@ parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/distemist/trf/
 
 pcts: ['0.5', '0.2', '0.1'] 
 model: es_dep_news_trf
+# model: es_core_news_sm
+
 
 
