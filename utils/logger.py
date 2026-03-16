@@ -61,7 +61,7 @@ class Logger:
                     r_start = line.index("recall:") + len("recall:")
                     r_end = line.index(",", r_start)
                     r = float(line[r_start:r_end].strip())
-                    recall_scores.append(f1)
+                    recall_scores.append(r)
 
                     f1s_start = line.index("f1_score(strict):") + len("f1_score(strict):")
                     f1s_end = line.index(",", f1s_start)
