@@ -142,7 +142,7 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
     filtered_data = [item for item in data if item["document_id"] in sampled_ids]
 
     # Save to new JSON file
-    filtered = output_file + f"{corpus_name}_ner_train_{float(pct_train)*100:.0f}pct.json"
+    filtered = output_file + f"{corpus_name}_ner_train_{float(pct_train)*100:.0f}pct.jsonl"
     save_to_json_line(filtered, filtered_data)
     print(f"Saved {len(filtered_data)} sentences to {output_file}")
 
