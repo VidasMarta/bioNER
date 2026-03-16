@@ -8,6 +8,8 @@ devel_medline: /home/${USERNAME}/syn-bioner/data/raw/quaero/QUAERO_BioC/corpus/d
 test_medline: /home/${USERNAME}/syn-bioner/data/raw/quaero/QUAERO_BioC/corpus/test/MEDLINE_test_bioc
 parsed_mesh_folder_medline: /home/${USERNAME}/syn-bioner/data/processed/quaero/trf/medline/
 
+parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/quaero/trf/
+
 dev_pct: 0.1
 
 pcts: ['0.5', '0.2', '0.1'] 

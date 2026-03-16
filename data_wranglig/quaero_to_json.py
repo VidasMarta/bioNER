@@ -7,8 +7,8 @@ import xml.etree.ElementTree as ET
 import spacy
 from collections import defaultdict
 import argparse
-from .dataset_to_json import argparse_args, save_to_json_line, load_yaml_with_env
-# from .dataset_to_json import *
+#from .dataset_to_json import argparse_args, save_to_json_line, load_yaml_with_env
+from dataset_to_json import *
 
 def parse_bioc_file(xml_path):
     """
@@ -98,9 +98,25 @@ def convert_to_bio(texts, annotations, nlp):
                         entity_tokens.append(tok.text)
                 if len(entity_tokens) > 0:
                     entities.append(" ".join(entity_tokens))
+
+            idx_to_delete = []
+            for i, tag in enumerate(tags): 
+                if tokens[i].strip() == "":
+                    idx_to_delete.append(i)
+
+            clean_tags = []
+            clean_tokens = []
+            for i, (tag, token) in enumerate(zip(tags, tokens)):
+                if i not in idx_to_delete:
+                    clean_tags.append(tag)
+                    clean_tokens.append(token) 
+            
+            if len(clean_tokens) == 0:
+                continue
+
             data.append({
-                "tokens": tokens,
-                "tags": tags, 
+                "tokens": clean_tokens,
+                "tags": clean_tags, 
                 "entities": entities,
                 "document_id": doc_id
             })
@@ -130,7 +146,7 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
     save_to_json_line(filtered, filtered_data)
     print(f"Saved {len(filtered_data)} sentences to {output_file}")
 
-    return filtered
+    return filtered, filtered_data
 
 def save_json(data, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -141,7 +157,7 @@ def save_json(data, output_path):
 
 if __name__ == "__main__":
     init_args = argparse_args()
-    yaml_args = load_yaml_with_env(init_args.config_file,)
+    yaml_args = load_yaml_with_env(init_args.config_file)
     args = argparse.Namespace(**yaml_args)
 
     if not spacy.util.is_package(args.model):
@@ -153,26 +169,28 @@ if __name__ == "__main__":
 
     #train
     texts, annotations = parse_bioc_file(args.training_emea)
-    data = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_train.jsonl"), data)
+    data_emea_train = convert_to_bio(texts, annotations, nlp)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_train.jsonl"), data_emea_train)
 
     #devel
     texts, annotations = parse_bioc_file(args.devel_emea)
-    data = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_dev.jsonl"), data)
+    data_emea_devel = convert_to_bio(texts, annotations, nlp)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_dev.jsonl"), data_emea_devel)
 
     #test
     texts, annotations = parse_bioc_file(args.test_emea)
-    data = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_test.jsonl"), data)
+    data_emea_test = convert_to_bio(texts, annotations, nlp)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_test.jsonl"), data_emea_test)
 
     # Filter by text file
+    filtered_emea = {}
     subset_pcts = sorted(args.pcts, reverse=True)
     available_text_files = args.parsed_mesh_folder_emea + "emea_train.jsonl"
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
-        filtered_text_files = filter_by_text_file("emea", available_text_files, args.parsed_mesh_folder_emea, samples_pct, pct)
+        filtered_text_files, filtered_data = filter_by_text_file("emea", available_text_files, args.parsed_mesh_folder_emea, samples_pct, pct)
+        filtered_emea.setdefault(pct, filtered_data)
         available_text_files = filtered_text_files
         previous_pct = pct
 
@@ -180,26 +198,40 @@ if __name__ == "__main__":
     #MEDLINE
     os.makedirs(args.parsed_mesh_folder_medline, exist_ok=True)
     texts, annotations = parse_bioc_file(args.training_medline)
-    data = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_train.jsonl"), data)
+    data_medline_train = convert_to_bio(texts, annotations, nlp)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_train.jsonl"), data_medline_train)
 
     #devel
     texts, annotations = parse_bioc_file(args.devel_medline)
-    data = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_dev.jsonl"), data)
+    data_medline_devel = convert_to_bio(texts, annotations, nlp)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_dev.jsonl"), data_medline_devel)
 
     #test
     texts, annotations = parse_bioc_file(args.test_medline)
-    data = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_test.jsonl"), data)
+    data_medline_test = convert_to_bio(texts, annotations, nlp)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_test.jsonl"), data_medline_test)
 
     # Filter by text file
+    filtered_medline = {}
     subset_pcts = sorted(args.pcts, reverse=True)
     available_text_files = args.parsed_mesh_folder_medline + "medline_train.jsonl"
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
-        filtered_text_files = filter_by_text_file("medline", available_text_files, args.parsed_mesh_folder_medline, samples_pct, pct)
+        filtered_text_files, filtered_data = filter_by_text_file("medline", available_text_files, args.parsed_mesh_folder_medline, samples_pct, pct)
+        filtered_medline.setdefault(pct, filtered_data)
         available_text_files = filtered_text_files
         previous_pct = pct
+
+
+
+    #Save joined medline and emea to quaero.
+    save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_train.jsonl"), data_medline_train + data_emea_train)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_dev.jsonl"), data_medline_devel + data_emea_devel)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_test.jsonl"), data_medline_test + data_emea_test)
+    for pct in filtered_emea.keys():
+        save_to_json_line(os.path.join(args.parsed_mesh_folder, f"quaero_ner_train_{float(pct)*100:.0f}pct.json"),
+                        filtered_emea.get(pct) + filtered_medline.get(pct))
+
+
     
