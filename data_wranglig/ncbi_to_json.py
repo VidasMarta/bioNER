@@ -62,7 +62,7 @@ def create_and_save_json(abstracts, annotations, output_file, nlp):
 
         doc = nlp(text)
         for sent in doc.sents:
-            doc_sent = nlp(sent)
+            doc_sent = nlp(sent.text)
             pos_tags = [token.pos_ for token in doc_sent]
             dep_rels = [token.dep_ for token in doc_sent]
             parents = [token.head.i for token in doc_sent] #index of parent token

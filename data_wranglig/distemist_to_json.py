@@ -48,11 +48,11 @@ def parse_to_bio(texts, ann, nlp):
         ents.sort(key=lambda x: x["start"])
 
         for sent in doc.sents:
-            doc_sent = nlp(sent)
+            doc_sent = nlp(sent.text)
             pos_tags = [token.pos_ for token in doc_sent]
             dep_rels = [token.dep_ for token in doc_sent]
             parents = [token.head.i for token in doc_sent] #index of parent token
-            
+
             tokens = [t.text for t in sent]
             if len(tokens) == 1: # \n novi red "rečenice"
                 continue
