@@ -69,6 +69,11 @@ def convert_to_bio(texts, annotations, nlp):
         ents = annotations.get(doc_id, [])
 
         for sent in doc.sents:
+            doc_sent = nlp(sent)
+            pos_tags = [token.pos_ for token in doc_sent]
+            dep_rels = [token.dep_ for token in doc_sent]
+            parents = [token.head.i for token in doc_sent] #index of parent token
+
             tokens = [tok.text for tok in sent]
             tags = [2] * len(tokens)
             entities = []
@@ -118,7 +123,10 @@ def convert_to_bio(texts, annotations, nlp):
                 "tokens": clean_tokens,
                 "tags": clean_tags, 
                 "entities": entities,
-                "document_id": doc_id
+                "document_id": doc_id,
+                "pos": pos_tags,
+                "dep": dep_rels,
+                "parents": parents,
             })
 
     return data
@@ -162,7 +170,7 @@ if __name__ == "__main__":
 
     if not spacy.util.is_package(args.model):
         subprocess.run([sys.executable, "-m", "spacy", "download", args.model])
-    nlp = spacy.load(args.model, disable=["ner", "parser", "tagger"])
+    nlp = spacy.load(args.model, disable=["ner", "tagger"])
     nlp.add_pipe("sentencizer")
 
     os.makedirs(args.parsed_mesh_folder_emea, exist_ok=True)

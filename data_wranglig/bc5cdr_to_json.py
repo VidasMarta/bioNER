@@ -65,6 +65,11 @@ def create_and_save_json(abstracts, annotations, output_file, nlp):
 
         doc = nlp(text)
         for sent in doc.sents:
+            doc_sent = nlp(sent)
+            pos_tags = [token.pos_ for token in doc_sent]
+            dep_rels = [token.dep_ for token in doc_sent]
+            parents = [token.head.i for token in doc_sent] #index of parent token
+
             sent_start = sent.start_char
             sent_end = sent.end_char
             tokens = [t.text for t in sent]
@@ -102,7 +107,10 @@ def create_and_save_json(abstracts, annotations, output_file, nlp):
                 "tags": tags,
                 "entities": list(set(entities_in_sent)),
                 "codes": list(set(codes_in_sent)),
-                "abstract_id": pmid
+                "document_id": pmid,
+                "pos": pos_tags,
+                "dep": dep_rels,
+                "parents": parents
             })
 
         # Step 4: Save to JSON file
@@ -170,7 +178,7 @@ if __name__=='__main__':
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
-        filtered_abstracts = filter_by_abstract_ids("bc5cdr", available_abstracts, args.parsed_mesh_folder, samples_pct, pct)
+        filtered_abstracts = filter_by_document_ids("bc5cdr", available_abstracts, args.parsed_mesh_folder, samples_pct, pct)
         available_abstracts = filtered_abstracts
         previous_pct = pct
 
