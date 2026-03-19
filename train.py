@@ -164,7 +164,7 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "kshot_50pct_C_L_5_A_with_20NCBI_ft" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "kshot_100pct_C_L_5_A_with_20NCBI_ft" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
