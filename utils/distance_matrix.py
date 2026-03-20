@@ -39,39 +39,6 @@ class SentenceDistance:
         """
         return abs(d1 - d2)
     
-    @staticmethod
-    def omega_distance(d_1: float, n_words1: int, d_min_1: float, 
-                       d_2: float, n_words2: int, d_min_2: float) -> float:
-        """
-        Simple absolute difference between D values
-        
-        Args:
-            d1: D value of sentence 1
-            d2: D value of sentence 2
-            D1_min: minimum theoretical value
-            D2_min: minimum theoretical value
-            Drla1 = 1/3*(n_words1**2-1): uniformly random linear arrangement of a certain tree
-            Drla1 = 1/3*(n_words2**2-1): uniformly random linear arrangement of a certain tree
-            
-        Returns:
-            Distance: |omega1 - omega2|
-        """
-        D_rla_1 = 1/3*(n_words1**2-1)
-        D_rla_2 = 1/3*(n_words2**2-1)
-        omega_1 = ( D_rla_1 - d_1 ) / ( D_rla_1 - d_min_1)
-        omega_2 = ( D_rla_2 - d_2 ) / ( D_rla_2 - d_min_2)
-        
-        return abs(omega_1 - omega_2)
-    
-    @staticmethod
-    def dz_distance(d_1: float, n_words1: int, 
-                    d_2: float, n_words2: int, 
-                    d_min_2: float = None, d_min_1: float = None) -> float:
-        var1 = (1 / 180 ) * (n_words1**2 - 1) * (n_words1**2 - 4) 
-        var2 = (1 / 180 ) * (n_words2**2 - 1) * (n_words2**2 - 4) 
-        D_rla_1 = 1/3 * (n_words1**2-1)
-        D_rla_2 = 1/3 * (n_words2**2-1)
-        return abs(( d_1 - D_rla_1) / np.sqrt(var1) - (d_2 - D_rla_2) / np.sqrt(var2))
 
     @staticmethod
     def normalized_D_distance(d1: float, n_words1: int, 
@@ -109,58 +76,6 @@ class SentenceDistance:
             Distance: |avg_dist1 - avg_dist2|
         """
         return abs(avg_dist1 - avg_dist2)
-    
-    @staticmethod
-    def euclidean_distance(d1: float, n_words1: int, avg_dist1: float,
-                          d2: float, n_words2: int, avg_dist2: float) -> float:
-        """
-        Euclidean distance in 3D space: (D, n_words, avg_distance)
-        
-        Args:
-            d1, n_words1, avg_dist1: Features of sentence 1
-            d2, n_words2, avg_dist2: Features of sentence 2
-            
-        Returns:
-            Euclidean distance
-        """
-        return np.sqrt((d1 - d2)**2 + (n_words1 - n_words2)**2 + (avg_dist1 - avg_dist2)**2)
-    
-    @staticmethod
-    def custom_distance(d1: float, n_words1: int, avg_dist1: float,
-                       d2: float, n_words2: int, avg_dist2: float,
-                       d_weight: float = 0.5,
-                       norm_d_weight: float = 0.3,
-                       avg_dist_weight: float = 0.2) -> float:
-        """
-        Weighted combination of multiple distance metrics
-        
-        Args:
-            d1, n_words1, avg_dist1: Features of sentence 1
-            d2, n_words2, avg_dist2: Features of sentence 2
-            d_weight: Weight for raw D difference
-            norm_d_weight: Weight for normalized D difference
-            avg_dist_weight: Weight for average distance difference
-            
-        Returns:
-            Weighted distance (normalized to 0-1 range roughly)
-        """
-        # Normalize weights
-        total_weight = d_weight + norm_d_weight + avg_dist_weight
-        d_weight /= total_weight
-        norm_d_weight /= total_weight
-        avg_dist_weight /= total_weight
-        
-        # Calculate components
-        d_diff = SentenceDistance.simple_D_distance(d1, d2)
-        norm_d_diff = SentenceDistance.normalized_D_distance(d1, n_words1, d2, n_words2)
-        avg_diff = SentenceDistance.avg_distance_difference(avg_dist1, avg_dist2)
-        
-        # Weighted sum
-        distance = (d_weight * d_diff + 
-                   norm_d_weight * norm_d_diff + 
-                   avg_dist_weight * avg_diff)
-        
-        return distance
 
 
 class DistanceMatrixGenerator:

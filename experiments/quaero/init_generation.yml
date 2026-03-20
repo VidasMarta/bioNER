@@ -1,6 +1,6 @@
 disease_file: data/KB/SNOMEDCT/concepts_filtered_fr.csv
 obo_file_path: false
-output_directory: data/synthetic/quaero/init_syn_generation_all
+output_directory: data/synthetic/quaero/0shot_syn_generation
 server_url: http://0.0.0.0:8484
 pairs_file_path: ''
 
