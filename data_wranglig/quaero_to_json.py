@@ -7,8 +7,8 @@ import xml.etree.ElementTree as ET
 import spacy
 from collections import defaultdict
 import argparse
-#from .dataset_to_json import argparse_args, save_to_json_line, load_yaml_with_env
-from dataset_to_json import *
+from .dataset_to_json import argparse_args, save_to_json_line, load_yaml_with_env
+#from dataset_to_json import *
 
 def parse_bioc_file(xml_path):
     """
@@ -65,10 +65,13 @@ def convert_to_bio(texts, annotations, nlp):
     data = []
 
     for doc_id, text in texts.items():
+
         doc = nlp(text)
         ents = annotations.get(doc_id, [])
 
         for sent in doc.sents:
+            if not sent.text.strip():
+                continue
             doc_sent = nlp(sent.text)
             pos_tags = [token.pos_ for token in doc_sent]
             dep_rels = [token.dep_ for token in doc_sent]

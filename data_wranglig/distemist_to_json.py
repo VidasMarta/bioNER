@@ -48,6 +48,8 @@ def parse_to_bio(texts, ann, nlp):
         ents.sort(key=lambda x: x["start"])
 
         for sent in doc.sents:
+            if not sent.text.strip():
+                continue
             doc_sent = nlp(sent.text)
             pos_tags = [token.pos_ for token in doc_sent]
             dep_rels = [token.dep_ for token in doc_sent]
