@@ -127,9 +127,9 @@ def print_args(model_args, settings_args):
 
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
-    '''model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'k_shot/100_pct/'
-    settings_args['train_filename'] = 'corrected_generated_sentences_20260304.jsonl'
+    model_name, model_args, settings_args = extract_args()
+    settings_args['dataset'] = 'distemist/trf/'
+    settings_args['train_filename'] = 'train.json' #train_10pct.json
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         main(new_model_name, model_args, settings_args, logger)
         
     
-    logger.calculate_mean_stddev()'''
+    logger.calculate_mean_stddev()
     """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
