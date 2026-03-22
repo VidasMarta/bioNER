@@ -1,8 +1,8 @@
+import csv
 import os
 import json
 from datetime import datetime
 import numpy as np
-import pandas as pd
 
 class Logger:
     def __init__(self, model_logs_path, model_args=None, settings_args=None):
@@ -90,14 +90,17 @@ class Logger:
             'Recall': f"{r_mean*100:0.2f} +/- {r_std*100:0.2f}"
         }
 
-        if os.path.exists(file_to_save):
-            df = pd.read_csv(file_to_save)
-            df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
-        else:
-            df = pd.DataFrame([new_data])
-            os.makedirs(os.path.dirname(file_to_save), exist_ok=True)
+        file_exists = os.path.isfile(file_to_save)
+        os.makedirs(os.path.dirname(file_to_save), exist_ok=True)
 
-        df.to_csv(file_to_save, index=False)
+        
+        with open(file_to_save, mode='a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=new_data.keys())
+            
+            if not file_exists:
+                writer.writeheader()
+                
+            writer.writerow(new_data)
 
         mean_std = f"Mean f1_score: {f1_mean}, Std. dev. f1_score: {f1_std}, Mean f1_score (strict): {f1_strict_mean}, Std. dev. f1_score (strict): {f1_strct_std}\n Mean precision: {p_mean}, Std. dev precision: {p_std}, Mean recall: {r_mean}, Std. dev recall: {r_std}"
 
