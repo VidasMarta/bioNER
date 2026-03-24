@@ -128,7 +128,7 @@ def print_args(model_args, settings_args):
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
     model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'distemist/synthetic/'
+    settings_args['dataset'] = 'distemist/synthetic/0shot/'
     settings_args['train_filename'] = 'corrected_generated_sentences_20260316.jsonl' #train_10pct.json
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
