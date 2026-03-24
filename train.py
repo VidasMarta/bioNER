@@ -74,7 +74,7 @@ def main(model_name, model_args, settings_args, logger):
 
     model_args['word_embedding'] = settings_args['word_embedding']
 
-    if settings_args['bert_finetuning'] and settings_args['word_embedding'] == 'bioBERT':
+    if settings_args['bert_finetuning'] and "bert" in settings_args['word_embedding'].lower():
         model_args['ft_lr'] = settings_args['ft_lr']
         trainer_object = trainer.Finetuning_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
         word_embeddings_model, char_emb, text_train, text_val, max_len, batch_size, 
