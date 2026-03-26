@@ -129,7 +129,7 @@ if __name__ == "__main__":
     #---> Train normal with 5 different seeds
     model_name, model_args, settings_args = extract_args()
     settings_args['dataset'] = 'bronco150/trf/'
-    settings_args['train_filename'] = 'train_50pct.json' #train_10pct.json
+    settings_args['train_filename'] = 'train.json' #train_10pct.json
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         
     #trainig_set - treba biti koje ime će u tablici taj model imati
     #file_to_save grupirati na koliko pct dataseta se trenira ili finetune-a model
-    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "bronco150/50pct/test.csv"))
+    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "bronco150/100pct/test.csv"))
     """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
