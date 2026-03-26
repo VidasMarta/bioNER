@@ -129,7 +129,7 @@ if __name__ == "__main__":
     #---> Train normal with 5 different seeds
     model_name, model_args, settings_args = extract_args()
     settings_args['dataset'] = 'bronco150/trf/'
-    settings_args['train_filename'] = 'train_20pct.jsonl' #train_10pct.json
+    settings_args['train_filename'] = 'train_20pct.json' #train_10pct.json
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
