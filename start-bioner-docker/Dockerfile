@@ -11,7 +11,7 @@ RUN apt-get update && \
   apt-get install -y pkg-config ffmpeg libsm6 libxext6 && \
   # apt-get install -y tesseract-ocr && \
   apt-get install -y python3 python3-pip && \
-  apt-get install -y libpq-dev gcc python3-dev curl && \
+  apt-get install -y libpq-dev python3-dev curl && \
   rm -rf /var/lib/apt/lists/*
 
 # Create conda environment karateclub

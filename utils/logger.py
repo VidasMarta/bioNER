@@ -1,3 +1,4 @@
+import csv
 import os
 import json
 from datetime import datetime
@@ -14,6 +15,7 @@ class Logger:
         open(self.output_path+'/train.log',"a").close()
         open(self.output_path+'/valid.log',"a").close()
         open(self.output_path+'/test.log',"a").close()
+
 
         #write config (hyperparameters etc.)
         log_config_file = open(self.output_path+'/config.log', "w")
@@ -39,7 +41,7 @@ class Logger:
         log_file.write(f"epoch: {epoch}, loss: {loss}, time: {datetime.now() - self.init_time}\n")
         log_file.close()
 
-    def calculate_mean_stddev(self):
+    def calculate_mean_stddev(self, training_set, file_to_save):
         f1_scores = []
         precission_scores = []
         recall_scores = []
@@ -61,7 +63,7 @@ class Logger:
                     r_start = line.index("recall:") + len("recall:")
                     r_end = line.index(",", r_start)
                     r = float(line[r_start:r_end].strip())
-                    recall_scores.append(f1)
+                    recall_scores.append(r)
 
                     f1s_start = line.index("f1_score(strict):") + len("f1_score(strict):")
                     f1s_end = line.index(",", f1s_start)
@@ -80,6 +82,25 @@ class Logger:
 
         r_mean = np.mean(recall_scores)
         r_std = np.std(recall_scores)
+
+        new_data = {
+            'Training set': training_set,
+            'F1': f"{f1_mean*100:0.2f} +/- {f1_std*100:0.2f}",
+            'Precision': f"{p_mean*100:0.2f} +/- {p_std*100:0.2f}",
+            'Recall': f"{r_mean*100:0.2f} +/- {r_std*100:0.2f}"
+        }
+
+        file_exists = os.path.isfile(file_to_save)
+        os.makedirs(os.path.dirname(file_to_save), exist_ok=True)
+
+        
+        with open(file_to_save, mode='a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=new_data.keys())
+            
+            if not file_exists:
+                writer.writeheader()
+                
+            writer.writerow(new_data)
 
         mean_std = f"Mean f1_score: {f1_mean}, Std. dev. f1_score: {f1_std}, Mean f1_score (strict): {f1_strict_mean}, Std. dev. f1_score (strict): {f1_strct_std}\n Mean precision: {p_mean}, Std. dev precision: {p_std}, Mean recall: {r_mean}, Std. dev recall: {r_std}"
 

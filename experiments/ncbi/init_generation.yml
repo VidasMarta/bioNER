@@ -1,4 +1,4 @@
-disease_file: data/SNOMEDCT/concepts_filtered.csv
+disease_file: data/KB/SNOMEDCT/concepts_filtered.csv
 obo_file_path: false
 output_directory: data/init_syn_generation_all
 server_url: http://0.0.0.0:8484
@@ -8,6 +8,8 @@ spacy_model: en_core_web_trf
 
 generate_k: 800000
 random_seed: 42
+kshot_pool: ''
+kshot_size: 0
 
 temperature: 0
 max_tokens: 500

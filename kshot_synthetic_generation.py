@@ -17,8 +17,11 @@ from . import generation_postprocessing
 import obonet
 
 def argparse_args():
-    parser = argparse.ArgumentParser(description="LLM-based text Generator iteration pipeline with k-shot.")
-    parser.add_argument('--config_file', type=str, default=f'/home/mkeber/syn-bioner/bioNER/experiments/kshot_generation.yml', help='Path to config file with all arguments.')
+    parser = argparse.ArgumentParser(
+        description="LLM-based text Generator iteration pipeline with k-shot.")
+    parser.add_argument('--config_file', type=str, 
+            default=f'/home/mkeber/syn-bioner/bioNER/experiments/kshot_generation.yml', 
+            help='Path to config file with all arguments.')
 
     return parser.parse_args()
 
@@ -71,8 +74,10 @@ def load_kshot_examples(args, kshot_path):
     return kshot_examples
 
 
-def sample_kshot(args, kshot_pool):
+def sample_kshot(args, kshot_pool) -> Tuple[str, str, list]:
     # Choose whether this sentence should contain an entity
+    if not kshot_pool:
+        return '', args.user_template, [] # kshot_text_block, user_template, used_ids
     want_no_entity = np.random.rand() < args.no_entity_ratio
     entity_examples = [ex for ex in kshot_pool if ex.get("entities")]
     no_entity_examples = [ex for ex in kshot_pool if not ex.get("entities")]
@@ -148,7 +153,7 @@ def kshot_generation(
                 file.write("\n")
             print("saved corrected to ", corrected_output_path)
             with open(os.path.join(args.output_directory, 'term_list.txt'), 'a') as f:
-                f.write(term + '\n')
+                f.write(str(term) + '\n')
 
         except Exception as e:
                 args.logger.info(f"Response content: {response.json().get('content', '')}")
@@ -190,7 +195,7 @@ def main(args: argparse.Namespace) -> None:
     if len(term_list) > args.generate_k:
         term_list = random.sample(term_list, args.generate_k)
         
-    nlp = generation_postprocessing.spacy_load_model('en_core_web_trf')
+    nlp = generation_postprocessing.spacy_load_model(args.spacy_model)
     # TODO: system_template, user_template to args
     # Defined later depends on the ration of no entitiy sentences
     kshot_generation(args, '', term_list, 

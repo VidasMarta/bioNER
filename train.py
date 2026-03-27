@@ -74,7 +74,7 @@ def main(model_name, model_args, settings_args, logger):
 
     model_args['word_embedding'] = settings_args['word_embedding']
 
-    if settings_args['bert_finetuning'] and settings_args['word_embedding'] == 'bioBERT':
+    if settings_args['bert_finetuning'] and "bert" in settings_args['word_embedding'].lower():
         model_args['ft_lr'] = settings_args['ft_lr']
         trainer_object = trainer.Finetuning_Trainer(model_name, model_args, num_tags, train_data_loader, valid_data_loader, 
         word_embeddings_model, char_emb, text_train, text_val, max_len, batch_size, 
@@ -128,6 +128,8 @@ def print_args(model_args, settings_args):
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
     '''model_name, model_args, settings_args = extract_args()
+    settings_args['dataset'] = 'distemist/synthetic/kshot_10pct'
+    settings_args['train_filename'] = '' #train_10pct.json
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
@@ -135,10 +137,11 @@ if __name__ == "__main__":
     for seed in [42, 198, 6000, 3828, 7382]:
         set_seed(seed)
         new_model_name = model_name + f"_seed{seed}"
-        main(model_name, model_args, settings_args, logger)
+        main(new_model_name, model_args, settings_args, logger)
         
-    
-    logger.calculate_mean_stddev()'''
+    #trainig_set - treba biti koje ime će u tablici taj model imati
+    #file_to_save grupirati na koliko pct dataseta se trenira ili finetune-a model
+    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "distemist/kshot_10_pct/test.csv"))'''
     """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
@@ -156,22 +159,22 @@ if __name__ == "__main__":
 
     #---> Train with generated data (with 5 different seeds - commented)
     model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'ncbi_disease_json/trf'
-    settings_args['train_filename'] = 'synthetic/corrected_generated_sentences_20260205.jsonl'
+    model_name = "ES_S_with_0shot"
+    settings_args['dataset'] = 'distemist/trf/synthetic/0shot/'
+    settings_args['train_filename'] = 'corrected_generated_sentences_20260324.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "S2_C_L_5_A_with_NCBI_ft" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "0shot_ft_with_10DISTEMIST" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
-    model_name_seed = model_name
     for seed in [42, 198, 6000, 3828, 7382]:
-        set_seed(seed)
-        #First train on gen data
-        model_name_seed += f"_seed{seed}" #TODO kad pokrenem za S2 ovdje staviti model_name_seed += f"_seed{seed} i model_name_seed = model_name prije petlje
+        set_seed(seed) 
+        model_name_seed = model_name + f"_seed{seed}" 
         if not os.path.exists(settings.MODEL_PATH + f"/{model_name_seed}_best.bin"):
+            model_args['weights'] = None
             main(model_name_seed, model_args, settings_args, logger)
         else:
             print("Ima predtreniranog")
@@ -180,15 +183,13 @@ if __name__ == "__main__":
         model_args_2 = copy.deepcopy(model_args)
         model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
-        settings_args_2['dataset'] = 'ncbi_disease_json/trf'
-        settings_args_2['train_filename'] = 'train.json' # 'train.json', train_50pct.json
+        settings_args_2['dataset'] = 'distemist/trf/'
+        settings_args_2['train_filename'] = 'train_10pct.json' # 'train.json', train_50pct.json
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
-        
-    
-    logger.calculate_mean_stddev()
-    logger_2.calculate_mean_stddev()
+    logger.calculate_mean_stddev(training_set="0-shot", file_to_save=os.path.join(settings.LOG_PATH, "distemist/0shot/test.csv"))
+    logger_2.calculate_mean_stddev(training_set="0-shot", file_to_save=os.path.join(settings.LOG_PATH, "distemist/10_pct/test.csv"))
     
 
 

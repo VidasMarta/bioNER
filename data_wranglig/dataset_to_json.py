@@ -13,22 +13,22 @@ def save_to_json_line(output_file, json_data):
             f.write(json.dumps(entry) + "\n")
     return
         
-def filter_by_abstract_ids(corpus_name, input_file, output_file, sample_ratio, pct_train):
+def filter_by_document_ids(corpus_name, input_file, output_file, sample_ratio, pct_train):
     # Load the full dataset
     with open(input_file, "r", encoding="utf-8") as f:
         data = [json.loads(line) for line in f]
 
     # Collect unique abstract IDs
-    abstract_ids = sorted({item["abstract_id"] for item in data})
-    print(f"Total abstracts: {len(abstract_ids)}")
+    document_ids = sorted({item["document_id"] for item in data})
+    print(f"Total abstracts: {len(document_ids)}")
 
     # Randomly sample args.pct of abstract IDs
-    sample_size = max(1, int(len(abstract_ids) * sample_ratio))
-    sampled_ids = set(random.sample(abstract_ids, sample_size))
+    sample_size = max(1, int(len(document_ids) * sample_ratio))
+    sampled_ids = set(random.sample(document_ids, sample_size))
     print(f"Selected {len(sampled_ids)} abstracts for the {float(pct_train)*100:.0f}% sample.")
 
     # Filter all sentences that belong to sampled abstracts
-    filtered_data = [item for item in data if item["abstract_id"] in sampled_ids]
+    filtered_data = [item for item in data if item["document_id"] in sampled_ids]
 
     # Save to new JSON file
     filtered_abstracts = output_file + f"{corpus_name}_ner_train_{float(pct_train)*100:.0f}pct.json"

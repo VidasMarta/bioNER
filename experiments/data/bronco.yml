@@ -1,0 +1,7 @@
+dataset: /home/${USERNAME}/syn-bioner/data/raw/BRONCO150/bioCFiles/BRONCO150.xml
+
+parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/bronco150/trf/
+
+
+pcts: ['0.5', '0.2', '0.1'] 
+model: de_dep_news_trf

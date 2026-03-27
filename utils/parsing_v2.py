@@ -81,7 +81,11 @@ def load_corpuses(path, nlp, corpus_name):
                 corpus_list.append((id, sentence, entities, "generated_train", None, entry["term_id"]))
     else:
         with open(path, "r", encoding="utf-8") as f:
-            json_data = json.load(f)
+            json_data = []
+            for line in f:
+                line = line.strip()
+                if line:
+                    json_data.append(json.loads(line))
             for entry in json_data:
                 id += 1
                 entities = entry["entities"]

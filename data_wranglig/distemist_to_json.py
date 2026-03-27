@@ -6,8 +6,8 @@ import subprocess
 import sys
 import spacy
 import random
-from dataset_to_json import save_to_json_line
-import yaml
+import argparse
+from .dataset_to_json import *
 
 def load_distemist(data_dir):
     # Collect text files
@@ -48,6 +48,13 @@ def parse_to_bio(texts, ann, nlp):
         ents.sort(key=lambda x: x["start"])
 
         for sent in doc.sents:
+            if not sent.text.strip():
+                continue
+            doc_sent = nlp(sent.text)
+            pos_tags = [token.pos_ for token in doc_sent]
+            dep_rels = [token.dep_ for token in doc_sent]
+            parents = [token.head.i for token in doc_sent] #index of parent token
+
             tokens = [t.text for t in sent]
             if len(tokens) == 1: # \n novi red "rečenice"
                 continue
@@ -104,9 +111,12 @@ def parse_to_bio(texts, ann, nlp):
             data_out.append({
                 "tokens": clean_tokens,
                 "tags": clean_tags,
-                "text_file": fname,
+                "document_id": fname,
                 "codes": codes,
-                "entities": entities 
+                "entities": entities,
+                "pos": pos_tags,
+                "dep": dep_rels,
+                "parents": parents
             })
     return data_out
 
@@ -116,16 +126,16 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
         data = [json.loads(line) for line in f]
 
     # Collect unique text files
-    text_files = sorted({item["text_file"] for item in data})
-    print(f"Total text files: {len(text_files)}")
+    document_ids = sorted({item["document_id"] for item in data})
+    print(f"Total text files: {len(document_ids)}")
 
     # Randomly sample args.pct of text files
-    sample_size = max(1, int(len(text_files) * sample_ratio))
-    sampled_ids = set(random.sample(text_files, sample_size))
+    sample_size = max(1, int(len(document_ids) * sample_ratio))
+    sampled_ids = set(random.sample(document_ids, sample_size))
     print(f"Selected {len(sampled_ids)} text files for the {float(pct_train)*100:.0f}% sample.")
 
     # Filter all sentences that belong to sampled text files
-    filtered_data = [item for item in data if item["text_file"] in sampled_ids]
+    filtered_data = [item for item in data if item["document_id"] in sampled_ids]
 
     # Save to new JSON file
     filtered = output_file + f"{corpus_name}_ner_train_{float(pct_train)*100:.0f}pct.json"
@@ -135,9 +145,11 @@ def filter_by_text_file(corpus_name, input_file, output_file, sample_ratio, pct_
     return filtered
 
 
+
 if __name__=='__main__':
     init_args = argparse_args()
     yaml_args = load_yaml_with_env(init_args.config_file,)
+    print(yaml_args)
     args = argparse.Namespace(**yaml_args)
 
     if not spacy.util.is_package(args.model):
