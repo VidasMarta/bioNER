@@ -141,7 +141,7 @@ if __name__ == "__main__":
         
     #trainig_set - treba biti koje ime će u tablici taj model imati
     #file_to_save grupirati na koliko pct dataseta se trenira ili finetune-a model
-    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "distemist/10_pct/test.csv"))'''
+    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "distemist/kshot_10_pct/test.csv"))'''
     """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
