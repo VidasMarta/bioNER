@@ -20,7 +20,7 @@ model:
 
 # Embedding and Dataset Configuration
 settings:
-  word_embedding: "roBERTa_clinical_es"  # Options: "bioBERT", "bioELMo", "roBERTa_clinical_es", "medBERT_ger", "drBERT_fr"
+  word_embedding: "medBERT_ger"  # Options: "bioBERT", "bioELMo", "roBERTa_clinical_es", "medBERT_ger", "drBERT_fr", medBERT_ger
   bert_finetuning: true #Ignore if word_embedding not set to bioBERT
   ft_lr: 2.628907967128477e-05 #staviti manji od lr-a za model     
   char_cnn_embedding: true #if false, ignore cnn_* settings
