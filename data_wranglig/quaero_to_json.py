@@ -123,6 +123,7 @@ def convert_to_bio(texts, annotations, nlp):
                 continue
 
             data.append({
+                "sentence": sent.text.strip(),
                 "tokens": clean_tokens,
                 "tags": clean_tags, 
                 "entities": entities,

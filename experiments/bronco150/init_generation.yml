@@ -10,6 +10,8 @@ generate_k: 25000
 random_seed: 42
 system_template: role_sent_type_prompt
 user_template: genre_syn_generation_new
+
+avoid_words: 	Patient, Individuum oder Subjekt
 language: german
 kshot_size: 0
 kshot_pool: ''

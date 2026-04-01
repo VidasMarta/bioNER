@@ -109,9 +109,10 @@ def parse_to_bio(texts, ann, nlp):
                     clean_tokens.append(token)              
 
             data_out.append({
+                "document_id": fname,
+                "sentence": sent.text.strip(),
                 "tokens": clean_tokens,
                 "tags": clean_tags,
-                "document_id": fname,
                 "codes": codes,
                 "entities": entities,
                 "pos": pos_tags,

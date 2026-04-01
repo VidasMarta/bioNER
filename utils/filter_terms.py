@@ -30,9 +30,9 @@ def parse_args():
 
     return parser.parse_args()
 
-""" python utils/filter_terms.py --concepts_eng_file /home/mkeber/syn-bioner/data/KB/SNOMEDCT/concepts_disease_filtered_sp.csv\
-    --file_to_filter /home/mkeber/syn-bioner/data/synthetic/distemist/kshot_syn_generation_10pct_filter/corrected_generated_sentences_20260326.jsonl\
-    --file_to_save /home/mkeber/syn-bioner/data/synthetic/distemist/kshot_syn_generation_10pct_filter/filtered_corrected_generated_sentences_20260326.jsonl """
+""" python utils/filter_terms.py --concepts_eng_file /home/mkeber/syn-bioner/data/KB/SNOMEDCT/concepts_disease_filtered_en.csv\
+    --file_to_filter /home/mkeber/syn-bioner/data/synthetic/ncbi/init_syn_generation_all_new/corrected_generated_sentences_20260214.jsonl\
+    --file_to_save /home/mkeber/syn-bioner/data/synthetic/ncbi/init_syn_generation_all_new/filtered_corrected_generated_sentences_20260214.jsonl """
 if __name__ == "__main__":
     args = parse_args()
 

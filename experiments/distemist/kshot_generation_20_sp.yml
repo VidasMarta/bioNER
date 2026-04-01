@@ -1,4 +1,4 @@
-disease_file: data/KB/SNOMEDCT/concepts_filtered_sp.csv
+disease_file: data/KB/SNOMEDCT/concepts_disease_filtered_sp.csv
 obo_file_path: false
 output_directory: data/synthetic/distemist/kshot_syn_generation_20pct_filter
 server_url: http://0.0.0.0:8484
@@ -6,10 +6,12 @@ pairs_file_path: ''
 
 spacy_model: es_dep_news_trf
 
-generate_k: 25000 #800000
+generate_k: 7053 #800000
 random_seed: 42
 
 system_template: role_sent_type_prompt
+
+avoid_words: paciente, individuo o sujeto
 language: spanish
 kshot_size: 3
 kshot_pool: data/processed/distemist/trf/distemist_ner_train_20pct.json

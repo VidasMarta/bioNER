@@ -10,6 +10,8 @@ generate_k: 25000 #800000
 random_seed: 42
 
 system_template: role_sent_type_prompt
+
+avoid_words: 	Patient, Individuum oder Subjekt
 language: german
 kshot_size: 3
 kshot_pool: data/processed/bronco150/trf/bronco150_ner_train_10pct.json
