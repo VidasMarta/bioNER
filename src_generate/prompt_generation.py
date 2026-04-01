@@ -98,7 +98,7 @@ PROMPT = {
         infer a plausible clinical context within a {genre}. Use semantic memory retrieval, contextual inference, 
         and perspective-taking to avoid generic or templated phrasing. Generate exactly one medically appropriate sentence 
         using {condition} as it would appear in a real medical document. Avoid diagnostic boilerplate (e.g., “diagnosed with”). 
-        Do not use the words patient, individual, or subject. Output plain {language} text only. \n\n""",    
+        Do not use the words {avoid_words}. Output plain {language} text only. \n\n""",    
     'genre_syn_generation_new_sp' : """
         You are a medical expert generating realistic clinical language. For the given {condition}, 
         infer a plausible clinical context within a {genre}. Use semantic memory retrieval, contextual inference, 
@@ -316,7 +316,8 @@ class PromptBuilder:
     
     def get_user_prompt(self, template_key: str, condition: str, 
                         text: Optional[str] = None, randomize: bool = True, 
-                        number_of_sentences: int = 1, language='english', **kwargs) -> str:
+                        number_of_sentences: int = 1, language='english', avoid_words='', 
+                        **kwargs) -> str:
         """Generate user prompt with optional randomization"""
         if template_key not in self.user_templates:
             raise ValueError(f"Template '{template_key}' not found. Available: {list(self.user_templates.keys())}")
@@ -330,7 +331,7 @@ class PromptBuilder:
                 kwargs['first_sentence'] = random.choice(self.randomization_options['first_sentence'])
         return template.format(condition=condition, text=text, 
                                number_of_sentences=number_of_sentences, 
-                               language=language, **kwargs)
+                               language=language, avoid_words=avoid_words, **kwargs)
 
     def build_messages(self, system_template: str, 
                        user_template: str, 
@@ -342,6 +343,7 @@ class PromptBuilder:
                       user_kwargs: Dict = {},
                       number_of_sentences: int = 1,
                       language: str = 'english',
+                      avoid_words: str = ''
                       ) -> List[Dict[str, Any]]:
         """Build complete message array for API request"""
         
@@ -350,7 +352,7 @@ class PromptBuilder:
         )
         user_content = self.get_user_prompt(
             user_template, condition, text=text, randomize=user_randomize, 
-            number_of_sentences=number_of_sentences, language=language, **user_kwargs
+            number_of_sentences=number_of_sentences, language=language, avoid_words=avoid_words, **user_kwargs
         )        
         return [
             {"role": "system", "content": system_content},
@@ -405,6 +407,7 @@ def message_request(args: argparse.Namespace,
         user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         number_of_sentences=getattr(args, 'num_sentences', 1), 
         language=getattr(args, 'language', 'english'),
+        avoid_words=getattr(args, 'avoid_words', 'patient, individual, or subject' )
     )
     args.logger.info(f'Generated SYSTEM prompt: {messages[0]["content"]}')
     args.logger.info(f'Generated USER prompt: {messages[1]["content"]}')
