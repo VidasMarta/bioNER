@@ -1,16 +1,16 @@
-disease_file: data/KB/SNOMEDCT/concepts_filtered_.csv
+disease_file: data/KB/ICD10_GE_CH/concepts_filtered_ge.csv
 obo_file_path: false
-output_directory: data/synthetic/distemist/0shot_syn_generation_filter
+output_directory: data/synthetic/bronco150/0shot_syn_generation_filter
 server_url: http://0.0.0.0:8484
 pairs_file_path: ''
 
-spacy_model: es_dep_news_trf
+spacy_model: de_dep_news_trf
 
 generate_k: 25000
 random_seed: 42
 system_template: role_sent_type_prompt
 user_template: genre_syn_generation_new
-language: spanish
+language: german
 kshot_size: 0
 kshot_pool: ''
 temperature: 0

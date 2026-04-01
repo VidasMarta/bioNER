@@ -1,23 +1,41 @@
 import pandas as pd
-import numpy as np
-df = pd.read_csv('/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_RELATIONSHIP.csv',
-                 delimiter='\t', on_bad_lines='skip')
-df_class = pd.read_csv('/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_CLASS.csv', 
-                          delimiter='\t', on_bad_lines='skip')
-diseases = []
-for class_id in df_class['concept_class_id']. unique():
-    if "finding" in class_id.lower() or "disease" in class_id.lower(): diseases.append(class_id)
+import argparse
 
+def main():
+    parser = argparse.ArgumentParser(description="Filter SNOMEDCT concepts by language and ancestor.")
+    
+    # Input Arguments
+    parser.add_argument('--lang_id', type=int, default=4182511, 
+                        help='Language concept ID (e.g., 4182511 for Spanish)')
+    parser.add_argument('--ancestors', type=int, nargs='+', default=[441840, 4274025],
+                        help='Ancestor IDs. Note: 441840 is Clinical Finding, 4274025 is Disease.')
+    parser.add_argument('--output', type=str, default='concepts_filtered.csv',
+                        help='Path and name for the output CSV file')
+    
+    # Path Arguments (keeping your defaults)
+    parser.add_argument('--rel_path', type=str, default='/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_RELATIONSHIP.csv')
+    parser.add_argument('--class_path', type=str, default='/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_CLASS.csv')
+    parser.add_argument('--anc_path', type=str, default='/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_ANCESTOR.csv')
+    parser.add_argument('--syn_path', type=str, default='/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_SYNONYM.csv')
 
-classes = df_class[df_class['concept_class_id'].isin(diseases)]['concept_class_concept_id']
-df_ancestor = pd.read_csv('/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_ANCESTOR.csv', 
-                          delimiter='\t', on_bad_lines='skip')
+    args = parser.parse_args()
 
-desecendants = df_ancestor[df_ancestor['ancestor_concept_id'].isin([441840, 4274025])]['descendant_concept_id'].values
-df_concepts = pd.read_csv('/home/mkeber/syn-bioner/data/KB/SNOMEDCT/CONCEPT_SYNONYM.csv', 
-                          delimiter='\t', on_bad_lines='skip')
-sp_df = df_concepts[df_concepts['language_concept_id'] == 4182511]
-output = sp_df[sp_df['concept_id'].isin(desecendants)]
+    # Load Data
+    df_class = pd.read_csv(args.class_path, delimiter='\t', on_bad_lines='skip')
+    df_ancestor = pd.read_csv(args.anc_path, delimiter='\t', on_bad_lines='skip')
+    df_concepts = pd.read_csv(args.syn_path, delimiter='\t', on_bad_lines='skip')
 
-output[['concept_synonym_name', 'concept_id']].to_csv(
-    '/home/mkeber/syn-bioner/data/KB/SNOMEDCT/concepts_filtered_sp.csv', index=False)
+    # Filter by ancestor
+    descendants = df_ancestor[df_ancestor['ancestor_concept_id'].isin(args.ancestors)]['descendant_concept_id'].values
+
+    # Filter by language and descendants
+    sp_df = df_concepts[df_concepts['language_concept_id'] == args.lang_id]
+    output = sp_df[sp_df['concept_id'].isin(descendants)]
+
+    # Save Output
+    output[['concept_synonym_name', 'concept_id']].to_csv(args.output, index=False)
+    print(f"File saved successfully to: {args.output}")
+
+if __name__ == "__main__":
+    main()
+

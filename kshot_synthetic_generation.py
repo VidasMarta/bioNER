@@ -194,6 +194,9 @@ def main(args: argparse.Namespace) -> None:
 
     if len(term_list) > args.generate_k:
         term_list = random.sample(term_list, args.generate_k)
+    else:
+        reps = random.sample(term_list,args.generate_k - len(term_list))
+        term_list += reps
         
     nlp = generation_postprocessing.spacy_load_model(args.spacy_model)
     # TODO: system_template, user_template to args
