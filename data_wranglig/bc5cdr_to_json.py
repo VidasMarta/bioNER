@@ -163,7 +163,7 @@ if __name__=='__main__':
     if not spacy.util.is_package(args.model):
         subprocess.run([sys.executable, "-m", "spacy", "download", args.model])
 
-    nlp = spacy.load(args.model, disable=["ner", "tagger", "parser", "lemmatizer"])
+    nlp = spacy.load(args.model, disable=["ner", "lemmatizer"])
     nlp.add_pipe("sentencizer")
 
     os.makedirs(args.parsed_mesh_folder, exist_ok=True)
