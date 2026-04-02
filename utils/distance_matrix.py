@@ -20,6 +20,7 @@ import random
 import argparse
 import os
 from . import actual_D
+from . import bar_plot_cluster_sizes
 
 
 class SentenceDistance:
@@ -159,7 +160,7 @@ class DistanceMatrixGenerator:
         
         n = len(results)
         distance_matrix = np.zeros((n, n))
-        sentence_ids = [r['id'] for r in results]
+        sentence_ids = [r.get('id', i) for i, r in enumerate(results)]
         
         if verbose:
             print(f"Creating distance matrix for {n} sentences...")
@@ -184,24 +185,6 @@ class DistanceMatrixGenerator:
                         results[j]['avg_distance']
                     )
                 
-                elif distance_func == SentenceDistance.euclidean_distance:
-                    # Euclidean in 3D
-                    dist = distance_func(
-                        results[i]['D'], results[i]['n_words'], results[i]['avg_distance'],
-                        results[j]['D'], results[j]['n_words'], results[j]['avg_distance']
-                    )
-                
-                elif distance_func == SentenceDistance.custom_distance:
-                    # Custom weighted
-                    dist = distance_func(
-                        results[i]['D'], results[i]['n_words'], results[i]['avg_distance'],
-                        results[j]['D'], results[j]['n_words'], results[j]['avg_distance']
-                    )
-                elif distance_func == SentenceDistance.dz_distance:
-                    dist = distance_func(
-                        results[i]['D'], results[i]['n_words'], 
-                        results[j]['D'], results[j]['n_words'], 
-                    )
                 else:
                     # Generic function call
                     dist = distance_func(results[i], results[j])
@@ -804,7 +787,8 @@ def main():
     basename = os.path.basename(INPUT_FILE).replace('.*', '.csv')
     # OUTPUT_DIR = args.output_dir
     # OUTPUT_FILE = f"{OUTPUT_DIR}" + os.path.basename(INPUT_FILE).replace('.jsonl', '_D.jsonl')
-    OUTPUT_FILE = INPUT_FILE.replace('.jsonl', '_D.jsonl')
+    OUTPUT_FILE = INPUT_FILE + '_D.jsonl'
+    
     OUTPUT_DIR = os.path.dirname(OUTPUT_FILE)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     print(f"Loading {OUTPUT_FILE}...")
@@ -828,8 +812,9 @@ def main():
         distance_func=SentenceDistance.simple_D_distance,
         verbose=True
     )
+    DISTANCE_MATRIX_NN = f"{OUTPUT_DIR}/distance_matrix_{basename}_{dist_matrix_simple.shape[0]}.npz"
     DistanceMatrixGenerator.save_distance_matrix(
-        dist_matrix_simple, ids, f"{OUTPUT_DIR}/distance_matrix_{basename}_{dist_matrix_simple.shape[0]}.npz", format='npz'
+        dist_matrix_simple, ids, DISTANCE_MATRIX_NN, format='npz'
     )
     DistanceAnalyzer.print_statistics(dist_matrix_simple)
     # Dz distance (z statistics)
@@ -851,7 +836,19 @@ def main():
             verbose=True
             )
         dist, sentence_ids = DistanceMatrixGenerator.create_distance_matrix_nm(results, results_synth)
-        DistanceMatrixGenerator.save_distance_matrix(dist, sentence_ids, f"{OUTPUT_DIR_SYNTH}/distance_matrix_nm_{dist.shape[0]}_{dist.shape[1]}.npz", format='npz')
+        DISTANCE_MATRIX_NM_FILE = f'{OUTPUT_DIR_SYNTH}/distance_matrix_nm_{dist.shape[0]}_{dist.shape[1]}.npz'
+        DistanceMatrixGenerator.save_distance_matrix(dist, sentence_ids, DISTANCE_MATRIX_NM_FILE, format='npz')
+        print(f'OUTPUT_FILE_SYNTH: {OUTPUT_FILE_SYNTH}')
+        print(f'Distance matrix saved to: {DISTANCE_MATRIX_NM_FILE}')
+
+        bar_plot_cluster_sizes.main([
+            "--synth", DISTANCE_MATRIX_NM_FILE,
+            "--p", "30",
+            "--strategy", "mean",
+            "--base", OUTPUT_FILE,
+            "--dist", DISTANCE_MATRIX_NN
+        ])
+
     print("\n✓ All distance matrices saved!")
 
 

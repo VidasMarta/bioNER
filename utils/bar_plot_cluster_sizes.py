@@ -120,9 +120,11 @@ def make_comparison_original_synth(
     # ── per-path assignment & counts ─────────────────────────────────────────
     path_after_counts = {}
     path_totals       = {}
-
+    number_of_samples = []
     for path, dm in all_distance_matrices.items():
         assignments = []
+        number_of_samples.append((dm.shape[0], dm.shape[1]))
+
         for i, row in tqdm(
             enumerate(dm),
             total=dm.shape[0],
@@ -165,7 +167,7 @@ def make_comparison_original_synth(
         x + (-total_bars / 2 + 0.5) * width,
         before_norm,
         width,
-        label=f'{original_data_name} {len(leaves)},
+        label=f'{original_data_name} {number_of_samples[0][1]}',
         color='steelblue',
     )
 
@@ -177,7 +179,7 @@ def make_comparison_original_synth(
             x + offset,
             after_norm,
             width,
-            label=f'{os.path.basename(os.path.dirname(path))} {}',
+            label=f'{os.path.basename(os.path.dirname(path))}: {number_of_samples[i][0]}',
             color=colors[i],
         )
 
@@ -206,7 +208,7 @@ def build_base_structures(jsonl_path, distance_matrix_path, p=30):
     -------
     leaves, leaf_label_dict, cluster_members, n_words, Z, out_dir
     """
-    out_dir  = os.path.dirname(os.path.abspath(jsonl_path))
+    out_dir  = os.path.dirname(os.path.abspath(distance_matrix_path))
     basename = os.path.splitext(os.path.basename(jsonl_path))[0]
 
     # ── load JSONL ────────────────────────────────────────────────────────────
@@ -271,7 +273,7 @@ def build_base_structures(jsonl_path, distance_matrix_path, p=30):
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-def parse_args():
+def parse_args(args=None):
     parser = argparse.ArgumentParser(
         description=(
             'Build cluster dendrogram from a base JSONL file and compare '
@@ -320,7 +322,7 @@ def parse_args():
         default='mean',
         help='Aggregation strategy for cluster assignment (default: mean).',
     )
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 """
 python3 -m bar_plot_cluster_sizes --synth /home/mkeber/syn-bioner/data/synthetic/init_syn_generation_all_new/distance_matrix_nm.npz /home/mkeber/syn-bioner/data/synthetic/kshot_syn_generation_10pct/distance_matrix_nm.npz \
@@ -328,8 +330,8 @@ python3 -m bar_plot_cluster_sizes --synth /home/mkeber/syn-bioner/data/synthetic
     --dist /home/mkeber/syn-bioner/data/processed/ncbi/trf/distance_matrices/distance_matrix_simple_D.csv
 """
 
-def main():
-    args = parse_args()
+def main(args=None):
+    args = parse_args(args)
 
     print(f"Base JSONL : {args.base}")
     print(f"Distance matrix path: {args.dist}")
