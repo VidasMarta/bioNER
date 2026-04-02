@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import subprocess
 import sys
 
-from dataset_to_json import *
+from .dataset_to_json import *
 
 def parse_text_file(input_file):
     abstracts = {}
@@ -128,7 +128,7 @@ if __name__=='__main__':
     os.makedirs(args.parsed_mesh_folder, exist_ok=True)
     
     #Train
-    train_parsed = args.parsed_mesh_folder + "ncbi_ner_train.json"
+    train_parsed = args.parsed_mesh_folder + "ncbi_ner_train.jsonl"
     abstracts, annotations = parse_text_file(args.train)
     create_and_save_json(abstracts, annotations, train_parsed, nlp)
 
@@ -143,12 +143,12 @@ if __name__=='__main__':
 
     #Devel
     abstracts, annotations = parse_text_file(args.devel)
-    devel_parsed = args.parsed_mesh_folder + "ncbi_ner_devel.json"
+    devel_parsed = args.parsed_mesh_folder + "ncbi_ner_devel.jsonl"
     create_and_save_json(abstracts, annotations, devel_parsed, nlp)
 
     #Test
     abstracts, annotations = parse_text_file(args.test)
-    test_parsed = args.parsed_mesh_folder + "ncbi_ner_test.json"
+    test_parsed = args.parsed_mesh_folder + "ncbi_ner_test.jsonl"
     create_and_save_json(abstracts, annotations, test_parsed, nlp)
 
 

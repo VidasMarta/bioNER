@@ -6,7 +6,7 @@ pairs_file_path: data/KB/hetionet/all.jsonl
 
 spacy_model: en_core_web_trf
 
-generate_k: 10717 #800000
+generate_k: 5427 #800000
 random_seed: 42
 
 system_template: 'role_sent_type_prompt'

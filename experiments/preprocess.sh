@@ -11,23 +11,23 @@
 
 # Paths to your images
 USERNAME=mkeber
-CORPUS=distemist
+CORPUS=ncbi
 # CORPUS=distemist, CORPUS=ncbi, CORPUS=quaero, CORPUS=bronco150 
-SPACY=es_dep_news_trf 
+SPACY=en_core_web_trf 
 # SPACY=es_dep_news_trf, SPACY=en_core_web_trf, SPACY=fr_dep_news_trf, SPACY=de_dep_news_trf
 
 CLIENT_IMAGE=/home/${USERNAME}/sif-files/synbioner_generate2.sif
 # Optional binding
 
-BIND_PATHS_SPACY="home/${USERNAME}/models/spacy_models:/models"
+BIND_PATHS_SPACY=/home/${USERNAME}/models/spacy_models:/models
 echo "Current time: $(date +"%H:%M:%S")"
 
-singularity exec --nv \
-  -B $BIND_PATHS_SPACY \
-  $CLIENT_IMAGE bash -c "
-export PYTHONPATH=/models:\$PYTHONPATH
-python3 utils/save_spacy_to_disk.py --model ${SPACY}
-"
+# singularity exec --nv \
+#   -B $BIND_PATHS_SPACY \
+#   $CLIENT_IMAGE bash -c "
+# export PYTHONPATH=/models:\$PYTHONPATH
+# python3 utils/save_spacy_to_disk.py --model ${SPACY}
+# "
 singularity exec --nv -B $BIND_PATHS_SPACY \
   $CLIENT_IMAGE bash -c "
 export PYTHONPATH=/models:\$PYTHONPATH && \
@@ -78,4 +78,3 @@ python3 -m bioNER.data_wranglig.${CORPUS}_to_json \
 
 # "
 # #  https://github.com/explosion/spacy-models/releases/download/fr_dep_news_trf-3.8.0/fr_dep_news_trf-3.8.0-py3-none-any.whl
-
