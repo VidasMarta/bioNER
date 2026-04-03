@@ -200,7 +200,8 @@ def main(args: argparse.Namespace) -> None:
         
     nlp = generation_postprocessing.spacy_load_model(args.spacy_model)
     # TODO: system_template, user_template to args
-    # Defined later depends on the ration of no entitiy sentences
+    # It is defined within kshot sampling depends on 
+    # the ration of no entitiy sentences
     kshot_generation(args, '', term_list, 
                               system_template=args.system_template,
                               nlp = nlp)
