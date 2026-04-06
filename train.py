@@ -127,7 +127,7 @@ def print_args(model_args, settings_args):
 
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
-    model_name, model_args, settings_args = extract_args()
+    '''model_name, model_args, settings_args = extract_args()
     settings_args['dataset'] = 'ncbi_tmp/kshot_10pct'
     settings_args['train_filename'] = 'filtered_corrected_generated_sentences_20260302_20260402.jsonl' #train_10pct.json
     print_args(model_args, settings_args)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         
     #trainig_set - treba biti koje ime će u tablici taj model imati
     #file_to_save grupirati na koliko pct dataseta se trenira ili finetune-a model
-    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))
+    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))'''
     """
 
     #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
@@ -158,15 +158,15 @@ if __name__ == "__main__":
             f.write(f"{error} \n")"""
 
     #---> Train with generated data (with 5 different seeds - commented)
-    '''model_name, model_args, settings_args = extract_args()
+    model_name, model_args, settings_args = extract_args()
     model_name = "NCBI_filtered1"
-    settings_args['dataset'] = 'ncbi_tmp/'
-    settings_args['train_filename'] = 'filtered_corrected_generated_sentences_20260205.jsonl'
+    settings_args['dataset'] = 'ncbi_tmp/kshot_10pct'
+    settings_args['train_filename'] = 'filtered_corrected_generated_sentences_20260302_20260402.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "NCBI_filtered1_ft_with_NCBI" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "NCBI_filtered10pct_ft_with_NCBI" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -188,8 +188,8 @@ if __name__ == "__main__":
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
-    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered1/test.csv"))
-    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/100_pct/test.csv"))'''
+    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))
+    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/100_pct/test.csv"))
     
 
 
