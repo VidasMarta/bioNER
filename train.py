@@ -189,7 +189,7 @@ if __name__ == "__main__":
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
     logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))
-    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/10_pct/test.csv"))
+    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/50_pct/test.csv"))
     
 
 
