@@ -166,7 +166,7 @@ if __name__ == "__main__":
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "NCBI_filtered10pct_ft_with_NCBI" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = "NCBI_filtered10pct_ft_with_10NCBI" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -184,12 +184,12 @@ if __name__ == "__main__":
         model_args_2['weights'] = torch.load(settings.MODEL_PATH + f"/{model_name_seed}_best.bin")
         settings_args_2 = copy.deepcopy(settings_args)
         settings_args_2['dataset'] = 'ncbi_disease_json/trf/'
-        settings_args_2['train_filename'] = 'train.json' # 'train.json', train_50pct.json
+        settings_args_2['train_filename'] = 'train_10pct.json' # 'train.json', train_50pct.json
 
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
     logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))
-    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/100_pct/test.csv"))
+    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/10_pct/test.csv"))
     
 
 
