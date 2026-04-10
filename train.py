@@ -127,8 +127,28 @@ def print_args(model_args, settings_args):
 
 if __name__ == "__main__":    
     #---> Train normal with 5 different seeds
-    '''model_name, model_args, settings_args = extract_args()
-    settings_args['dataset'] = 'ncbi_tmp/kshot_10pct'
+    model_name, model_args, settings_args = extract_args()
+    output_path = os.path.join(settings.LOG_PATH, model_name)
+    print_args(model_args, settings_args)
+    logger = Logger(output_path, model_args, settings_args)
+
+    for seed in [42, 198, 6000, 3828, 7382]:
+        set_seed(seed)
+        model_name_seed = model_name + f"_seed{seed}"
+
+        if model_args["pretrained_weights_path"] is None:
+            model_args["weights"] = None
+        else:
+            model_args['weights'] = torch.load(settings.MODEL_PATH + model_args["pretrained_weights_path"] + f"_seed{seed}_best.bin")
+
+        main(model_name_seed, model_args, settings_args, logger)
+        
+    #trainig_set - treba biti koje ime će u tablici taj model imati
+    #file_to_save grupirati na koliko pct dataseta se trenira ili finetune-a model
+    logger.calculate_mean_stddev(training_set=settings_args["training_set"], file_to_save=os.path.join(settings.LOG_PATH, settings_args["file_to_save"]))
+    
+
+    '''settings_args['dataset'] = 'ncbi_tmp/kshot_10pct'
     settings_args['train_filename'] = 'filtered_corrected_generated_sentences_20260302_20260402.jsonl' #train_10pct.json
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
@@ -141,32 +161,17 @@ if __name__ == "__main__":
         
     #trainig_set - treba biti koje ime će u tablici taj model imati
     #file_to_save grupirati na koliko pct dataseta se trenira ili finetune-a model
-    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))'''
-    """
-
-    #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
-    errors_val, errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))
     
-
-    with open(output_path+'/wrong_val.log',"w") as f:
-        for error in errors_val:
-            f.write(f"{error} \n")
-    
-
-    with open(output_path+'/wrong_test.log',"w") as f:
-        for error in errors_test:
-            f.write(f"{error} \n")"""
-
     #---> Train with generated data (with 5 different seeds - commented)
-    model_name, model_args, settings_args = extract_args()
-    model_name = "NCBI_filtered1"
+    model_name = "NCBI_filtered10pct"
     settings_args['dataset'] = 'ncbi_tmp/kshot_10pct'
     settings_args['train_filename'] = 'filtered_corrected_generated_sentences_20260302_20260402.jsonl'
     print_args(model_args, settings_args)
     output_path = os.path.join(settings.LOG_PATH, model_name)
     logger = Logger(output_path, model_args, settings_args)
 
-    new_model_name = "NCBI_filtered10pct_ft_with_50NCBI" #D1_ftB_C_L_5_A_mean_with_genData
+    new_model_name = model_name + "ft_with_50NCBI" #D1_ftB_C_L_5_A_mean_with_genData
     output_path = os.path.join(settings.LOG_PATH, new_model_name)
     logger_2 = Logger(output_path)
 
@@ -189,7 +194,22 @@ if __name__ == "__main__":
         main(new_model_name, model_args_2, settings_args_2, logger_2)
         
     logger.calculate_mean_stddev(training_set="-", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/filtered10pct/test.csv"))
-    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/50_pct/test.csv"))
+    logger_2.calculate_mean_stddev(training_set="filtered1", file_to_save=os.path.join(settings.LOG_PATH, "ncbi/50_pct/test.csv"))'''
+
+    """
+    #---> Extract wrongly classified entities from validation and test sets (modelName = "D1_ftB_C_L_5_A_with_gen2Data")
+    errors_val, errors_test= evaluate_and_find_errors(model_name, settings_args, model_args, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    
+
+    with open(output_path+'/wrong_val.log',"w") as f:
+        for error in errors_val:
+            f.write(f"{error} \n")
+    
+
+    with open(output_path+'/wrong_test.log',"w") as f:
+        for error in errors_test:
+            f.write(f"{error} \n")"""
+
     
 
 
