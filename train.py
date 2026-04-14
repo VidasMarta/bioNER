@@ -18,7 +18,7 @@ from utils.extract_wrong_words import evaluate_and_find_errors
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script")
-    parser.add_argument('--config', type=str, required=False, help='Path to the config file', default='/lustre/home/mvidas/Diplomski/experiments/default_train.yml')    
+    parser.add_argument('--config', type=str, required=False, help='Path to the config file', default='/home/martavidas/Documents/FER/Diplomski/Diplomski/experiments/distemist/kshot_10pct/pretrain.yml')    
     parser.add_argument('--model_name', type=str, required=False, help='Name of the file used for saving model weights', default='bilstm_crf')    
     return parser.parse_args()
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         set_seed(seed)
         model_name_seed = model_name + f"_seed{seed}"
 
-        if model_args["pretrained_weights_path"] is None:
+        if model_args["pretrained_weights_path"] == "None":
             model_args["weights"] = None
         else:
             model_args['weights'] = torch.load(settings.MODEL_PATH + "/" + model_args["pretrained_weights_path"] + f"_seed{seed}_best.bin")
