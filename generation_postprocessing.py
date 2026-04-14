@@ -99,94 +99,119 @@ def create_rule_json(
 
 def check_additional_disease_tags(
     args,
-    text: str,
-    terms: List[str],
+    # text: str,
+    # terms: List[str],
+    items,
     system_template: str = "annotation",
     user_template: str = "disease_annotation",
 ):
     response = prompt_generation.message_request(
-        args,
-        terms,
+        args,items, 
+        terms = [item['base_terms'] for item in items],
         system_template=system_template,
         user_template=user_template,
-        text=text,
+        max_tokens=32,
+        # text=[item['sentence'] for item in items],
     )
-
-    cleaned = utils.remove_code_fences(response.json()["content"])
+    data = utils.safe_load_response(response)
+    cleaned = [utils.remove_code_fences(text['content'].strip()) for text in data]
 
     try:
-        parsed = eval(cleaned)
-        return [t.lower() for t in parsed if isinstance(t, str)]
-    except Exception:
+        parsed = [eval(clean) for clean in cleaned]
+        out = []
+        for parse in parsed:
+            out.append([t.lower() for t in parse if isinstance(t, str)])
+        return out
+    except Exception as e:
+        args.logger.info('Exception in LLM check and reanotate the the respons!')
+        print(f'Exception is: {e}')
         return []
 
 
 def create_json(
-    args,
-    text: str,
-    id: str,
-    terms: Tuple[List[str], List[str]],
+    args: argparse.Namespace,
+    text: List[str],
+    id: List[str],
+    terms: List[Tuple[List[str], List[str]]],
     nlp: Any = None,
-    system_template: str = "annotation",
-    user_template: str = "disease_annotation_reduced",
+    system_template: List[str] = "annotation",
+    user_template: List[str] = "disease_annotation_reduced",
 ):
     if nlp is None:
         nlp = spacy_load_model(args.spacy_model)
-
-    doc = nlp(text)
-
-    # ---- normalize terms ----
-    unpacked_terms = []
-    for t, tid in zip(terms[0], terms[1]):
-        unpacked_terms.append(([t], [tid]))
-
-    # ---- rule-based pass ----
-    tags, tokens, entities, spans = create_rule_json(doc, nlp, unpacked_terms)
-
+    if not hasattr(args, "timings"):
+        args.timings = [{}]
+    start_time = time.time()
+    items = []
+    for i, (text, term) in enumerate(zip(text, terms)):
+        doc = nlp(text)
+        # ---- normalize terms ----
+        unpacked_terms = []
+        for te, tid in zip(term[0], term[1]):
+            unpacked_terms.append(([te], [tid]))
+    
+        tags, tokens, entities, spans = create_rule_json(doc, nlp, unpacked_terms)
+        # items[i]['tags'], items[i]['tokens'], items[i]['entities'], items[i]['spans'] 
+        print(text)
+        items.append({
+            'id': id,
+            'sentence': text,
+            'base_terms':[term_text[0].lower() for term_text, _ in unpacked_terms],
+            'unpacked_terms':unpacked_terms,
+            'tags':tags, 
+            'tokens':tokens, 
+            'entities':entities, 
+            'spans':spans,
+            'kshot_text_block':'',
+        })
+    nlp_time = time.time()
+    args.timings[-1]['nlp_time'] = nlp_time - start_time
     # ---- LLM pass ----
-    base_terms = [t[0].lower() for t, _ in unpacked_terms]
+
+    for t, term in zip(text, terms):
+        unpacked_terms = []
+        for t, tid in zip(term[0], term[1]):
+            unpacked_terms.append(([t], [tid]))
+
     llm_terms = check_additional_disease_tags(
-        args, text, base_terms, system_template, user_template
-    )
+            args, items, system_template, user_template
+        )    
+    args.timings[-1]['check_llm_terms'] = time.time() - nlp_time
+    # llm_terms = check_additional_disease_tags(
+    #         args, text, base_terms, system_template, user_template
+    #     )
+    for llm_te, item in zip(llm_terms, items):
+        llm_term_tuples = [([t], []) for t in llm_te if t not in item['base_terms']]
 
-    llm_term_tuples = [([t], []) for t in llm_terms if t not in base_terms]
-
-    tags_llm, _, entities_llm, spans_llm = create_rule_json(
-        doc, nlp, llm_term_tuples
-    )
+        tags_llm, _, entities_llm, spans_llm = create_rule_json(
+            doc, nlp, llm_term_tuples
+        )
+        item['tags_llm'], item['entities_llm'], item['spans_llm'] = tags_llm, entities_llm, spans_llm
 
     # ---- merge spans safely ----
-    occupied = set(i for s, e, _ in spans for i in range(s, e))
 
-    for start, end, text_llm in spans_llm:
-        span_range = set(range(start, end))
-        if occupied.intersection(span_range):
-            continue
-        spans.append((start, end, text_llm))
-        entities.append(text_llm)
-        occupied.update(span_range)
+        occupied = set(i for s, e, _ in item['spans'] for i in range(s, e))
 
-        tags[start] = 0
-        for i in range(start + 1, end):
-            tags[i] = 1
+        for start, end, text_llm in spans_llm:
+            span_range = set(range(start, end))
+            if occupied.intersection(span_range):
+                continue
+            spans.append((start, end, text_llm))
+            entities.append(text_llm)
+            occupied.update(span_range)
 
-    pos_tags = [t.pos_ for t in doc]
-    dep_rels = [t.dep_ for t in doc]
-    parents = [t.head.i for t in doc]
+            tags[start] = 0
+            for i in range(start + 1, end):
+                tags[i] = 1
 
-    return {
-        "abstract_id": None,
-        "id": id,
-        "sentence": text,
-        "entities": entities,
-        "corpus": "generated_train",
-        "pos": pos_tags,
-        "dep": dep_rels,
-        "parents": parents,
-        "tags": tags,
-        "tokens": tokens,
-        "terms": unpacked_terms,
-    }
+        pos_tags = [t.pos_ for t in doc]
+        dep_rels = [t.dep_ for t in doc]
+        parents = [t.head.i for t in doc]
+        item['corpus'], item['podocument_id'] = 'generated_train', None
+        item['pos'], item['dep'], item['parents'] = pos_tags, dep_rels, parents
+        
+    args.timings[-1]['total_correction_time'] = time.time() -start_time
+    return items
 
 def load_data(args):
     with open(args.generated) as f:

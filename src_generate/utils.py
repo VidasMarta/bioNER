@@ -11,9 +11,39 @@ import pandas as pd
 import subprocess
 from collections import defaultdict  
 import sys
-
+import requests
 
 SPACY_NLP = None
+
+
+def safe_load_response(response):
+    raw_data = json.loads(response.content.decode("utf-8"))
+    return normalize_llama_response(raw_data)
+
+
+def normalize_llama_response(data):
+    # Case 1: single dict → wrap in list
+    if isinstance(data, dict):
+        return [data]
+
+    # Case 2: list
+    if isinstance(data, list):
+        normalized = []
+        for item in data:
+            if isinstance(item, dict):
+                normalized.append(item)
+            elif isinstance(item, str):
+                normalized.append({"content": item})
+            else:
+                normalized.append({"content": str(item)})
+        return normalized
+
+    # Case 3: raw string
+    if isinstance(data, str):
+        return [{"content": data}]
+
+    # fallback
+    return [{"content": str(data)}]
 
 
 def remove_code_fences(text: str) -> str:

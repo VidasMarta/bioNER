@@ -127,13 +127,14 @@ def generate_sentences_per_cluster(
                 print(f"[INFO] Generating sentence for term: {term[0]}")
                 kshot_text_block, user_template, used_ids = sample_kshot(args, no_entity_examples, entity_examples)
                 args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
-
+                #TODO:
+                # define a batch
+                batch=[{}]
                 response = prompt_generation.message_request(
                         args,
-                        term[0],
+                        batch,
                         system_template=system_template,
                         user_template=user_template,
-                        text=kshot_text_block
                     )
                 sent_gen_time = time.time() - start_time
                 save_generated_sentences(args, output_path, response, term, used_ids, sent_gen_time)

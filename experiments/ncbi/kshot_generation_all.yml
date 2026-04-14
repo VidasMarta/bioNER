@@ -8,6 +8,7 @@ spacy_model: en_core_web_trf
 
 generate_k: 5427 #800000
 random_seed: 42
+batch: 1
 
 system_template: 'role_sent_type_prompt'
 kshot_size: 3

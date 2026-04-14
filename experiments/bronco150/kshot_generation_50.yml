@@ -8,10 +8,13 @@ spacy_model: de_dep_news_trf
 
 generate_k: 25000 #800000
 random_seed: 42
+batch: 6
 
 system_template: role_sent_type_prompt
-avoid_words: 	Patient, Individuum oder Subjekt
+avoid_words: 	Patient, Patientin, Individuum oder Subjekt
 language: german
+genre_group: clinical
+
 kshot_size: 3
 kshot_pool: data/processed/bronco150/trf/bronco150_ner_train_50pct.json
 no_entity_ratio: 0.1 #calculated on whole NCBI train

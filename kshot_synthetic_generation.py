@@ -9,12 +9,13 @@ import random
 import numpy as np
 from datetime import datetime
 from collections import defaultdict
-
+import traceback
 import yaml  
 from .src_generate import prompt_generation
 from .src_generate import utils
 from . import generation_postprocessing
 import obonet
+import time
 
 def argparse_args():
     parser = argparse.ArgumentParser(
@@ -37,9 +38,9 @@ def setup(args: argparse.Namespace, iter_output: str = '') -> str:
     return output_path, corrected_output_path
 
 
-def save_generated_sentences(args, output_path, method, response, term, sent_gen_time,
+def save_generated_sentences(args, output_path, method, text, term, sent_gen_time,
                              used_ids: list = []):
-    text = response.json()['content'].strip()
+    # text = response.json()['content'].strip()
     text = utils.clean_text(text)
     text = utils.remove_code_fences(text)
     #parsed_text, entities = utils.parse_text_entities_format(args, text)
@@ -113,6 +114,7 @@ def sample_kshot(args, kshot_pool) -> Tuple[str, str, list]:
 
     return kshot_text_block, user_template, used_ids
 
+
 def kshot_generation(
     args: argparse.Namespace,
     iter_output: str, 
@@ -127,38 +129,85 @@ def kshot_generation(
     #       f"\n[INFO] Corrected output path: {corrected_output_path}")
     kshot_pool = load_kshot_examples(args, args.kshot_pool)
     # open(output_path, "w").close()  
+    batch_size = max(1, args.batch)
 
-    for i, term in enumerate(tqdm.tqdm(term_list)):
-        try:
-            start_time = time.time()
-            print(f"[INFO] Generating sentence for term: {term[0]}")
-            kshot_text_block, user_template, used_ids = sample_kshot(args, kshot_pool)
-            args.logger.info(f"K-shot examples used for term '{term[0]}': {used_ids}")
-            
+    # Prepare items first
+    items = []
+    for i, term in enumerate(term_list):
+        kshot_text_block, user_template, used_ids = sample_kshot(args, kshot_pool)
+
+        items.append({
+            "term": term,
+            "term_text": term[0],
+            "kshot_text_block": kshot_text_block,
+            "user_template": user_template,
+            "system_template": system_template,
+            "used_ids": used_ids,
+            "index": i
+        })
+    for i in tqdm.tqdm(
+        range(0, len(items), batch_size),
+        desc="Processing batched k-shot generation",
+        total=(len(items) + batch_size - 1) // batch_size
+    ):
+        batch = items[i:i+batch_size]
+        batch_timings = {}
+        batch_timings['start_time'] = time.time()
+#========================================
+#       k shot prompt 
+#========================================
+        try:  
             response = prompt_generation.message_request(
                     args,
-                    term[0],
-                    system_template=system_template,
-                    user_template=user_template,
-                    text=kshot_text_block
+                    batch
+                    # [it['term'] for it in ],
+                    # system_template=system_template,
+                    # user_template=user_template,
+                    # text=kshot_text_block
                 )
-            sent_gen_time = time.time() - start_time
-            text = save_generated_sentences(args, output_path, 'a', response, term, sent_gen_time, used_ids)
+            batch_gen_time = time.time()
+            batch_timings['batch_gen_time'] = batch_gen_time - batch_timings['start_time']
+            args.timings.append(batch_timings)
+            data = utils.safe_load_response(response)
+            for d in data:
+                args.logger.info(f'RESPONSE {i} for generation:  {d["content"]}')
+            texts = [save_generated_sentences(args, output_path, 'a', d['content'].strip(), 
+                            item['term'], batch_timings['batch_gen_time'], item['used_ids']) for item, d in zip(batch,data)]
             print("saved to ", output_path)
-            generated_json = generation_postprocessing.create_json(args, text, i, term, nlp, 
+            terms = [item['term'] for item in batch]
+
+#========================================
+#       Computation of correction 
+#========================================
+
+            generated_jsons = generation_postprocessing.create_json(args, texts, i, terms, nlp, 
+                                            system_template='annotation', 
                                             user_template='disease_annotation_reduced')
-            print("created json: ", generated_json)
+            args.timings[-1]['batch_correction_time'] = time.time() - batch_gen_time
+            print("created json: ", generated_jsons)
+            args.timings[-1]['total_sample_time'] = time.time() - batch_timings['start_time']
+
+#========================================
+#       Save outputs
+#========================================
             with open(corrected_output_path, 'a', encoding='utf-8') as file:
-                file.write(json.dumps(generated_json))
-                file.write("\n")
-            print("saved corrected to ", corrected_output_path)
+                for generated_json in generated_jsons:
+                    file.write(json.dumps(generated_json))
+                    file.write("\n")
+            # print("saved corrected to ", corrected_output_path)
             with open(os.path.join(args.output_directory, 'term_list.txt'), 'a') as f:
-                f.write(str(term) + '\n')
+                for term in terms:
+                    f.write(str(term) + '\n')
+                                
+            with open(os.path.join(args.output_directory, 'timings.json'), 'a') as fi:
+                fi.write(json.dumps(args.timings[-1]))
+                fi.write("\n")
 
         except Exception as e:
-                args.logger.info(f"Response content: {response.json().get('content', '')}")
-                if args.verbose:
-                    print(f"[ERROR] Term {term[0]}: {e}")
+            args.logger.info(f"Response content: {data}")
+            if args.verbose:
+                print(f"[ERROR] Term {term[0]}")
+                traceback.print_exc()
     return output_path
 
 
@@ -213,6 +262,7 @@ if __name__ == "__main__":
         yaml_args = yaml.safe_load(file)
     args = argparse.Namespace(**yaml_args)
     args.logger = utils.setup_logger(args.output_directory, args.verbose)
+    args.timings = []
     vars_str = '{'
     for k, v in vars(args).items():
         vars_str += f'\n {k}: {v},'

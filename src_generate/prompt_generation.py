@@ -20,10 +20,7 @@ SYSTEM_PROMPTS = {
         You are a careful {language} {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence in {language}. 
         Output {language} raw plain text only. No formatting, emojis, or commentary.
         """,
-    'role_sent_type_sp':"""
-        You are a careful spanish {role} with medical expertise. Generate exactly one linguistically {sent_type} sentence in spanish. 
-        Output spanish raw plain text only. No formatting, emojis, or commentary.
-        """,
+
     'annotation':"""You are a carefull medical expert in finding
         medical entities in text. You take context in to account when 
         searching for entities and output the desired structure a 
@@ -99,13 +96,6 @@ PROMPT = {
         and perspective-taking to avoid generic or templated phrasing. Generate exactly one medically appropriate sentence 
         using {condition} as it would appear in a real medical document. Avoid diagnostic boilerplate (e.g., “diagnosed with”). 
         Do not use the words {avoid_words}. Output plain {language} text only. \n\n""",    
-    'genre_syn_generation_new_sp' : """
-        You are a medical expert generating realistic clinical language. For the given {condition}, 
-        infer a plausible clinical context within a {genre}. Use semantic memory retrieval, contextual inference, 
-        and perspective-taking to avoid generic or templated phrasing. Generate exactly one medically appropriate sentence 
-        using {condition} as it would appear in a real medical document. Avoid diagnostic boilerplate (e.g., “diagnosed with”). 
-        Do not use the words patient, individual, or subject. Output plain text in spanish language only. \n\n""",
-        
         # genre = anamnesis, abstract, case-study
         # We want to check if there are additional diagnoses in produced sentence 
         # ('this is the part where there could be noise)
@@ -206,19 +196,45 @@ class SentType(Enum):
 
 class Genre(Enum):
     ABSTRACT = "medical paper abstract"
-    #ANAMNESIS_MD = "anamnesis from one MD to another MD"
-    #ANAMNESIS_PT = "anamnesis from MD to patient"
-    #LETTER = "medical letter"
+    ANAMNESIS_MD = "anamnesis from one MD to another MD"
+    ANAMNESIS_PT = "anamnesis from MD to patient"
+    LETTER = "medical letter"
     RESEARCH = "research paper"
-    #CASESTUDY = "patient case-study"
-    #NOTE = "medical note"
+    CASESTUDY = "patient case-study"
+    NOTE = "medical note"
     REPORT = "medical report"
     SUMMARY = "medical summary"
-    #DISCHARGE = "discharge summary"
-    #PRESCRIPTION = "medical prescription"
-    #GUIDELINE = "medical guideline"
+    DISCHARGE = "discharge summary"
+    PRESCRIPTION = "medical prescription"
+    GUIDELINE = "medical guideline"
     REVIEW = "medical review article"
-    
+
+
+GENRE_GROUPS = {
+    "general": [
+        Genre.ABSTRACT,
+        Genre.RESEARCH,
+        Genre.REPORT,
+        Genre.SUMMARY,
+        Genre.REVIEW,
+    ],
+    "clinical": [
+        Genre.ANAMNESIS_MD,
+        Genre.ANAMNESIS_PT,
+        Genre.LETTER,
+        Genre.CASESTUDY,
+        Genre.NOTE,
+        Genre.DISCHARGE,
+    ],
+    "guides": [
+        Genre.REPORT,        # reuse allowed ✅
+        Genre.PRESCRIPTION,
+        Genre.GUIDELINE,
+        Genre.REVIEW,
+        Genre.CASESTUDY,
+    ]
+}
+
     
 @dataclass
 class PromptTemplate:
@@ -261,11 +277,7 @@ class PromptBuilder:
                 role_variations=[role.value for role in Role],
                 sent_type_variations=[sent_type.value for sent_type in SentType],
             ),
-            'role_sent_type_prompt_sp': PromptTemplate(
-                base_template=SYSTEM_PROMPTS['role_sent_type_sp'],
-                role_variations=[role.value for role in Role],
-                sent_type_variations=[sent_type.value for sent_type in SentType],
-            ),
+
             'annotation': PromptTemplate(
                 base_template=SYSTEM_PROMPTS['annotation']
             ),
@@ -326,7 +338,8 @@ class PromptBuilder:
         # Add random elements if requested
         if randomize:
             if 'genre' in template and 'genre' not in kwargs:
-                kwargs['genre'] = random.choice(self.randomization_options['genre'])
+                group = kwargs.get("genre_group", "general")   
+                kwargs['genre'] = select_genre(group)
                 kwargs['sent_type'] = random.choice(self.randomization_options['sent_type'])
                 kwargs['first_sentence'] = random.choice(self.randomization_options['first_sentence'])
         return template.format(condition=condition, text=text, 
@@ -343,7 +356,8 @@ class PromptBuilder:
                       user_kwargs: Dict = {},
                       number_of_sentences: int = 1,
                       language: str = 'english',
-                      avoid_words: str = ''
+                      avoid_words: str = '',
+                      genre_group: str = 'general'
                       ) -> List[Dict[str, Any]]:
         """Build complete message array for API request"""
         
@@ -352,7 +366,8 @@ class PromptBuilder:
         )
         user_content = self.get_user_prompt(
             user_template, condition, text=text, randomize=user_randomize, 
-            number_of_sentences=number_of_sentences, language=language, avoid_words=avoid_words, **user_kwargs
+            number_of_sentences=number_of_sentences, language=language, 
+            avoid_words=avoid_words, **user_kwargs
         )        
         return [
             {"role": "system", "content": system_content},
@@ -369,6 +384,12 @@ class PromptBuilder:
             raise ValueError("template_type must be 'system' or 'user'")
 
 
+
+def select_genre(group: str) -> str:
+    genres = GENRE_GROUPS.get(group, GENRE_GROUPS["general"])
+    return random.choice(genres).value
+
+
 def format_chat(messages: List[Dict[str, Any]]) -> str:
     """Format messages using the template compatible with llama.cpp server."""
     formatted = ""
@@ -383,11 +404,17 @@ def format_chat(messages: List[Dict[str, Any]]) -> str:
 
 
 def message_request(args: argparse.Namespace, 
-                    condition: str,
-                   prompt_builder: PromptBuilder = PromptBuilder(), 
-                   system_template: str = 'initial_prompt',
-                   user_template: str = 'initial_prompt', 
-                   text: Optional[str] = "") -> requests.Response:
+                    batch: Dict,
+                    terms: List[str] = [],
+                    prompt_builder: PromptBuilder = PromptBuilder(),
+                    system_template: str = '',
+                    user_template: str = '', 
+                    max_tokens:int = None):
+#     condition: str,
+#    prompt_builder: PromptBuilder = PromptBuilder(), 
+#    system_template: str = 'initial_prompt',
+#    user_template: str = 'initial_prompt', 
+#    text: Optional[str] = "") -> requests.Response:
     """
     Improved message request function using PromptBuilder
     Args:
@@ -397,27 +424,37 @@ def message_request(args: argparse.Namespace,
         system_template (str): Key for the system prompt template initial_prompt or role_prompt
         user_template (str): Key for the user prompt template initial_prompt or genre_prompt
     """
-    # Build messages using the prompt builder
-    messages = prompt_builder.build_messages(
-        system_template=system_template,
-        user_template=user_template,
-        condition=condition,
+# batch = items.append({
+#         "term": term,
+#         "term_text": term[0],
+#         "kshot_text_block": kshot_text_block,
+#         "user_template": user_template,
+#         "used_ids": used_ids,
+#         "index": i
+#     })
+# Build messages using the prompt builder
+    messages = [prompt_builder.build_messages(
+        system_template=system_template if system_template else item['system_template'],
+        user_template=user_template if user_template else item['user_template'],
+        condition=terms if terms else item['term'][0],
         system_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
-        text=text,
+        text=item['kshot_text_block'],
         user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         number_of_sentences=getattr(args, 'num_sentences', 1), 
         language=getattr(args, 'language', 'english'),
-        avoid_words=getattr(args, 'avoid_words', 'patient, individual, or subject' )
-    )
-    args.logger.info(f'Generated SYSTEM prompt: {messages[0]["content"]}')
-    args.logger.info(f'Generated USER prompt: {messages[1]["content"]}')
-    prompt = format_chat(messages)
+        avoid_words=getattr(args, 'avoid_words', 'patient, individual, or subject'),
+        genre_group=getattr(args, 'genre_group', 'general'),
+    ) for item in batch]
+    for i, message in enumerate(messages):
+        args.logger.info(f'Generated {i} SYSTEM prompt:\n {message[0]["content"]}')
+        args.logger.info(f'Generated {i} USER prompt:\n {message[1]["content"]}')
+    prompt = [format_chat(message) for message in messages]
     # Send to llama.cpp HTTP server
     response = requests.post(
         f"{args.server_url}/completion",
         json={
             "prompt": prompt,
-            "max_tokens": args.max_tokens,
+            "max_tokens": max_tokens if max_tokens else args.max_tokens,
             "temperature": args.temperature,
             "stop": ["<|eot_id|>"]
         })
@@ -426,7 +463,7 @@ def message_request(args: argparse.Namespace,
         args.logger.info('API response:')
         args.logger.info(f'Response status code: {response.status_code}')
         # args.logger.info(f'System prompt used: {messages[0]["content"][:100]}...')
-        args.logger.info(response.json()['content'])
+        # args.logger.info(response.json()['content'])
     
     if response.status_code != 200:
         args.logger.info(f"Error: {response.status_code} - {response.text}")
