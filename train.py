@@ -139,7 +139,7 @@ if __name__ == "__main__":
         if model_args["pretrained_weights_path"] is None:
             model_args["weights"] = None
         else:
-            model_args['weights'] = torch.load(settings.MODEL_PATH + model_args["pretrained_weights_path"] + f"_seed{seed}_best.bin")
+            model_args['weights'] = torch.load(settings.MODEL_PATH + "/" + model_args["pretrained_weights_path"] + f"_seed{seed}_best.bin")
 
         main(model_name_seed, model_args, settings_args, logger)
         
