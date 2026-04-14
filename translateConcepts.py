@@ -11,13 +11,12 @@ import logging
 
 from typing import Optional
 from typing import List, Dict, Any, Optional
-from nltk.tokenize import sent_tokenize
 from datetime import datetime
-
+#Use spacy
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import utils.utils as utils
+from utils import utils
 
-nltk.download('punkt_tab')
+
 """
 This script sends a formatted chat prompt to a llama.cpp HTTP server for testing various biomedical and clinical NLP tasks.
 It supports different system and prompt templates for information extraction, summarization, and diagnosis from medical text.
@@ -146,10 +145,14 @@ def message_request(args: argparse.Namespace, chunk: str, col: str, i: int) -> r
         Croatian language while preserving medical terminology and context. 
         Ensure the translation is accurate and maintains the original meaning. 
         Take your time to ensure the target language is correct Croatian language 
-        with 'dijalektalna karakteristika hrvatskog jezika u kojem se praslavenski 
+        with 
+        
+        'dijalektalna karakteristika hrvatskog jezika u kojem se praslavenski 
         glas "jat" (ě) u dugim slogovima zamjenjuje sa "ije", a u kratkim slogovima 
-        sa "je" koristeći hrvatsko štokavsko narječje' parts and 'kirurgija' for 
-        surgery, 'brežni kamenac' for kidney stone and 'DRENAŽA' for DRAIN. Don't 
+        sa "je" koristeći hrvatsko štokavsko narječje' 
+        
+        parts and 'kirurgija' for 
+        surgery, 'bubrežni kamenac' for kidney stone and 'DRENAŽA' for DRAIN. Don't 
         offer any extra informatioon just translate the text to Croatian language. 
         Use plain text format. Make shure you translate every single word to 
         croatian language even words written in CAPITAL letters.""",
@@ -193,7 +196,9 @@ def main(args: argparse.Namespace):
     else:
         # Example DataFrame for testing
         df = pd.DataFrame({
-            args.column_to_translate : ["The patient has diabetes and hypertension. They are experiencing fatigue and frequent urination. The doctor recommends a blood test to check glucose levels."]})
+            args.column_to_translate : ["""The patient has diabetes and hypertension. 
+                                        They are experiencing fatigue and frequent urination. 
+                                        The doctor recommends a blood test to check glucose levels."""]})
     output_file = os.path.join(args.output_dir, f'{len(df)}_samples_hr_{args.temperature}_temp_{args.max_tokens}_max_tokens.csv')
     if args.column_to_translate == 'all':
         columns = df.columns

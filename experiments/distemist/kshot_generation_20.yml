@@ -8,6 +8,7 @@ spacy_model: es_dep_news_trf
 
 generate_k: 7053 #800000
 random_seed: 42
+batch: 1
 
 system_template: role_sent_type_prompt
 

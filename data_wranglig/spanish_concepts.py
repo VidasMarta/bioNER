@@ -25,7 +25,8 @@ def main():
     df_concepts = pd.read_csv(args.syn_path, delimiter='\t', on_bad_lines='skip')
 
     # Filter by ancestor
-    descendants = df_ancestor[df_ancestor['ancestor_concept_id'].isin(args.ancestors)]['descendant_concept_id'].values
+    descendants = df_ancestor[df_ancestor['ancestor_concept_id'].isin(
+        args.ancestors)]['descendant_concept_id'].values
 
     # Filter by language and descendants
     sp_df = df_concepts[df_concepts['language_concept_id'] == args.lang_id]
