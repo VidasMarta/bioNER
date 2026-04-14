@@ -1,18 +1,18 @@
 disease_file: data/KB/ICD10_GE_CH/concepts_filtered_ge.csv
 obo_file_path: false
-output_directory: data/synthetic/bronco150/kshot_syn_generation_10pct_test
+output_directory: data/synthetic/bronco150/kshot_syn_generation_10pct
 server_url: http://0.0.0.0:8484
 pairs_file_path: ''
 
 spacy_model: de_dep_news_trf
 
-generate_k: 28 #800000
+generate_k: 25000 #800000
 random_seed: 42
 batch: 6
 
 system_template: role_sent_type_prompt
 
-avoid_words: 	Patient, Patientin, Individuum oder Subjekt
+avoid_words: Patient, Patientin, Individuum oder Subjekt
 language: german
 genre_group: clinical
 kshot_size: 3

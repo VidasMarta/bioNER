@@ -338,8 +338,9 @@ class PromptBuilder:
         # Add random elements if requested
         if randomize:
             if 'genre' in template and 'genre' not in kwargs:
-                group = kwargs.get("genre_group", "general")   
-                kwargs['genre'] = select_genre(group)
+                genre_group = kwargs.get("genre_group", "general")   
+                print(genre_group)
+                kwargs['genre'] = select_genre(genre_group)
                 kwargs['sent_type'] = random.choice(self.randomization_options['sent_type'])
                 kwargs['first_sentence'] = random.choice(self.randomization_options['first_sentence'])
         return template.format(condition=condition, text=text, 
@@ -367,7 +368,7 @@ class PromptBuilder:
         user_content = self.get_user_prompt(
             user_template, condition, text=text, randomize=user_randomize, 
             number_of_sentences=number_of_sentences, language=language, 
-            avoid_words=avoid_words, **user_kwargs
+            avoid_words=avoid_words, genre_group=genre_group, **user_kwargs
         )        
         return [
             {"role": "system", "content": system_content},
@@ -410,11 +411,6 @@ def message_request(args: argparse.Namespace,
                     system_template: str = '',
                     user_template: str = '', 
                     max_tokens:int = None):
-#     condition: str,
-#    prompt_builder: PromptBuilder = PromptBuilder(), 
-#    system_template: str = 'initial_prompt',
-#    user_template: str = 'initial_prompt', 
-#    text: Optional[str] = "") -> requests.Response:
     """
     Improved message request function using PromptBuilder
     Args:
@@ -424,15 +420,7 @@ def message_request(args: argparse.Namespace,
         system_template (str): Key for the system prompt template initial_prompt or role_prompt
         user_template (str): Key for the user prompt template initial_prompt or genre_prompt
     """
-# batch = items.append({
-#         "term": term,
-#         "term_text": term[0],
-#         "kshot_text_block": kshot_text_block,
-#         "user_template": user_template,
-#         "used_ids": used_ids,
-#         "index": i
-#     })
-# Build messages using the prompt builder
+
     messages = [prompt_builder.build_messages(
         system_template=system_template if system_template else item['system_template'],
         user_template=user_template if user_template else item['user_template'],

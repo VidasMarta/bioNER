@@ -11,7 +11,7 @@ random_seed: 42
 batch: 6
 
 system_template: role_sent_type_prompt
-avoid_words: 	Patient, Patientin, Individuum oder Subjekt
+avoid_words: Patient, Patientin, Individuum oder Subjekt
 language: german
 genre_group: clinical
 

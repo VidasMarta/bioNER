@@ -128,6 +128,19 @@ def kshot_generation(
     # print(f"[INFO] Output path: {output_path}",
     #       f"\n[INFO] Corrected output path: {corrected_output_path}")
     kshot_pool = load_kshot_examples(args, args.kshot_pool)
+    seen = set()
+
+    for i, ex in enumerate(kshot_pool):
+        ex_id = ex.get('id')
+
+        if ex_id is None or ex_id in seen:
+            ex_id = i
+            while ex_id in seen:
+                ex_id += 1
+            ex['id'] = ex_id
+
+        seen.add(ex_id)
+            
     # open(output_path, "w").close()  
     batch_size = max(1, args.batch)
 
@@ -135,7 +148,7 @@ def kshot_generation(
     items = []
     for i, term in enumerate(term_list):
         kshot_text_block, user_template, used_ids = sample_kshot(args, kshot_pool)
-
+        print(used_ids)
         items.append({
             "term": term,
             "term_text": term[0],
@@ -160,10 +173,6 @@ def kshot_generation(
             response = prompt_generation.message_request(
                     args,
                     batch
-                    # [it['term'] for it in ],
-                    # system_template=system_template,
-                    # user_template=user_template,
-                    # text=kshot_text_block
                 )
             batch_gen_time = time.time()
             batch_timings['batch_gen_time'] = batch_gen_time - batch_timings['start_time']
@@ -266,7 +275,7 @@ if __name__ == "__main__":
     vars_str = '{'
     for k, v in vars(args).items():
         vars_str += f'\n {k}: {v},'
-    vars_str = '}'
+    vars_str += '}'
 
     args.logger.info(f"Arguments:\n {vars_str}")
     args.logger.info(f"Output directory: {args.output_directory}")
