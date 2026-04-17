@@ -1,4 +1,4 @@
-#Model name: bronco_filtered50pct_ft_with_50bronco
+#Model name: bronco_50pct_ft_with_50bronco
 
 # Model Hyperparameters
 model:
@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "bronco_filtered50pct"
+  pretrained_weights_path: "bronco_50pct"
 
 
 # Embedding and Dataset Configuration
