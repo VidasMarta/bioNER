@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "distemist_filtered100pct"
+  pretrained_weights_path: "ES_S_with_kshot_100pct"
 
 
 # Embedding and Dataset Configuration
