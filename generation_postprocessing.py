@@ -110,20 +110,32 @@ def check_additional_disease_tags(
         terms = [item['base_terms'] for item in items],
         system_template=system_template,
         user_template=user_template,
-        max_tokens=32,
+        max_tokens=int(args.max_tokens/args.batch),
         # text=[item['sentence'] for item in items],
     )
+    cleaned=[]
     data = utils.safe_load_response(response)
-    cleaned = [utils.remove_code_fences(text['content'].strip()) for text in data]
+    anotations = [text['content'] for text in data]
+    parsed = [utils.safe_parse(text['content']) for text in data]
 
+    args.logger.info(f'ANNOTATIONS: {anotations}')
+    args.logger.info(f'PARSED: {parsed}')
     try:
-        parsed = [eval(clean) for clean in cleaned]
+        # parsed = [eval(clean) for clean in cleaned]
         out = []
         for parse in parsed:
-            out.append([t.lower() for t in parse if isinstance(t, str)])
+            if not isinstance(parse, list):
+                parse = []
+                out.append([t.lower() for t in parse if isinstance(t, str)])
         return out
     except Exception as e:
-        args.logger.info('Exception in LLM check and reanotate the the respons!')
+        args.logger.info('ERROR:Exception in LLM check and reanotate the the response!')
+        try:
+            args.logger.info(f'Exception is: {e}')
+            args.logger.info(f'LLM content was: {content}')
+            args.logger.info(f'Cleaned response was: {cleaned}')
+        except Exception as e:
+            args.logger.info(f'Exception in logging LLM response: {e}')
         print(f'Exception is: {e}')
         return []
 
@@ -143,6 +155,7 @@ def create_json(
         args.timings = [{}]
     start_time = time.time()
     items = []
+    docs = []
     for i, (text, term) in enumerate(zip(text, terms)):
         doc = nlp(text)
         # ---- normalize terms ----
@@ -162,8 +175,9 @@ def create_json(
             'tokens':tokens, 
             'entities':entities, 
             'spans':spans,
-            'kshot_text_block':'',
+            'text_block': text,
         })
+        docs.append(doc)
     nlp_time = time.time()
     args.timings[-1]['nlp_time'] = nlp_time - start_time
     # ---- LLM pass ----
@@ -180,7 +194,7 @@ def create_json(
     # llm_terms = check_additional_disease_tags(
     #         args, text, base_terms, system_template, user_template
     #     )
-    for llm_te, item in zip(llm_terms, items):
+    for llm_te, item, doc in zip(llm_terms, items, docs):
         llm_term_tuples = [([t], []) for t in llm_te if t not in item['base_terms']]
 
         tags_llm, _, entities_llm, spans_llm = create_rule_json(

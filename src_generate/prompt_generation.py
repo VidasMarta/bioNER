@@ -166,10 +166,12 @@ PROMPT = {
         Exclude general or vague terms (“disease”, “syndrome”, “tumor”) unless they are part of a specific phrase (e.g., “breast cancer”).
         Do not annotate biological processes (“carcinogenesis”) or organisms (“bacterial”) unless they directly refer to a disease 
         (e.g., “Epstein-Barr virus”). Use exact spans from the sentence, preserving their form and order. 
+        use semantic memory retrieval, and contextual inference, 
+        and analytical reasoning, and information processing and scientific reasoning to find entities.
         Output a list: [<entity_text>, <entity_text>, ...]. If no valid entities are found, output an empty list: []. 
-        The sentence may mention a form of {condition} use semantic memory retrieval, and contextual inference, 
-        and analytical reasoning, and information processing and scientific reasoning to find entities in following text:
-        {text}\n\n"""
+        A mention of {condition} in following text is possible.
+        Find and extract diagnoses and diseases mentioned in the following text in list format [<entity_text>, <entity_text>, ...].:
+        Text: {text}\n\n List of diagnoses and diseases:"""
         }
 
 
@@ -424,15 +426,15 @@ def message_request(args: argparse.Namespace,
     messages = [prompt_builder.build_messages(
         system_template=system_template if system_template else item['system_template'],
         user_template=user_template if user_template else item['user_template'],
-        condition=terms if terms else item['term'][0],
+        condition=terms[i] if terms else item['term'][0],
         system_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
-        text=item['kshot_text_block'],
+        text=item['text_block'],
         user_randomize=args.randomize_prompts if hasattr(args, 'randomize_prompts') else True,
         number_of_sentences=getattr(args, 'num_sentences', 1), 
         language=getattr(args, 'language', 'english'),
         avoid_words=getattr(args, 'avoid_words', 'patient, individual, or subject'),
         genre_group=getattr(args, 'genre_group', 'general'),
-    ) for item in batch]
+    ) for i, item in enumerate(batch)]
     for i, message in enumerate(messages):
         args.logger.info(f'Generated {i} SYSTEM prompt:\n {message[0]["content"]}')
         args.logger.info(f'Generated {i} USER prompt:\n {message[1]["content"]}')

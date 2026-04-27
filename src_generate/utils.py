@@ -12,6 +12,8 @@ import subprocess
 from collections import defaultdict  
 import sys
 import requests
+import ast
+
 
 SPACY_NLP = None
 
@@ -49,14 +51,91 @@ def normalize_llama_response(data):
 def remove_code_fences(text: str) -> str:
     return re.sub(r'```[\w]*\n?', '', text).strip()
 
+
 def clean_text(text: str) -> str:
-    text = re.sub(r'```+', '', text)
-    text = re.sub(r'\s+([.,!?;:])', r'\1', text)
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'([.!?,])([^\s])', r'\1 \2', text)
-    text = re.sub(r'\s+', ' ', text)
+    if not isinstance(text, str):
+        return text
+
+    text = re.sub(r'```.*?```', '', text, flags=re.S)
+    text = re.sub(r'^\s*json\s*', '', text, flags=re.I)
     text = re.sub(r'<\|.*?\|>', '', text)
-    return text.strip()
+    text = text.strip()
+
+    return text
+
+
+def normalize_llm_json(text: str) -> str:
+    text = clean_text(text)
+
+    # convert: [ "x" ] → ["x"]
+    text = re.sub(r'\[\s*"(.*?)"\s*\]', r'["\1"]', text)
+
+    return text
+
+
+def safe_parse(text: str):
+    text = normalize_llm_json(text)
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try Python literal lists with single quotes
+    try:
+        return ast.literal_eval(text)
+
+    except Exception:
+        print(f"[WARNING] Parsing failed for text: {text}")
+        return []
+
+
+def normalize_leading_cap(text: str) -> str:
+    """
+    Lowercase first letter only when the initial capital appears to be
+    sentence-style capitalization rather than an acronym/code/token.
+
+    Rules:
+    - Empty / 1-char strings handled safely
+    - If first char is not A-Z -> unchanged
+    - If second char is missing -> lowercase single capital letter
+    - Keep unchanged if second char is:
+        - uppercase letter
+        - digit
+        - non-letter symbol
+      Examples: USA, X1, A_Brand, C++
+    - Keep unchanged if the whole alpha token is uppercase
+      Example: NASA
+    - Otherwise lowercase first letter
+      Examples: Apple -> apple, Zagreb -> zagreb
+    """
+    if not text:
+        return text
+
+    if len(text) == 1:
+        return text.lower() if text.isalpha() else text
+
+    first = text[0]
+    second = text[1]
+
+    # First char must be uppercase letter
+    if not first.isalpha() or not first.isupper():
+        return text
+
+    # Preserve if second char is uppercase, digit, or symbol
+    if second.isupper() or second.isdigit() or not second.isalpha():
+        return text
+
+    # Extract leading alphabetic token
+    m = re.match(r'^([A-Za-z]+)', text)
+    if m:
+        token = m.group(1)
+        # Preserve all-caps words
+        if token.isupper():
+            return text
+
+    # Lowercase only first character
+    return first.lower() + text[1:]
 
 def check_last_token(tokens_lower: List[str]) -> List[str]:
     tokens_lower[-1] = tokens_lower[-1].rstrip(string.punctuation)

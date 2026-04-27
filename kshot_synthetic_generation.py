@@ -68,11 +68,19 @@ def load_kshot_examples(args, kshot_path):
         kshot_examples = utils.load_training_samples(kshot_path)
         if args.verbose:
             print(f"[INFO] Loaded {len(kshot_examples)} k-shot examples from {kshot_path}")
+        filtered = [
+            item for item in kshot_examples
+            if item.get("sentence", "").strip()                      # not empty
+            and not item.get("sentence", "").isupper()              # not ALL CAPS
+            and len(item.get("parents", [])) >= 3                   # parents length at least 3
+        ]
+
+# result is in filtered
     else:
         print(f"[INFO] No k-shot examples loaded. BUG! Check path: {kshot_path}")
         print(f"{os.path.exists(kshot_path)} {os.getcwd()}")
 
-    return kshot_examples
+    return filtered
 
 
 def sample_kshot(args, kshot_pool) -> Tuple[str, str, list]:
@@ -148,11 +156,13 @@ def kshot_generation(
     items = []
     for i, term in enumerate(term_list):
         kshot_text_block, user_template, used_ids = sample_kshot(args, kshot_pool)
-        print(used_ids)
+        for i, t in enumerate(term[0]):
+            term[0][i] = utils.normalize_leading_cap(t)
+        # print(used_ids)
         items.append({
             "term": term,
             "term_text": term[0],
-            "kshot_text_block": kshot_text_block,
+            "text_block": kshot_text_block,
             "user_template": user_template,
             "system_template": system_template,
             "used_ids": used_ids,
