@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "ES_S_with_3shot_1pct"
+  pretrained_weights_path: "DISTEMIST_with_1DISTEMIST"
 
 
 # Embedding and Dataset Configuration
