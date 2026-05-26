@@ -15,6 +15,7 @@ import json
 import networkx as nx
 from typing import List, Tuple, Dict, Optional
 from pathlib import Path
+import spacy
 
 
 class ActualDCalculator:
@@ -186,7 +187,7 @@ class CorpusWithActualD:
     @staticmethod
     def load_and_calculate_D(jsonl_path: str, 
                             output_path: Optional[str] = None,
-                            verbose: bool = True) -> List[Dict]:
+                            verbose: bool = True, spacy_model: str = "en_core_web_sm") -> List[Dict]:
         """
         Load NCBI JSONL and calculate actual D for each sentence
         
@@ -194,6 +195,7 @@ class CorpusWithActualD:
             jsonl_path: Path to JSONL file
             output_path: Optional output file for results
             verbose: Print progress
+            spacy_model: spaCy model to use for NLP processing
             
         Returns:
             List of analysis results
@@ -207,6 +209,7 @@ class CorpusWithActualD:
         results = []
         count = 0
         skipped = 0
+        nlp = spacy.load(spacy_model)
         
         with open(jsonl_path, 'r') as f:
             for line_num, line in enumerate(f, 1):
@@ -218,10 +221,17 @@ class CorpusWithActualD:
                     #     continue
                     
                     sentence = entry["sentence"]
-                    pos_tags = entry["pos"]
-                    dep_labels = entry["dep"]
-                    parents = entry["parents"]
-                    sent_id = entry["id"]
+                    if not getattr(entry, "pos", None) or not getattr(entry, "dep", None) or not getattr(entry, "parents", None):
+                        # Use spacy to calculate pos dep and parents if not provided
+                        doc = nlp(sentence)
+                        pos_tags = [token.pos_ for token in doc]
+                        dep_labels = [token.dep_ for token in doc]
+                        parents = [token.head.i for token in doc]
+                    else:
+                        pos_tags = entry["pos"]
+                        dep_labels = entry["dep"]
+                        parents = entry["parents"]
+                    sent_id = getattr(entry, "id", None)
                     
                     n = len(pos_tags)
                     
@@ -359,7 +369,8 @@ def main():
     results = CorpusWithActualD.load_and_calculate_D(
         INPUT_FILE,
         output_path=OUTPUT_FILE,
-        verbose=True
+        verbose=True,
+        spacy_model="en_core_web_sm"  # Change if you want a different spaCy model
     )
     
     if not results:

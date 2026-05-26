@@ -1,4 +1,4 @@
-disease_file: data/KB/SNOMEDCT/concepts_filtered_fr.csv
+disease_file: data/KB/ICD10FR/concepts_filtered_fr.csv
 obo_file_path: false
 output_directory: data/synthetic/quaero/0shot_syn_generation
 server_url: http://0.0.0.0:8484
@@ -8,15 +8,18 @@ spacy_model: fr_dep_news_trf
 
 generate_k: 25000
 random_seed: 42
-batch: 1
+batch: 4
 
+avoid_words: Patient, patiente, individu ou sujet
 system_template: role_sent_type_prompt
 user_template: genre_syn_generation_new
+genre_group: "titles and leflets"
+
 language: french
 kshot_size: 0
 kshot_pool: ''
 temperature: 0
-max_tokens: 500
+max_tokens: 320
 
 include_pos: true
 include_dep: true

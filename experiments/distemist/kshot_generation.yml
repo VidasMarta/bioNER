@@ -1,6 +1,6 @@
 disease_file: data/KB/SNOMEDCT/concepts_disease_filtered_sp.csv
 obo_file_path: false
-output_directory: data/synthetic/distemist/10shot_syn_generation_20pct
+output_directory: data/synthetic/${CORPUS}/${K_SHOT}shot_syn_generation_${PCT}pct_${KSHOT_CHECK}shot_check_${SIZE}
 server_url: http://0.0.0.0:8484
 pairs_file_path: ''
 
@@ -8,22 +8,28 @@ spacy_model: es_dep_news_trf
 
 generate_k: 25000 #800000
 random_seed: 42
-batch: 4
+batch: ${BATCH}
 
 system_template: role_sent_type_prompt
+user_template: genre_syn_generation_new
+kshot_size: ${K_SHOT}
+
+system_template_check: 'annotation'
+user_template_check: disease_annotation_reduced
+kshot_check: ${KSHOT_CHECK}
+
 
 avoid_words: paciente, individuo o sujeto
 language: spanish
-kshot_size: 10
-kshot_pool: data/processed/distemist/trf/distemist_ner_train_20pct.json
+kshot_pool: data/processed/${CORPUS}/trf/${CORPUS}_ner_train_${PCT}pct.json
 no_entity_ratio: 0.1 #calculated on whole NCBI train
 
 temperature: 0
-max_tokens: 320
+max_tokens: ${MAX_TOKENS}
 
 include_pos: false #true
 include_dep: false #true
 
 verbose: true #false
-test: false
+test: ${TEST}
 

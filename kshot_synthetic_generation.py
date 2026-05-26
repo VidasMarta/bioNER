@@ -74,13 +74,14 @@ def load_kshot_examples(args, kshot_path):
             and not item.get("sentence", "").isupper()              # not ALL CAPS
             and len(item.get("parents", [])) >= 3                   # parents length at least 3
         ]
+        return filtered
 
 # result is in filtered
     else:
         print(f"[INFO] No k-shot examples loaded. BUG! Check path: {kshot_path}")
         print(f"{os.path.exists(kshot_path)} {os.getcwd()}")
-
-    return filtered
+        return kshot_examples
+    
 
 
 def sample_kshot(args, kshot_pool) -> Tuple[str, str, list]:
@@ -194,16 +195,18 @@ def kshot_generation(
                             item['term'], batch_timings['batch_gen_time'], item['used_ids']) for item, d in zip(batch,data)]
             print("saved to ", output_path)
             terms = [item['term'] for item in batch]
-
+            kshot_text_blocks = [item['text_block'] for item in batch]
 #========================================
 #       Computation of correction 
 #========================================
-
+            # TODO: this is completely fixed should we add kshot.
             generated_jsons = generation_postprocessing.create_json(args, texts, i, terms, nlp, 
                                             system_template='annotation', 
-                                            user_template='disease_annotation_reduced')
+                                            user_template='disease_annotation_reduced', 
+                                            kshot_text_blocks=kshot_text_blocks)
+            
             args.timings[-1]['batch_correction_time'] = time.time() - batch_gen_time
-            print("created json: ", generated_jsons)
+            # print("created json: ", generated_jsons)
             args.timings[-1]['total_sample_time'] = time.time() - batch_timings['start_time']
 
 #========================================
@@ -223,7 +226,7 @@ def kshot_generation(
                 fi.write("\n")
 
         except Exception as e:
-            args.logger.info(f"Response content: {data}")
+            args.logger.info(f"[ERROR]Response content: {data}")
             if args.verbose:
                 print(f"[ERROR] Term {term[0]}")
                 traceback.print_exc()
@@ -255,9 +258,9 @@ def main(args: argparse.Namespace) -> None:
         disease_terms = utils.generate_term_list(args.pairs_file_path, args.verbose)
         term_list += disease_terms
 
-    if args.test:
-        term_list = term_list[:2] + term_list[400:406] + term_list[1100:1102] + term_list[-2:]
-        print("Testing on samples: ", len(term_list), term_list)
+    if args.test: 
+        args.generate_k = 100
+        # print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
 
     if len(term_list) > args.generate_k:
@@ -275,11 +278,46 @@ def main(args: argparse.Namespace) -> None:
                               nlp = nlp)
 
 
+def load_config(config_path: str):
+    import yaml, os
+
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    def expand(value):
+        if isinstance(value, str):
+            return os.path.expandvars(value)
+        return value
+
+    config = {k: expand(v) for k, v in config.items()}
+
+    # ✅ cast types explicitly
+    int_fields = ["k_shot", "batch", "num_sentences", "max_tokens",
+                  "generate_k", "random_seed", "kshot_size", ]
+    
+    float_fields = ["temperature", "no_entity_ratio"]
+
+    bool_fields = ["verbose", "use_context", "test", "reprocess", 
+                   "include_pos", "include_dep", "obo_file_path"]
+
+    for key in int_fields:
+        if key in config and config[key] is not None:
+            config[key] = int(config[key])
+
+    for key in float_fields:
+        if key in config and config[key] is not None:
+            config[key] = float(config[key])
+
+    for key in bool_fields:
+        if key in config and isinstance(config[key], str):
+            config[key] = config[key].lower() in ("true", "1", "yes")
+
+    return argparse.Namespace(**config)
+
+
 if __name__ == "__main__":
     init_args = argparse_args()
-    with open(init_args.config_file, 'r') as file:
-        yaml_args = yaml.safe_load(file)
-    args = argparse.Namespace(**yaml_args)
+    args = load_config(init_args.config_file)
     args.logger = utils.setup_logger(args.output_directory, args.verbose)
     args.timings = []
     vars_str = '{'
@@ -289,4 +327,5 @@ if __name__ == "__main__":
 
     args.logger.info(f"Arguments:\n {vars_str}")
     args.logger.info(f"Output directory: {args.output_directory}")
+    
     main(args)

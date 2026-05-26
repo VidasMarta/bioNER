@@ -59,6 +59,7 @@ def clean_text(text: str) -> str:
     text = re.sub(r'```.*?```', '', text, flags=re.S)
     text = re.sub(r'^\s*json\s*', '', text, flags=re.I)
     text = re.sub(r'<\|.*?\|>', '', text)
+    text = re.sub(r'\*\*', '', text)
     text = text.strip()
 
     return text

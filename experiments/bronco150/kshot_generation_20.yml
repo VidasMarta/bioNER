@@ -6,7 +6,7 @@ pairs_file_path: ''
 
 spacy_model: de_dep_news_trf
 
-generate_k: 25000 #800000
+generate_k: 13520 #800000
 random_seed: 42
 batch: 4
 

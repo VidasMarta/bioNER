@@ -20,8 +20,6 @@ import random
 import argparse
 import os
 from . import actual_D
-from . import bar_plot_cluster_sizes
-
 
 class SentenceDistance:
     """Calculate distance between sentences based on syntactic features"""
@@ -772,15 +770,19 @@ def argparse_args():
     parser.add_argument("--input", help="Input JSONL file")
     parser.add_argument("--input_synth", help="Input synthetic JSONL file")
     parser.add_argument("--output_dir", help="Output directory for CSV files and jsonl files")
+    parser.add_argument("--spacy_model", help="spaCy model to use for NLP processing")
     return parser.parse_args()
 """
 python3 -m distance_matrix \
     --input /home/mkeber/syn-bioner/data/processed/ncbi/trf/syntax_features_sent_tree_head.jsonl \
-    --input_synth /home/mkeber/syn-bioner/data/synthetic/kshot_syn_generation_10pct/corrected_generated_sentences_20260302.jsonl
+    --input_synth /home/mkeber/syn-bioner/data/synthetic/kshot_syn_generation_10pct/corrected_generated_sentences_20260302.jsonl \
+    --spacy_model en_core_web_sm
 """
 
 def main():
     """Example usage"""
+    from . import bar_plot_cluster_sizes
+
     args = argparse_args()
     # Load results from JSONL
     INPUT_FILE = args.input
@@ -798,7 +800,8 @@ def main():
         results = actual_D.CorpusWithActualD.load_and_calculate_D(
                         INPUT_FILE,
                         output_path=OUTPUT_FILE,
-                        verbose=True
+                        verbose=True,
+                        spacy_model=args.spacy_model if hasattr(args, 'spacy_model') else 'en_core_web_sm'
                         )
     # results = random.sample(results,100)
     print(f"✓ Loaded {len(results)} sentences\n")

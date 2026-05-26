@@ -1,0 +1,33 @@
+disease_file: data/KB/SNOMEDCT/concepts_disease_filtered_en.csv
+obo_file_path: false
+output_directory: data/synthetic/ncbi/${K_SHOT}shot_syn_generation_${PCT}pct_${KSHOT_CHECK}shot_check_${SIZE}
+server_url: http://0.0.0.0:8484
+pairs_file_path: data/KB/hetionet/all.jsonl
+
+spacy_model: en_core_web_trf
+
+generate_k: 25000
+random_seed: 42
+batch: ${BATCH}
+
+system_template: 'role_sent_type_prompt'
+user_template: genre_syn_generation_new
+kshot_size: ${K_SHOT}
+
+# decision for use of kshot... use disease_annotation_reduced_kshot
+system_template_check: 'annotation'
+user_template_check: disease_annotation_reduced  
+kshot_check: ${KSHOT_CHECK}
+
+kshot_pool: data/processed/ncbi/trf/ncbi_ner_train_${PCT}pct.json
+no_entity_ratio: 0.17 #calculated on whole NCBI train
+genre_group: general
+temperature: 0
+max_tokens: ${MAX_TOKENS}
+
+include_pos: false #true
+include_dep: false #true
+
+verbose: true #false
+test: ${TEST}
+

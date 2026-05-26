@@ -5,5 +5,6 @@ test: /home/${USERNAME}/syn-bioner/data/raw/MeSH_NCBI/NCBItestset_corpus.txt
 parsed_mesh_folder: /home/${USERNAME}/syn-bioner/data/processed/ncbi/trf/
 histograms: /home/${USERNAME}/syn-bioner/data/ncbi/processed/trf/plots/
 
-pcts: ['0.5', '0.2', '0.1'] 
+pcts: ['0.5', '0.2', '0.1', '0.05', '0.01'] 
+# pcts: ['0.5', '0.2', '0.1', '0.05', '0.01'] 
 model: en_core_web_trf

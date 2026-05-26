@@ -64,6 +64,17 @@ def assign_new_samples(new_sample_distances, cluster_members, leaves, strategy='
 
 
 # ── core function ─────────────────────────────────────────────────────────────
+def load_npz_path(path):
+    if path.endswith('.npz'):
+        raw_dist, sid = DistanceMatrixGenerator.load_distance_matrix(path)
+    else:
+        # Find the npz file in the path assuming the path is directory
+        npz_files = [f for f in os.listdir(path) if f.endswith('.npz')]
+        if not npz_files:
+            raise FileNotFoundError(f"No .npz file found in directory {path}")
+        npz_path = os.path.join(path, npz_files[0])
+        raw_dist, sid = DistanceMatrixGenerator.load_distance_matrix(npz_path)
+    return raw_dist, sid
 
 def make_comparison_original_synth(
     dist_path,
@@ -97,7 +108,7 @@ def make_comparison_original_synth(
     all_sentence_ids      = {}
 
     for path in dist_path: # shape: (n_original, m_new) or (m_new, n_original)
-        raw_dist, sid = DistanceMatrixGenerator.load_distance_matrix(path)
+        raw_dist, sid = load_npz_path(path)
         n_original = len(n_words)
         if raw_dist.shape[0] == n_original:       # rows are original → transpose
             dm = np.log(raw_dist.T + 1)           # → (m_new, n_original)
@@ -179,7 +190,7 @@ def make_comparison_original_synth(
             x + offset,
             after_norm,
             width,
-            label=f'{os.path.basename(os.path.dirname(path))}: {number_of_samples[i][0]}',
+            label=f'{os.path.basename(os.path.dirname(path)) if path.endswith(".npz") else os.path.basename(path)}: {number_of_samples[i][0]}',
             color=colors[i],
         )
 
@@ -189,9 +200,9 @@ def make_comparison_original_synth(
     ax.set_title('Cluster distribution: original vs synthetic sets')
     ax.legend(fontsize=8)
     plt.tight_layout()
-
+    out_dir = out_dir if len(dist_path) > 1 else os.path.dirname(dist_path[0])
     out_path = os.path.join(out_dir, png_name)
-    fig.savefig(out_path, dpi=150)
+    fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"\nSaved bar plot → {out_path}")
 
@@ -222,7 +233,8 @@ def build_base_structures(jsonl_path, distance_matrix_path, p=30):
 
     n_words = np.array(n_words)
     distance_matrices = dict()
-    sample, sentence_ids = DistanceMatrixGenerator.load_distance_matrix(distance_matrix_path)
+    
+    sample, sentence_ids = load_npz_path(distance_matrix_path)
     # df = pd.read_csv(distance_matrix_path, index_col=0)
     # sample = df.values
     sample = np.log(sample + 1)
@@ -322,6 +334,10 @@ def parse_args(args=None):
         default='mean',
         help='Aggregation strategy for cluster assignment (default: mean).',
     )
+    parser.add_argument(
+        '--output_path',
+        help='Path to the output directory where plots will be saved.',
+    )
     return parser.parse_args(args)
 
 """
@@ -337,10 +353,12 @@ def main(args=None):
     print(f"Distance matrix path: {args.dist}")
     print(f"Synth files: {args.synth}")
     print(f"p={args.p}, strategy={args.strategy}\n")
+    print(f"Output path: {args.output_path}\n")
 
     leaves, leaf_label_dict, cluster_members, n_words, Z, out_dir, png_name = \
         build_base_structures(args.base, args.dist, p=args.p)
     original_data_name = os.path.basename(args.base)
+
     make_comparison_original_synth(
         dist_path=args.synth,
         leaves=leaves,

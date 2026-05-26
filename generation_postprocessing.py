@@ -110,7 +110,7 @@ def check_additional_disease_tags(
         terms = [item['base_terms'] for item in items],
         system_template=system_template,
         user_template=user_template,
-        max_tokens=int(args.max_tokens/args.batch),
+        max_tokens=int(getattr(args, 'max_tokens', 64) / 2),
         # text=[item['sentence'] for item in items],
     )
     cleaned=[]
@@ -120,35 +120,39 @@ def check_additional_disease_tags(
 
     args.logger.info(f'ANNOTATIONS: {anotations}')
     args.logger.info(f'PARSED: {parsed}')
-    try:
-        # parsed = [eval(clean) for clean in cleaned]
-        out = []
-        for parse in parsed:
-            if not isinstance(parse, list):
-                parse = []
-                out.append([t.lower() for t in parse if isinstance(t, str)])
-        return out
-    except Exception as e:
-        args.logger.info('ERROR:Exception in LLM check and reanotate the the response!')
-        try:
-            args.logger.info(f'Exception is: {e}')
-            args.logger.info(f'LLM content was: {content}')
-            args.logger.info(f'Cleaned response was: {cleaned}')
-        except Exception as e:
-            args.logger.info(f'Exception in logging LLM response: {e}')
-        print(f'Exception is: {e}')
-        return []
+    return parsed
+    # try:
+    #     # parsed = [eval(clean) for clean in cleaned]
+    #     out = []
+    #     for parse in parsed:
+    #         if not isinstance(parse, list):
+    #             parse = []
+    #             out.append([t.lower() for t in parse if isinstance(t, str)])
+    #     return out
+    # except Exception as e:
+    #     args.logger.info('ERROR:Exception in LLM check and reanotate the the response!')
+    #     try:
+    #         args.logger.info(f'Exception is: {e}')
+    #         args.logger.info(f'LLM content was: {content}')
+    #         args.logger.info(f'Cleaned response was: {cleaned}')
+    #     except Exception as e:
+    #         args.logger.info(f'Exception in logging LLM response: {e}')
+    #     print(f'Exception is: {e}')
+    #     return []
 
 
 def create_json(
     args: argparse.Namespace,
-    text: List[str],
+    texts: List[str],
     id: List[str],
     terms: List[Tuple[List[str], List[str]]],
     nlp: Any = None,
     system_template: List[str] = "annotation",
     user_template: List[str] = "disease_annotation_reduced",
+    kshot_text_blocks: List[str] = [],
 ):
+    system_template = getattr(args, 'system_template_check', 'annotation')
+    user_template = getattr(args, 'user_template_check', 'disease_annotation_reduced')
     if nlp is None:
         nlp = spacy_load_model(args.spacy_model)
     if not hasattr(args, "timings"):
@@ -156,16 +160,25 @@ def create_json(
     start_time = time.time()
     items = []
     docs = []
-    for i, (text, term) in enumerate(zip(text, terms)):
+    if kshot_text_blocks == []:
+        kshot_text_blocks = ['' for _ in texts]
+    for i, (text, term, kshot_text) in enumerate(zip(texts, terms, kshot_text_blocks)):
         doc = nlp(text)
         # ---- normalize terms ----
         unpacked_terms = []
         for te, tid in zip(term[0], term[1]):
             unpacked_terms.append(([te], [tid]))
-    
+        # Tu se upišu i drugi iz batcha od llm-a
+        spans = []
+        args.logger.info(f"  unpacked_terms.append(([te], [tid])): '{unpacked_terms}'")
         tags, tokens, entities, spans = create_rule_json(doc, nlp, unpacked_terms)
-        # items[i]['tags'], items[i]['tokens'], items[i]['entities'], items[i]['spans'] 
-        print(text)
+        args.logger.info(f" 'entities' :entities,: '{entities}'")
+        args.logger.info(f" 'spans' :spans,:  '{spans}'")
+
+
+        pos_tags = [t.pos_ for t in doc]
+        dep_rels = [t.dep_ for t in doc]
+        parents = [t.head.i for t in doc]
         items.append({
             'id': id,
             'sentence': text,
@@ -176,26 +189,26 @@ def create_json(
             'entities':entities, 
             'spans':spans,
             'text_block': text,
+            'pos': pos_tags,
+            'dep': dep_rels,
+            'parents': parents,
+            'kshot_text':kshot_text
         })
         docs.append(doc)
+
+    
     nlp_time = time.time()
     args.timings[-1]['nlp_time'] = nlp_time - start_time
-    # ---- LLM pass ----
-
-    for t, term in zip(text, terms):
-        unpacked_terms = []
-        for t, tid in zip(term[0], term[1]):
-            unpacked_terms.append(([t], [tid]))
 
     llm_terms = check_additional_disease_tags(
             args, items, system_template, user_template
         )    
     args.timings[-1]['check_llm_terms'] = time.time() - nlp_time
-    # llm_terms = check_additional_disease_tags(
-    #         args, text, base_terms, system_template, user_template
-    #     )
+    args.logger.info(f"STARTING MERGE llm terms missing: '{llm_terms}'")
+
     for llm_te, item, doc in zip(llm_terms, items, docs):
         llm_term_tuples = [([t], []) for t in llm_te if t not in item['base_terms']]
+        args.logger.info(f"STARTING MERGE create_rule_json'{llm_term_tuples}', DOC TEXT: {doc.text}")
 
         tags_llm, _, entities_llm, spans_llm = create_rule_json(
             doc, nlp, llm_term_tuples
@@ -203,26 +216,24 @@ def create_json(
         item['tags_llm'], item['entities_llm'], item['spans_llm'] = tags_llm, entities_llm, spans_llm
 
     # ---- merge spans safely ----
-
-        occupied = set(i for s, e, _ in item['spans'] for i in range(s, e))
-
+        # occupied = set(i for s, e, _ in item['spans'] for i in range(s, e))
+        args.logger.info(f"POS POS tags for sentence from doc file '{doc.text}': {pos_tags}")
+        args.logger.info(f"ENTITIES LLM AND SPANS LLM: '{entities_llm}': '{spans_llm}'")
+        # tags = item['tags']
         for start, end, text_llm in spans_llm:
             span_range = set(range(start, end))
-            if occupied.intersection(span_range):
-                continue
-            spans.append((start, end, text_llm))
-            entities.append(text_llm)
-            occupied.update(span_range)
+            # if occupied.intersection(span_range):
+            #     continue
+            if (start, end, text_llm) not in item['spans']:
+                item['spans'].append((start, end, text_llm))
+                item['entities'].append(text_llm)
+            # occupied.update(span_range)
 
-            tags[start] = 0
+            item['tags'][start] = 0
             for i in range(start + 1, end):
-                tags[i] = 1
-
-        pos_tags = [t.pos_ for t in doc]
-        dep_rels = [t.dep_ for t in doc]
-        parents = [t.head.i for t in doc]
+                item['tags'][i] = 1
+            
         item['corpus'], item['podocument_id'] = 'generated_train', None
-        item['pos'], item['dep'], item['parents'] = pos_tags, dep_rels, parents
         
     args.timings[-1]['total_correction_time'] = time.time() -start_time
     return items

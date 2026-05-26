@@ -7,7 +7,7 @@ settings.py
 test.ipynb
 testic.py
 experiments/ncbi/*test*
-
+settings.py
 
 !data/CroatianStopWords.txt
 
