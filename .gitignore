@@ -8,6 +8,8 @@ test.ipynb
 testic.py
 experiments/ncbi/*test*
 settings.py
+helpers.md
+mineru.sif
 
 !data/CroatianStopWords.txt
 

@@ -131,9 +131,9 @@ def kshot_generation(
     system_template: str = 'role_prompt',
     nlp: Any = None
     ) -> str:
-    output_path, corrected_output_path = setup(args, iter_output)
-    args.logger.info(f"[INFO] Output path: {output_path}")
-    args.logger.info(f"[INFO] Corrected output path: {corrected_output_path}")
+    args.output_path, args.corrected_output_path = setup(args, iter_output)
+    args.logger.info(f"[INFO] Output path: {args.output_path}")
+    args.logger.info(f"[INFO] Corrected output path: {args.corrected_output_path}")
     # print(f"[INFO] Output path: {output_path}",
     #       f"\n[INFO] Corrected output path: {corrected_output_path}")
     kshot_pool = load_kshot_examples(args, args.kshot_pool)
@@ -191,9 +191,9 @@ def kshot_generation(
             data = utils.safe_load_response(response)
             for d in data:
                 args.logger.info(f'RESPONSE {i} for generation:  {d["content"]}')
-            texts = [save_generated_sentences(args, output_path, 'a', d['content'].strip(), 
+            texts = [save_generated_sentences(args, args.output_path, 'a', d['content'].strip(), 
                             item['term'], batch_timings['batch_gen_time'], item['used_ids']) for item, d in zip(batch,data)]
-            print("saved to ", output_path)
+            print("saved to ", args.output_path)
             terms = [item['term'] for item in batch]
             kshot_text_blocks = [item['text_block'] for item in batch]
 #========================================
@@ -212,7 +212,7 @@ def kshot_generation(
 #========================================
 #       Save outputs
 #========================================
-            with open(corrected_output_path, 'a', encoding='utf-8') as file:
+            with open(args.corrected_output_path, 'a', encoding='utf-8') as file:
                 for generated_json in generated_jsons:
                     file.write(json.dumps(generated_json))
                     file.write("\n")
@@ -230,7 +230,16 @@ def kshot_generation(
             if args.verbose:
                 print(f"[ERROR] Term {term[0]}")
                 traceback.print_exc()
-    return output_path
+    return args.output_path
+
+
+def how_many_to_generate(args):
+    for file in os.listdir(args.output_directory):
+        if 'corrected_generated_sentences_' in file:
+            with open(file, "r", encoding="utf-8") as f:
+                num_lines = sum(1 for _ in f)
+            if num_lines < args.generate_k:
+                args.generate_k -= num_lines
 
 
 def get_diseases(args: argparse.Namespace):
@@ -241,6 +250,7 @@ def get_diseases(args: argparse.Namespace):
         print(f"Number of edges (relations): {graph.number_of_edges()}")
         print('First 20 terms: ', do_terms[:20])  # Show first 20 terms
     return do_terms 
+
 
 def main(args: argparse.Namespace) -> None:
     os.makedirs(args.output_directory, exist_ok=True)
@@ -257,7 +267,8 @@ def main(args: argparse.Namespace) -> None:
     if args.pairs_file_path:
         disease_terms = utils.generate_term_list(args.pairs_file_path, args.verbose)
         term_list += disease_terms
-
+    # fill up the output or use the 
+    how_many_to_generate(args)
     if args.test: 
         args.generate_k = 100
         # print("Testing on samples: ", len(term_list), term_list)
@@ -268,14 +279,16 @@ def main(args: argparse.Namespace) -> None:
     else:
         reps = random.sample(term_list,args.generate_k - len(term_list))
         term_list += reps
-        
+
     nlp = generation_postprocessing.spacy_load_model(args.spacy_model)
     # TODO: system_template, user_template to args
     # It is defined within kshot sampling depends on 
     # the ration of no entitiy sentences
-    kshot_generation(args, '', term_list, 
-                              system_template=args.system_template,
-                              nlp = nlp)
+    kshot_generation(args, 
+                     '', 
+                     term_list, 
+                     system_template=args.system_template,
+                    nlp = nlp)
 
 
 def load_config(config_path: str):
