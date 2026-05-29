@@ -1,13 +1,14 @@
 disease_file: data/KB/SNOMEDCT/concepts_disease_filtered_sp.csv
 obo_file_path: false
 output_directory: data/synthetic/${CORPUS}/0shot_syn_generation_${KSHOT_CHECK}shot_check_${SIZE}
-server_url: http://0.0.0.0:8484
+server_url: http://0.0.0.0:${PORT}
 pairs_file_path: ''
 
 spacy_model: es_dep_news_trf
 
 generate_k: 25000
 random_seed: 42
+batch: ${BATCH}
 
 system_template: role_sent_type_prompt
 user_template: genre_syn_generation_new
@@ -19,7 +20,7 @@ kshot_check: ${KSHOT_CHECK}
 
 avoid_words: paciente, individuo o sujeto
 language: spanish
-batch:  ${BATCH}
+no_entity_ratio: 0.7
 
 kshot_pool: ''
 temperature: 0

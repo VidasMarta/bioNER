@@ -236,10 +236,12 @@ def kshot_generation(
 def how_many_to_generate(args):
     for file in os.listdir(args.output_directory):
         if 'corrected_generated_sentences_' in file:
-            with open(file, "r", encoding="utf-8") as f:
+            with open(os.path.join(args.output_directory, file), 
+                      "r", encoding="utf-8") as f:
                 num_lines = sum(1 for _ in f)
             if num_lines < args.generate_k:
                 args.generate_k -= num_lines
+                args.logger.info(f"Generation file found from prior generation {os.path.join(args.output_directory, file)}")
 
 
 def get_diseases(args: argparse.Namespace):
