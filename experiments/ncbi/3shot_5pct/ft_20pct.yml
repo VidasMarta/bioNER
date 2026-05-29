@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "train_20pct.json"
   training_set: "3shot_5pct"
-  file_to_save: "ncbi/20_pct/test.csv"
+  file_to_save: "ncbi/20_pct/test_new.csv"
