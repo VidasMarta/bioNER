@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "NCBI_with_3shot_50pct"
+  pretrained_weights_path: "NCBI_3shot_50pct"
 
 
 # Embedding and Dataset Configuration
