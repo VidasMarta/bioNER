@@ -201,8 +201,8 @@ def kshot_generation(
 #========================================
             # TODO: this is completely fixed should we add kshot.
             generated_jsons = generation_postprocessing.create_json(args, texts, i, terms, nlp, 
-                                            system_template='annotation', 
-                                            user_template='disease_annotation_reduced', 
+                                            system_template=args.system_template_check, 
+                                            user_template=args.user_template_check, 
                                             kshot_text_blocks=kshot_text_blocks)
             
             args.timings[-1]['batch_correction_time'] = time.time() - batch_gen_time
@@ -272,7 +272,7 @@ def main(args: argparse.Namespace) -> None:
     # fill up the output or use the 
     how_many_to_generate(args)
     if args.test: 
-        args.generate_k = 100
+        args.generate_k = 48
         # print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
 
@@ -326,13 +326,14 @@ def load_config(config_path: str):
     for key in bool_fields:
         if key in config and isinstance(config[key], str):
             config[key] = config[key].lower() in ("true", "1", "yes")
-
+    print(f"Loaded config: {config}")
     return argparse.Namespace(**config)
 
 
 if __name__ == "__main__":
     init_args = argparse_args()
     args = load_config(init_args.config_file)
+    print(f"args.output_directory")
     args.logger = utils.setup_logger(args.output_directory, args.verbose)
     args.timings = []
     vars_str = '{'
