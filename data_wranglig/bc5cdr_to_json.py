@@ -169,7 +169,7 @@ if __name__=='__main__':
     os.makedirs(args.parsed_mesh_folder, exist_ok=True)
     
     #Train
-    train_parsed = args.parsed_mesh_folder + "bc5cdr_ner_train.json"
+    train_parsed = args.parsed_mesh_folder + "bc5cdr_ner_train_100pct.json"
     abstracts, annotations = parse_text_file(args.train)
     create_and_save_json(abstracts, annotations, train_parsed, nlp)
 

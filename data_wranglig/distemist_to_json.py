@@ -175,7 +175,7 @@ if __name__=='__main__':
     train_split = train_data[:split_idx]
     dev_split = train_data[split_idx:]
 
-    with open(args.parsed_mesh_folder + "distemist_ner_train.json","w",encoding="utf-8") as f:
+    with open(args.parsed_mesh_folder + "distemist_ner_train_100pct.json","w",encoding="utf-8") as f:
         for row in train_split:
             f.write(json.dumps(row) + "\n")
     with open(args.parsed_mesh_folder + "distemist_ner_devel.json","w",encoding="utf-8") as f:
@@ -193,7 +193,7 @@ if __name__=='__main__':
 
     # Filter by text file
     subset_pcts = sorted(args.pcts, reverse=True)
-    available_text_files = args.parsed_mesh_folder + "distemist_ner_train.json"
+    available_text_files = args.parsed_mesh_folder + "distemist_ner_train_100pct.json"
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from

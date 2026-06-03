@@ -267,7 +267,7 @@ if __name__ == "__main__":
     # Filter by text file
     filtered  = {}
     subset_pcts = sorted(args.pcts, reverse=True)
-    available_text_files = args.parsed_mesh_folder  + "bronco150_ner_train.json"
+    available_text_files = args.parsed_mesh_folder  + "bronco150_ner_train_100pct.json"
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
