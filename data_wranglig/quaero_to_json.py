@@ -182,7 +182,7 @@ if __name__ == "__main__":
     #train
     texts, annotations = parse_bioc_file(args.training_emea)
     data_emea_train = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_ner_train.json"), data_emea_train)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_emea, "emea_ner_train_100pct.json"), data_emea_train)
 
     #devel
     texts, annotations = parse_bioc_file(args.devel_emea)
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     # Filter by text file
     filtered_emea = {}
     subset_pcts = sorted(args.pcts, reverse=True)
-    available_text_files = args.parsed_mesh_folder_emea + "emea_ner_train.json"
+    available_text_files = args.parsed_mesh_folder_emea + "emea_ner_train_100pct.json"
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     os.makedirs(args.parsed_mesh_folder_medline, exist_ok=True)
     texts, annotations = parse_bioc_file(args.training_medline)
     data_medline_train = convert_to_bio(texts, annotations, nlp)
-    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_ner_train.json"), data_medline_train)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder_medline, "medline_ner_train_100pct.json"), data_medline_train)
 
     #devel
     texts, annotations = parse_bioc_file(args.devel_medline)
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     # Filter by text file
     filtered_medline = {}
     subset_pcts = sorted(args.pcts, reverse=True)
-    available_text_files = args.parsed_mesh_folder_medline + "medline_ner_train.json"
+    available_text_files = args.parsed_mesh_folder_medline + "medline_ner_train_100pct.json"
     previous_pct = 1
     for pct in subset_pcts:
         samples_pct = float(pct) / float(previous_pct) # so that it contains given % from train dataset and not subset it is being extracted from
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
 
     #Save joined medline and emea to quaero.
-    save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_ner_train.json"), data_medline_train + data_emea_train)
+    save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_ner_train_100pct.json"), data_medline_train + data_emea_train)
     save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_ner_dev.json"), data_medline_devel + data_emea_devel)
     save_to_json_line(os.path.join(args.parsed_mesh_folder, "quaero_ner_test.json"), data_medline_test + data_emea_test)
     for pct in filtered_emea.keys():

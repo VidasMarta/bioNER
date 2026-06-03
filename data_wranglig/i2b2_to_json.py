@@ -44,7 +44,7 @@ def parse_text_file(file_path, path_to_save):
 if __name__ == "__main__":
    i2b2_path = "/home/martavidas/Documents/FER/Diplomski/Diplomski/data/i2b2"
    train_init = os.path.join(i2b2_path, "train.txt")
-   train_json = os.path.join(i2b2_path, "train.json")
+   train_json = os.path.join(i2b2_path, "train_100pct.json")
    parse_text_file(train_init, train_json)
 
 
