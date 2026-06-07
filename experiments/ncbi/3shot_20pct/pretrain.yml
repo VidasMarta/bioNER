@@ -30,7 +30,7 @@ settings:
   cnn_max_word_len: 20 
   cnn_embedding_dim: 256
   feature_size: 128
-  dataset: "ncbi/synthetic/3shot_20pct/27B/" 
+  dataset: "ncbi/synthetic/27B/3shot_20pct/" 
   tagging_scheme : "IOB1" 
   train_filename: "corrected_generated_sentences_20260529.jsonl"
   training_set: "-"
