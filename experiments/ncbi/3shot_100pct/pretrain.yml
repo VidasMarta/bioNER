@@ -32,6 +32,6 @@ settings:
   feature_size: 128
   dataset: "ncbi/synthetic/3shot_100pct/" 
   tagging_scheme : "IOB1" 
-  train_filename: ".jsonl"
+  train_filename: "corrected_generated_sentences_20260603.jsonl"
   training_set: "-"
   file_to_save: "ncbi/3shot_100pct/test.csv"
