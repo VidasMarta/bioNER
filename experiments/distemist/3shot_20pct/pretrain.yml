@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "corrected_generated_sentences_20260606.jsonl"
   training_set: "-"
-  file_to_save: "distemist/10shot_20pct/test.csv"
+  file_to_save: "distemist/3shot_20pct/test.csv"
