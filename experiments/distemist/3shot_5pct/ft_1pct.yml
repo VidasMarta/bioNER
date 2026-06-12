@@ -1,4 +1,4 @@
-#MODEL NAME: distemist_filtered10pct_ft_with_20distemist
+#MODEL NAME: distemist_filtered10pct_ft_with_10distemist
 
 # Model Hyperparameters
 model:
@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "ES_S_with_10shot_50pct"
+  pretrained_weights_path: "ES_S_with_3shot_5pct"
 
 
 # Embedding and Dataset Configuration
@@ -32,6 +32,6 @@ settings:
   feature_size: 128
   dataset: "distemist/trf/" 
   tagging_scheme : "IOB1" 
-  train_filename: "train_20pct.json"
-  training_set: "10shot_50pct"
-  file_to_save: "distemist/20_pct/test.csv"
+  train_filename: "train_1pct.json"
+  training_set: "3shot_5pct"
+  file_to_save: "distemist/1_pct/test.csv"

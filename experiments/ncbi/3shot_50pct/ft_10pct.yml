@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "NCBI_3shot_50pct"
+  pretrained_weights_path: "27B_NCBI_3shot_50pct"
 
 
 # Embedding and Dataset Configuration
@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "train_10pct.json"
   training_set: "3shot_50pct"
-  file_to_save: "ncbi/10_pct/test_new.csv"
+  file_to_save: "ncbi/10_pct/27B/test.csv"

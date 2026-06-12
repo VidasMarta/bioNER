@@ -33,5 +33,5 @@ settings:
   dataset: "ncbi/trf/" 
   tagging_scheme : "IOB1" 
   train_filename: "train_5pct.json"
-  training_set: "3shot_50pct"
-  file_to_save: "ncbi/5_pct/test_new.csv"
+  training_set: "3shot_100pct"
+  file_to_save: "ncbi/5_pct/27B/test.csv"

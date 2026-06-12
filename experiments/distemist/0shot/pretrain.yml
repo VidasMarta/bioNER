@@ -32,6 +32,6 @@ settings:
   feature_size: 128
   dataset: "distemist/synthetic/0shot/" 
   tagging_scheme : "IOB1" 
-  train_filename: "filtered_corrected_generated_sentences_20260324.jsonl"
+  train_filename: "corrected_generated_sentences_20260604.jsonl"
   training_set: "-"
   file_to_save: "distemist/0shot/test.csv"
