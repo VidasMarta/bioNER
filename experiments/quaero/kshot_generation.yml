@@ -1,6 +1,6 @@
 disease_file: data/KB/ICD10FR/concepts_filtered_fr.csv
 obo_file_path: false
-output_directory: data/synthetic/${CORPUS}/${K_SHOT}shot_syn_generation_${PCT}pct_${KSHOT_CHECK}shot_check_${SIZE}
+output_directory: ${OUTPUT_DIR_SCRATCH}
 server_url: http://0.0.0.0:${PORT}
 pairs_file_path: ''
 
@@ -20,14 +20,14 @@ kshot_size: ${K_SHOT}
 system_template_check: 'annotation'
 user_template_check: disease_annotation_reduced  
 kshot_check: ${KSHOT_CHECK}
+
+kshot_pool: data/processed/${CORPUS}/trf/${CORPUS}_ner_train_1pct.json
+no_entity_ratio: 0.52 
 genre_group: "titles and leflets"
 
-kshot_pool: data/processed/${CORPUS}/trf/${CORPUS}_ner_train.json
-no_entity_ratio: 0.52 #calculated on whole NCBI train
 
 temperature: 0
 max_tokens: ${MAX_TOKENS}
-
 
 include_pos: false #true
 include_dep: false #true

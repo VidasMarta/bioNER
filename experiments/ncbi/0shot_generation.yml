@@ -1,6 +1,6 @@
 disease_file: data/KB/SNOMEDCT/concepts_disease_filtered_en.csv
 obo_file_path: false
-output_directory: data/synthetic/${CORPUS}/0shot_syn_generation_${KSHOT_CHECK}shot_check_${SIZE}
+output_directory: ${OUTPUT_DIR_SCRATCH}
 server_url: http://0.0.0.0:${PORT}
 pairs_file_path: data/KB/hetionet/all.jsonl
 

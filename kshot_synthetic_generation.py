@@ -242,6 +242,10 @@ def how_many_to_generate(args):
             if num_lines < args.generate_k:
                 args.generate_k -= num_lines
                 args.logger.info(f"Generation file found from prior generation {os.path.join(args.output_directory, file)}")
+                args.logger.info(f"{num_lines} sentences already generated, generating {args.generate_k} more.")
+            else:
+                args.logger.info(f"Already generated {num_lines} sentences, which meets or exceeds the target of {args.generate_k}. No more generation needed.")
+                exit(0)
 
 
 def get_diseases(args: argparse.Namespace):
@@ -272,7 +276,8 @@ def main(args: argparse.Namespace) -> None:
     # fill up the output or use the 
     how_many_to_generate(args)
     if args.test: 
-        args.generate_k = 48
+        args.generate_k = 70
+        how_many_to_generate(args)
         # print("Testing on samples: ", len(term_list), term_list)
     random.seed(args.random_seed)
 
