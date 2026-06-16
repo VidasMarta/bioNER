@@ -1,0 +1,37 @@
+#MODEL NAME: distemist_filtered10pct_ft_with_10distemist
+
+# Model Hyperparameters
+model:
+  cell: "lstm"  
+  hidden_size: 512
+  num_layers: 1
+  dropout: 0.37777114597800093
+  lr: 0.0013897276055611916
+  batch_size: 32
+  use_crf: true  
+  loss: "CRF" 
+  optimizer: "adamw"  
+  epochs: 100
+  max_length: 256
+  max_grad_norm: 5.0
+  early_stopping: 10 
+  attention: true 
+  att_num_of_heads: 4 
+  pretrained_weights_path: "GER_S_with_3shot_100pct"
+
+
+# Embedding and Dataset Configuration
+settings:
+  word_embedding: "medBERT_ger"  
+  bert_finetuning: true 
+  ft_lr: 2.628907967128477e-05   
+  char_cnn_embedding: true
+  cnn_vocab: "bcdefghijklmnopqrstuvwxyz0123456789-,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}" 
+  cnn_max_word_len: 20 
+  cnn_embedding_dim: 256
+  feature_size: 128
+  dataset: "bronco/trf/" 
+  tagging_scheme : "IOB1" 
+  train_filename: "train_5pct.json"
+  training_set: "3shot_100pct"
+  file_to_save: "bronco/5_pct/test.csv"

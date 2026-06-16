@@ -50,7 +50,7 @@ def hash_to_vector(h, dim):
     return v
 
 
-def get_graph_embedding(graphs, wl_iterations=2, dimensions=16):
+def get_graph_embedding(graphs, wl_iterations=2, dimensions=16): #TODO da ne dođe do hash kolizije dimensions = 1024 or 2048 i multi-hot hashing?
     embeddings = []
     for G in graphs:
         h = nx.weisfeiler_lehman_graph_hash(
