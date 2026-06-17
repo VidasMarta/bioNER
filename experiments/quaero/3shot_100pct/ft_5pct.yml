@@ -22,7 +22,7 @@ model:
 
 # Embedding and Dataset Configuration
 settings:
-  word_embedding: ""  
+  word_embedding: "drBERT_fr"  
   bert_finetuning: true 
   ft_lr: 2.628907967128477e-05   
   char_cnn_embedding: true
