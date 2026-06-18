@@ -26,12 +26,12 @@ settings:
   bert_finetuning: true 
   ft_lr: 2.628907967128477e-05   
   char_cnn_embedding: true
-  cnn_vocab: "bcdefghijklmnopqrstuvwxyz0123456789-,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}" 
+  cnn_vocab:  "bcdefghijklmnopqrstuvwxyz0123456789-,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}áéíóúüñ¿¡äößàâæçèêëîïôœùûÿ" 
   cnn_max_word_len: 20 
   cnn_embedding_dim: 256
   feature_size: 128
-  dataset: "distemist/synthetic/3shot_20pct/" 
+  dataset: "distemist/synthetic/4B/3shot_20pct/" 
   tagging_scheme : "IOB1" 
   train_filename: "corrected_generated_sentences_20260606.jsonl"
   training_set: "-"
-  file_to_save: "distemist/3shot_20pct/test.csv"
+  file_to_save: "distemist/3shot_20pct/4B/test.csv"
