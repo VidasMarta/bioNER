@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "FR_S_with_0shot"
+  pretrained_weights_path: "FR_S_with_0shot_4B"
 
 
 # Embedding and Dataset Configuration
