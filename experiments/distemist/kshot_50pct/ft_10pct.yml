@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "train_10pct.json"
   training_set: "filtered50pct"
-  file_to_save: "distemist/10_pct/4B/test.csv"
+  file_to_save: "distemist/10_pct/test.csv"

@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "train_20pct.json"
   training_set: "baseline"
-  file_to_save: "distemist/1_pct/4B/test.csv"
+  file_to_save: "distemist/1_pct/test.csv"

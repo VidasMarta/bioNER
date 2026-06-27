@@ -17,7 +17,7 @@ model:
   early_stopping: 10 
   attention: true 
   att_num_of_heads: 4 
-  pretrained_weights_path: "ES_S_with_3shot_1pct_4B"
+  pretrained_weights_path: "ES_S_with_3shot_1pct_27B"
 
 
 # Embedding and Dataset Configuration
@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "train_50pct.json"
   training_set: "3shot_1pct"
-  file_to_save: "distemist/50_pct/4B/test.csv"
+  file_to_save: "distemist/50_pct/test.csv"
