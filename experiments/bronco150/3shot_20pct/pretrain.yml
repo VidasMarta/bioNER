@@ -32,6 +32,6 @@ settings:
   feature_size: 128
   dataset: "bronco/synthetic/3shot_20pct/" 
   tagging_scheme : "IOB1" 
-  train_filename: ".jsonl"
+  train_filename: "corrected_generated_sentences_20260618.jsonl" #4B corrected_generated_sentences_20260621
   training_set: "-"
   file_to_save: "bronco/3shot_20pct/test.csv"
