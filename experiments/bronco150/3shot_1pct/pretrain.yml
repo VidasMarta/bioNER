@@ -34,4 +34,4 @@ settings:
   tagging_scheme : "IOB1" 
   train_filename: "corrected_generated_sentences_20260620.jsonl" #27B corrected_generated_sentences_20260617
   training_set: "-"
-  file_to_save: "bronco/3hot_1pct/test.csv"
+  file_to_save: "bronco/3hot_1pct/4B/test.csv"
