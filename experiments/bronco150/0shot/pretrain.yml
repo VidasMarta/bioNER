@@ -30,7 +30,7 @@ settings:
   cnn_max_word_len: 20 
   cnn_embedding_dim: 256
   feature_size: 128
-  dataset: "bronco/synthetic/0shot/" 
+  dataset: "bronco/synthetic/4B/0shot/" 
   tagging_scheme : "IOB1" 
   train_filename: "corrected_generated_sentences_20260620.jsonl" #27B corrected_generated_sentences_20260616
   training_set: "-"
