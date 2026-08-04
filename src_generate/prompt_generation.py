@@ -302,7 +302,7 @@ GENRE_GROUPS = {
         Genre.DRUG_INSERTS,
         Genre.PRODUCT_CHARACTERISTICS,
         Genre.MEDICATION_LEAFLETS,
-       Genre.LETTER_TITLE,
+        Genre.LETTER_TITLE,
     ],
     "guides": [
         Genre.REPORT,        # reuse allowed ✅
