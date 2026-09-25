@@ -10,7 +10,7 @@
 # #SBATCH --partition=gpu
 
 # Paths to your images
-USERNAME=mkeber
+USERNAME= # TODO: write your username here
 
 # Matching pairs (same order!)
 CORPORA=(ncbi)
@@ -22,6 +22,13 @@ CLIENT_IMAGE=/home/${USERNAME}/sif-files/synbioner_generate2.sif
 BIND_PATHS_SPACY=/home/${USERNAME}/models/spacy_models:/models
 
 echo "Start time: $(date +"%H:%M:%S")"
+
+# singularity exec --nv \
+#   -B $BIND_PATHS_SPACY \
+#   $CLIENT_IMAGE bash -c "
+# export PYTHONPATH=/models:\$PYTHONPATH
+# python3 utils/save_spacy_to_disk.py --model ${SPACY}
+# "
 
 # Loop through indices
 for i in "${!CORPORA[@]}"; do
@@ -39,10 +46,3 @@ for i in "${!CORPORA[@]}"; do
 done
 
 echo "End time: $(date +"%H:%M:%S")"
-
-# singularity exec --nv \
-#   -B $BIND_PATHS_SPACY \
-#   $CLIENT_IMAGE bash -c "
-# export PYTHONPATH=/models:\$PYTHONPATH
-# python3 utils/save_spacy_to_disk.py --model ${SPACY}
-# "

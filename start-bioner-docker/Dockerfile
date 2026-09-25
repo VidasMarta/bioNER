@@ -1,8 +1,8 @@
 FROM pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime
 # FROM ubuntu:focal-20231003
 ARG DEBIAN_FRONTEND=noninteractive
-ARG USER_UID=1050
-ARG USER_GID=100
+ARG USER_UID=1000
+ARG USER_GID=1000
 ARG USER_NAME=vscode
 
 RUN apt-get update && \
@@ -19,10 +19,6 @@ WORKDIR /workspace
 COPY . /workspace
 # Use bash so we can "conda activate"
 SHELL ["/bin/bash", "-c"]
-RUN conda create -y -n gen python=3.10 && \
-    source activate gen && \
-    pip install --upgrade-strategy only-if-needed -r requirements_gen.txt
-
 RUN pip install --upgrade pip && \
   pip install --upgrade-strategy only-if-needed -r requirements_base.txt && \
   python3 -m spacy download en_core_web_lg && \

@@ -12,7 +12,6 @@ batch: ${BATCH}
 
 system_template: 'role_sent_type_prompt'
 user_template: genre_syn_generation_new
-user_template: genre_syn_generation_new
 
 kshot_size: ${K_SHOT}
 

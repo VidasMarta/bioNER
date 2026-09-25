@@ -23,7 +23,7 @@ K_SHOT=3
 MAX_TOKENS=128
 # Paths to your images
 PORT=8284
-USERNAME=mkeber
+USERNAME= # TODO: write your username here
 # MODEL=${MODEL:-medgemma-27b-text-it-BF16-00001-of-00002.gguf}
 # (6, 1536) (4, 2048) 
 CTX_SINGLE=2304

@@ -3,7 +3,7 @@
 set -e  # Stop on error
 
 ENV_NAME="bioner"
-REQ_FILE="/home/mkeber/syn-bioner/bioNER/start-bioner-docker/requirements_base.txt"
+REQ_FILE="/home/${USERNAME}/syn-bioner/bioNER/start-bioner-docker/requirements_base.txt"
 
 echo "======================================"
 echo "Creating conda environment: $ENV_NAME"

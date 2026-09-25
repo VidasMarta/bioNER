@@ -13,7 +13,7 @@ import traceback
 import yaml  
 from .src_generate import prompt_generation
 from .src_generate import utils
-from . import generation_postprocessing
+from .src_generate import generation_postprocessing
 import obonet
 import time
 
@@ -191,8 +191,10 @@ def kshot_generation(
             data = utils.safe_load_response(response)
             for d in data:
                 args.logger.info(f'RESPONSE {i} for generation:  {d["content"]}')
-            texts = [save_generated_sentences(args, args.output_path, 'a', d['content'].strip(), 
-                            item['term'], batch_timings['batch_gen_time'], item['used_ids']) for item, d in zip(batch,data)]
+            texts = [save_generated_sentences(args, args.output_path, 'a', 
+                        d['content'].strip(), item['term'], 
+                        batch_timings['batch_gen_time'], 
+                        item['used_ids']) for item, d in zip(batch,data)]
             print("saved to ", args.output_path)
             terms = [item['term'] for item in batch]
             kshot_text_blocks = [item['text_block'] for item in batch]
