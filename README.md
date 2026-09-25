@@ -1,4 +1,3 @@
-````markdown
 # Synthetic Fine-Tuning for Multilingual Biomedical Named Entity Recognition
 
 This repository implements a synthetic-data generation and training pipeline for biomedical named entity recognition (BioNER) in English, Spanish, German, and French. It addresses a central problem in BioNER: strong supervised models normally require large, expensive, expert-annotated datasets.
@@ -540,4 +539,3 @@ When using an individual gold corpus, terminology, language model, or pretrained
 For code defects or documentation problems, open an issue in the [GitHub repository](https://github.com/VidasMarta/bioNER/issues).
 
 For restricted data access, contact the corresponding dataset owner rather than attaching data to a public issue.
-````
