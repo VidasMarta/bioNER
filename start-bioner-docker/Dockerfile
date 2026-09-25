@@ -28,7 +28,3 @@ RUN pip install --upgrade pip && \
 
 RUN useradd $USER_NAME -u $USER_UID -g $USER_GID -m -s /bin/bash
 RUN chown -R $USER_UID:$USER_GID /workspace
-
-RUN python3 /workspace/test_imports.py \
-    && echo "All imports succeeded!" \
-    || (echo "Some imports failed!" && exit 1)

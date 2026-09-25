@@ -4,29 +4,11 @@ This repository implements a synthetic-data generation and training pipeline for
 
 The pipeline samples disease terms from biomedical terminologies and uses a decoder language model to generate and annotate synthetic text. The synthetic examples are used to pretrain a smaller BERT-based BioNER model with a bidirectional recurrent layer, multi-head attention (MHA), and a conditional random field (CRF). The model is then fine-tuned on 1%, 5%, 10%, 20%, 50%, or 100% of a gold-labelled downstream dataset.
 
-> **Repository status:** This research artifact is being prepared for release. Paths and cluster scripts still require local configuration. Items that are not yet available are marked `TODO` throughout this document.
-
-## Paper
-
-**Title:** TODO: add the final paper title  
-**Authors:** TODO: add the complete author list  
-**Venue/year:** TODO: add the venue and publication year  
-**Paper:** TODO: add the DOI, publisher page, or preprint link
-
-The accompanying paper studies whether synthetic fine-tuning can reduce the amount of manually annotated data required for multilingual BioNER. It compares zero-shot and three-shot synthetic generation on NCBI Disease (English), DisTEMIST (Spanish), BRONCO150 (German), and QUAERO (French), then evaluates the resulting BioNER models using several percentages of the gold training data. The largest improvements are observed in the lowest-resource settings.
-
-The code associated with the paper is maintained on the [`paper` branch](https://github.com/VidasMarta/bioNER/tree/paper).
+TODO: The paper associated with this code [`paper`](https://TBD) TBD.
+TODO: Synthetic data available at: [`data`](https://TBD) TBD.
 
 ## Main results
-
-The paper reports the following absolute F1-score improvements over baseline models trained only on the same gold-labelled subset:
-
-| Gold training data | English (NCBI) | Spanish (DisTEMIST) | German (BRONCO150) | French (QUAERO) |
-|---:|---:|---:|---:|---:|
-| 1% | +45.0 | +19.4 | +14.9 | +15.8 |
-| 5% | +10.2 | +7.8 | +4.1 | +6.4 |
-| 10% | +4.4 | +3.1 | +4.5 | +3.9 |
-
+TODO: plots and images 
 > **TODO — main-results figure:** Add the paper figure containing the complete F1 results, including the 20%, 50%, and 100% gold-data settings.
 
 ## Method overview
@@ -34,41 +16,13 @@ The paper reports the following absolute F1-score improvements over baseline mod
 1. Download the gold corpora and biomedical terminology resources.
 2. Convert each corpus to the repository's sentence-level JSON format and create the 1%, 5%, 10%, 20%, and 50% training subsets.
 3. Sample disease terms from SNOMED CT, ICD-10, and the Disease Ontology.
-4. Generate zero-shot or three-shot synthetic sentences with a decoder language model served by llama.cpp.
+4. Generate zero-shot or three-shot synthetic sentences with a decoder language model served by llama.cpp. 
 5. Ask the language model to check or correct the entity annotations and apply language-specific spaCy processing.
 6. Pretrain the BioNER model on the corrected synthetic data.
 7. Fine-tune the model on a selected percentage of gold data.
 8. Evaluate the model on the unchanged gold test set.
 
 > **TODO — pipeline figure:** Add the methodology figure from the paper here.
-
-The resulting dependency chain is:
-
-```text
-raw corpora + biomedical terminologies
-                  |
-                  v
-        preprocessed gold JSON
-          |                 |
-          |                 +----> baseline BioNER training
-          v
-zero-/three-shot prompts + sampled terms
-                  |
-                  v
-       raw synthetic JSONL
-                  |
-                  v
-   corrected synthetic JSONL
-                  |
-                  v
-       synthetic pretraining
-                  |
-                  v
-       gold-data fine-tuning
-                  |
-                  v
-       test logs + result CSVs
-```
 
 ## Repository contents
 
@@ -105,34 +59,7 @@ Experiment directories contain three configuration families:
 
 ## Requirements
 
-The supplied research workflow targets a Linux server or HPC cluster.
-
-| Component | Requirement |
-|---|---|
-| Operating system | Linux; the supplied orchestration scripts use Bash and SLURM |
-| Python | Python 3; TODO: record the exact tested minor version |
-| Training runtime | PyTorch 2.4.1, CUDA 12.4, and cuDNN 9 in the supplied base image |
-| GPU | NVIDIA CUDA GPU recommended for training; generation scripts request two GPUs |
-| Generation runtime | Apptainer/Singularity, a CUDA llama.cpp server image, and local GGUF model weights |
-| CPU and RAM | Generation jobs request 8 CPUs and 24 GB RAM; preprocessing requests 6 CPUs and 16 GB RAM |
-| Storage | TODO: report raw-data, model, container, synthetic-data, and checkpoint sizes |
-
-Python packages are listed in [`start-bioner-docker/requirements_base.txt`](start-bioner-docker/requirements_base.txt). The main dependencies include:
-
-- PyTorch
-- Transformers
-- spaCy
-- TorchCRF
-- seqeval
-- scikit-learn
-- pandas
-- NumPy
-- PyYAML
-- obonet
-- requests
-- Optuna
-
-The current requirements file is not version-pinned. Exact reproduction may therefore require reconstructing and publishing the package versions used for the paper.
+The supplied research workflow targets a Linux server or HPC cluster. NVIDIA CUDA GPU recommended for training; generation scripts request two GPUs a CUDA llama.cpp server image, using GGUF model weights.
 
 ### Language models and encoders
 
@@ -145,21 +72,16 @@ The experiments expect local copies of the following encoder families beneath `E
 | `drBERT_fr` | `drBERT_fr_setup/` |
 | `medBERT_ger` | `medBERT_ger_setup/` |
 
-TODO: add the exact upstream model identifiers, revisions, licenses, and download or conversion commands used to create these directories.
 
 The preprocessing and generation configurations additionally use these spaCy pipelines:
-
 ```text
-en_core_web_trf
-es_dep_news_trf
-de_dep_news_trf
-fr_dep_news_trf
+en_core_web_trf, es_dep_news_trf, de_dep_news_trf, fr_dep_news_trf
 ```
 
 ## Installation and environment setup
 
 Clone the paper branch and enter the repository:
-
+TODO:
 ```bash
 git clone --branch paper https://github.com/VidasMarta/bioNER.git
 cd bioNER
